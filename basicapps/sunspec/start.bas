@@ -9,7 +9,9 @@ kWh = 0.0
 opst = 0
 START:
 	SunspecReader 0, 1, kW,kWh, opst
-	PRINT "kW:"  kW " kWh:" kWh " State:" opst
+	PRINT "kW1:"  kW " kWh1:" kWh " State:" opst
+	SunspecReader 0, 2, kW,kWh, opst
+	PRINT "kW2:"  kW " kWh2:" kWh " State:" opst
 	PAUSE 5000
 GOTO start
 ' Sunspec reader for Solaredge, SMA, Fronius
@@ -25,41 +27,25 @@ SUB SunspecReader ( type, slv, kW, kWh, opst )
  '     SL FC ADDR NUM    CRC   - All modbus address have an offset of -1 to the modbus address
  ' Tx: 01 03 9C 40 00 7A EB AD - Read 122 (0x7a) registers starting at address 40001 (0x9c41).
  ' Rx: 01 03 F4 53 75 ... [Registers data] ... FF FF 12 1B (53 75 is SunS value)
+ ' 40001, 40002 0x53756e53 "SunS"
  ' 40084 (0x9c94) AC Power value (int16)
  ' 40085 (0x9c95) AC Power value scale factor (int16)
- ' 40094 (0x9c9e) AC Livetime Energy production (acc32)
- ' 40095 (0x9c9f) AC Livetime Energy production scale factor (int16)
+ ' 40094 (0x9c9e) AC Lifetime Energy production (acc32)
+ ' 40096 (0x9c9f) AC Lifetime Energy production scale factor (int16)
  ' 40108 (0x9cac) Operating State (unint16) 0=off, 2=night mode, 4=producing power
-    msg$=CHR$(slv)+CHR$(&H03)+CHR$(&H9C)+CHR$(&H40)+CHR$(&H00)+CHR$(&H7A)
-	crc$=CRCCalc$(0,msg$)
-	req$=msg$+crc$
-	num=RS485Write(req$)
-	PAUSE 500
-	rsp$=RS485Read$(122+9)
-	PRINT "len" len(rsp$)
-	FOR i = 1 TO len(rsp$)
-		print i  "2 0x"  HEX$(ASC(MID$(rsp$,i,1)))
-	NEXT i
-	IF len(rsp$)<> 131 THEN 
-	 kW=0.0
-	 kWh=0.0
-	 opst=0
-	 RETURN
-	ENDIF
-	' Check for MODBUS Func 3 response 
-	IF ASC(MID$(rsp$,1,1)) = 1 AND ASC(MID$(rsp$,2,1))=3 AND ASC(MID$(rsp$,3,1))=&HF4 THEN
-	 ' Check for SunS (0x53756e53)
-	 IF ASC(MID$(rsp$,4,1))=&H53 AND ASC(MID$(rsp$,5,1))=&H75 AND ASC(MID$(rsp$,6,1))=&H6E AND ASC(MID$(rsp$,5,1))=&H53 THEN
-	  ' Parse kW reg 40084 and 40085
-	  kW=(ASC(MID$(rsp$,4+(84*2),1))*256+ASC(MID$(rsp$,4+(84*2)+1,1)))*(ASC(MID$(rsp$,4+(85*2),1))*256+ASC(MID$(rsp$,4+(85*2)+1,1))) THEN
-	  ' Parse kWh regs 40094 and 40095
-	  kWh=(ASC(MID$(rsp$,4+(94*2),1))*256*256*256+ASC(MID$(rsp$,4+(94*2)+1,1))*256*256+ASC(MID$(rsp$,4+(94*2)+2,1))*256+ASC(MID$(rsp$,4+(94*2)+3,1)))*(ASC(MID$(rsp$,4+(95*2),1))*256+ASC(MID$(rsp$,4+(95*2)+1,1)))
-	  ' Parse Operation State
-	  opst=ASC(MID$(rsp$,4+(108*2),1)
-	 ENDIF
-	ENDIF
+	ModbusFC3Read slv, 40084-1, power
+	ModbusFC3Read slv, 40085-1, powerscale	
+	SunSpecScale powerscale, scale
+	kW=power*scale/1000.0
+	'print "kW" power " powerscale " powerscale " factor " scale " kW " kW
+	ModbusFC3Read slv, 40094-1, energyh
+	ModbusFC3Read slv, 40095-1, energyl
+	ModbusFC3Read slv, 40096-1, energyscale	
+	SunSpecScale energyscale, scale
+	kWh=(energyl/1000.0*scale)+(energyh*(65536.0/1000.0)*scale)
+	ModbusFC3Read slv, 40108-1, opst
  ELSEIF type = 1 THEN ' SMA SUNSPEC
- ' SMA (Technische Beschreibung SunSpec®-Modbus®-Schnittstelle) page 21
+ ' SMA (Technische Beschreibung SunSpec-Modbus-Schnittstelle) page 21
  ' 40200 (0x9D08) AC Power value (int16)
  ' 40201 (0x9D09) AC Power scale factor (int 16)
  ' 40210 (0x9D12) AC Livetime Energy production (acc32)
@@ -76,4 +62,47 @@ SUB SunspecReader ( type, slv, kW, kWh, opst )
  '  5=power reduction, 6 = switch off, 7 = error, 8 = standby
  ' Not implemented yet
  ENDIF 
+END SUB
+' ** Read a modbus register with function 3
+SUB ModbusFC3Read ( slv, register, value )
+    ' convert the register number to hex string and fill it up with 0 at the start for 4 chars
+	regs$=hex$(register)
+	regs$=string$(4-len(regs$),"0")+regs$
+	msg$=CHR$(slv)+CHR$(&H03)+CHR$(val("&H"+left$(regs$,2)))+CHR$(val("&H"+right$(regs$,2)))+CHR$(&H00)+CHR$(&H01)
+	crc$=CRCCalc$(0,msg$)
+	req$=msg$+crc$
+	num=RS485Write(req$)
+	n=1000
+	DO
+	 num=RS485Rq
+	 if num<7 then Pause 1
+	 n=n-1
+	LOOP UNTIL num>=7 OR n=0
+	rsp$=RS485Read$(RS485Rq)
+	if n > 0 then
+		value=peek(VAR rsp$,4)*256+peek(VAR rsp$,5)
+	else	
+		Hexdump rsp$, out$
+		print "modbus problem " len(rsp$)  "hex " out$
+		value = 0
+	endif
+END SUB
+' ** Convert scale factor to multiplier
+SUB SunSpecScale ( sf, factor )
+if sf < 10 then 
+factor = 10^sf
+elseif sf > 65525 then
+ factor = 10^(sf-65536)
+else
+ factor= 1
+endif
+END SUB
+' ** Dump a string in hex 
+SUB Hexdump ( msg$, out$ )
+	out$=""
+	for i = 1 TO len(msg$)
+	h$=hex$(peek(VAR msg$,i))
+	if len(h$) = 1 then h$="0"+h$
+	 out$=out$+h$
+	next i 
 END SUB
