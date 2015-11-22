@@ -37,7 +37,6 @@ SUB SunspecReader ( type, slv, kW, kWh, opst )
 	ModbusFC3Read slv, 40085-1, powerscale	
 	SunSpecScale powerscale, scale
 	kW=power*scale/1000.0
-	'print "kW" power " powerscale " powerscale " factor " scale " kW " kW
 	ModbusFC3Read slv, 40094-1, energyh
 	ModbusFC3Read slv, 40095-1, energyl
 	ModbusFC3Read slv, 40096-1, energyscale	
@@ -48,19 +47,39 @@ SUB SunspecReader ( type, slv, kW, kWh, opst )
  ' SMA (Technische Beschreibung SunSpec-Modbus-Schnittstelle) page 21
  ' 40200 (0x9D08) AC Power value (int16)
  ' 40201 (0x9D09) AC Power scale factor (int 16)
- ' 40210 (0x9D12) AC Livetime Energy production (acc32)
- ' 40212 (0x9d14) AC Livetime Energy production scale factor (sunssf)
+ ' 40210 (0x9D12) AC Lifetime Energy production (acc32)
+ ' 40212 (0x9d14) AC Lifetime Energy production scale factor (sunssf)
  ' 40224 (0x9D20) Operating state (enum 16) 1=off, 2=wait of pv voltage, 3=start, 4=MPP, 
  '  5=reduced output power, 6=shutdown, 7=error, 
  '  8=wait for energ provider
- ' Not implemented yet
+ ' Not tested yet
+	ModbusFC3Read slv, 40200-1, power
+	ModbusFC3Read slv, 40201-1, powerscale	
+	SunSpecScale powerscale, scale
+	kW=power*scale/1000.0
+	ModbusFC3Read slv, 40210-1, energyh
+	ModbusFC3Read slv, 40211-1, energyl
+	ModbusFC3Read slv, 40212-1, energyscale	
+	SunSpecScale energyscale, scale
+	kWh=(energyl/1000.0*scale)+(energyh*(65536.0/1000.0)*scale)
+	ModbusFC3Read slv, 40224-1, opst
  ELSEIF type = 2 THEN ' Fronius SUNSPEC
  ' Fronius (Fronius Datamanager Modbus TCP & RTU) page 18
  ' 40092 (0x9C9C) AC Power value (float32)
  ' 40102 (0x9CA6) AC Lifetime Energy production (float32)
  ' 40118 (0x9CB6) Operating State (enum 16) 1=off, 2=in operation, 3 = run up, 4=normal operation
  '  5=power reduction, 6 = switch off, 7 = error, 8 = standby
- ' Not implemented yet
+ ' Not tested yet
+	ModbusFC3Read slv, 40092-1, powerh
+	ModbusFC3Read slv, 40093-1, powerl	
+	ModbusFloat32 powerh, powerl, power
+	kW=power/1000.0
+	ModbusFC3Read slv, 40102-1, energyh
+	ModbusFC3Read slv, 40103-1, energyl	
+	ModbusFloat32 energyh, energyl, energy
+	kWh=energy/1000.0
+	ModbusFC3Read slv, 40118-1, opst
+
  ENDIF 
 END SUB
 ' ** Read a modbus register with function 3
@@ -96,6 +115,20 @@ elseif sf > 65525 then
 else
  factor= 1
 endif
+END SUB
+' ** Convert the readout of two 16bit registers into a float value
+SUB ModbusFloat32 ( hi, lo, value )
+	e=hi/128
+	m=((hi mod 127)*65535.0)+lo
+	if e >= 256 then 
+		s=-1.0
+		e=e-256
+	else
+		s=1.0
+	endif
+	' we ignore infinity and other stuff
+	e=e-127
+	value=s*m*(2^e)
 END SUB
 ' ** Dump a string in hex 
 SUB Hexdump ( msg$, out$ )
