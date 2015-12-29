@@ -13,7 +13,7 @@ START:
 	PRINT "kWh1 " kWh1 " kWh2 " kWh2 " kWh3 " kWh3
 	PAUSE 60000
 	GOTO START
-' S0 reader subroutine
+' * S0 reader subroutine
 SUB S0Reader ( kWh1, kWh2, kWh3)
 	'Reset counter with reading
 	imp1=S0Inp(1,1)
