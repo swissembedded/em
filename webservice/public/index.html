@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Solar App</title>
+	<link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css" media="screen" title="no title" charset="utf-8">
+</head>
+
+<body ng-app="SolarApp">
+
+<img src="images/swiss-embedded-logo.jpg" alt="Mountain View" style="width:60%;height:300px" >
+	<div ui-view ng-controller="ListController">
+	
+	<h1>Results</h1>
+	<div class="table-responsive">
+	<table class="table">
+	 <thead>
+                <tr>
+                    <th>UUID</th>
+                    <th>KW1</th>
+                    <th>KW2</th>
+					<th>Timestamp</th>
+                </tr>
+            </thead>
+  <tr ng-repeat="x in list">
+    <td>{{ x.uuid }}</td>
+    <td>{{ x.kw1  | number:2 }}</td>
+	<td>{{ x.kw2  | number:2 }}</td>
+	<td>{{ x.date | date:"yyyy-MM-dd @ HH:mm:ss" }}</td>
+  </tr>
+</table>
+	</div>
+	</div>
+</body>
+
+ <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+<script type="text/javascript" src="../controllers/temperatureList.js">  </script>
+
+</html>
+
+

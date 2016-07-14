@@ -1,0 +1,27 @@
+{
+  "name": "y",
+  "authors": [
+    "Davittt <ddonari@gmail.com>"
+  ],
+  "description": "mqtt client",
+  "main": "index.html",
+  "keywords": [
+    "mqtt"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "mqttjs-browser": "mqtt-browser#^0.0.1",
+    "bootstrap": "^3.3.6",
+    "mongoose": "^4.5.3",
+    "express": "^4.14.0"
+  }
+}
