@@ -12,4 +12,4 @@
 ./embdo-server/results
 ./embdo-server/npm-debug.log
 ./embdo-server/node_modules
-./embdo-server/public/libs
+./embdo-server/public/libs/*
