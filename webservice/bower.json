@@ -1,27 +1,12 @@
 {
-  "name": "y",
-  "authors": [
-    "Davittt <ddonari@gmail.com>"
-  ],
-  "description": "mqtt client",
-  "main": "index.html",
-  "keywords": [
-    "mqtt"
-  ],
-  "license": "MIT",
-  "homepage": "",
-  "private": true,
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ],
+  "name": "angular",
+  "version": "1.0.0",
   "dependencies": {
-    "mqttjs-browser": "mqtt-browser#^0.0.1",
-    "bootstrap": "^3.3.6",
-    "mongoose": "^4.5.3",
-    "express": "^4.14.0"
+    "bootstrap": "latest",
+    "angular": "latest",
+    "angular-route": "latest",
+    "express": "latest",
+    "mongoose": "^4.5.4",
+    "body-parser": "^1.15.2"
   }
 }
