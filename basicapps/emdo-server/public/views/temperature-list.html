@@ -1,0 +1,24 @@
+<div class="jumbotron text-center">
+	<p>{{ title }}</p>
+
+	<div ui-view  >
+		<div class="table-responsive">
+			<table class="table"  style="text-align:left">
+				<thead>
+					<tr>
+						<th>UUID</th>
+						<th>KW1</th>
+						<th>KW2</th>
+						<th>Timestamp</th>
+					</tr>
+				</thead>
+				<tr ng-repeat="x in list">
+					<td>{{ x.uuid }}</td>
+					<td>{{ x.kw1  | number:2 }}</td>
+					<td>{{ x.kw2  | number:2 }}</td>
+					<td>{{ x.date | date:"yyyy-MM-dd @ HH:mm:ss" }}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</div>

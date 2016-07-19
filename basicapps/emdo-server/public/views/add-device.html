@@ -1,0 +1,53 @@
+<div class="row" style="margin-top:80px; margin-buttom:40px">
+  <div class="col-lg-3">
+
+  </div>
+</div>
+<div class="container" style="margin-left:80px">
+  <div class="row">
+    <div class="col-md-12">
+     <!--  <form  novalidate="" name="addUser" ng-submit="vm.addUser(addUser.$valid, addUser)" id="addUser"> -->
+      <form  novalidate="" name="addUser" ng-submit="submit()" >
+        <legend>Add Device</legend>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <input type="text" class="form-control"  name="email" ng-model="uuid"  required="">
+               <p>Please enter uuid</p>
+              </div>
+          </div>
+        </div>
+         <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <input type="text" class="form-control" name="name" ng-model="name" required >
+                <p> Please enter name</p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <input type="text" class="form-control" name="latitude" ng-model="latitude" required >
+                <p> Please enter latitude</p>
+            </div>
+          </div>
+        </div>
+         <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <input type="text" class="form-control" name="longitude" ng-model="longitude" required >
+                <p> Please enter longitude</p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+</div>
