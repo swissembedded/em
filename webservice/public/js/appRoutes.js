@@ -8,16 +8,6 @@ angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', f
 			controller: 'MainController'
 		})
 
-		.when('/nerds', {
-			templateUrl: 'views/nerd.html',
-			controller: 'NerdController'
-		})
-
-		.when('/geeks', {
-			templateUrl: 'views/geek.html',
-			controller: 'GeekController'	
-		})
-
 		.when('/temperature-list', {
 			templateUrl: 'views/temperature-list.html',
 			controller: 'TemperatureListController'	
@@ -26,9 +16,15 @@ angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', f
 		.when('/add-device', {
 			templateUrl: 'views/add-device.html',
 			controller: 'DeviceController'	
-		});
+		})
+
+		.when('/list-devices', {
+			templateUrl: 'views/list-devices.html',
+			controller: 'ListDevicesController'	
+		})
+		;
 
 
-	$locationProvider.html5Mode(true);
+		$locationProvider.html5Mode(true);
 
-}]);
+	}]);

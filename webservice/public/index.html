@@ -10,25 +10,39 @@
 	<link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/style.css"> <!-- custom styles -->
 
-	<!-- JS -->
+	<!-- JS --><!-- 
 	<script src="libs/angular/angular.min.js"></script>
-	<script src="libs/angular-route/angular-route.min.js"></script>
+	<script src="libs/angular-route/angular-route.min.js"></script> -->
+
+	<!-- JS Source -->
+	<!-- <script src="libs/jquery/jquery.js"></script> -->
+
+
+	<script src="libs/angular/angular.js"></script>
+	<script src="libs/angular-route/angular-route.js"></script>
+	<script src="libs/angularjs-geolocation/dist/angularjs-geolocation.min.js"></script>
+
+	<!-- Holder JS -->
+	<script src="libs/holderjs/holder.js"></script>
+	<!-- Google Maps API -->
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTMtICPBIlcTsfXyNHPyrpVOQqnOMKsbE"></script>
+	
+	<!-- Modernizr -->
+	<!-- <script src="libs/modernizr/bin/modernizr"></script>
+ -->
 
 	<!-- ANGULAR CUSTOM -->
+	<script src="js/services/gservice.js"></script>
+
+
 	<script src="js/controllers/MainCtrl.js"></script>
-	<script src="js/controllers/NerdCtrl.js"></script>
-
+	
 	<script src="js/controllers/TemperatureListCtrl.js"></script>
-
 	<script src="js/services/TemperatureListService.js"></script>
 
-
-	<script src="js/services/NerdService.js"></script>
-
-	<script src="js/controllers/GeekCtrl.js"></script>
-	<script src="js/services/GeekService.js"></script>
-
 	<script src="js/controllers/DeviceCtrl.js"></script>
+
+	<script src="js/controllers/ListDevicesCtrl.js"></script>
 
 	
 	<script src="js/appRoutes.js"></script>
@@ -46,15 +60,16 @@
 			<a class="navbar-brand" href="/">Home</a>
 		</div> -->
 		<ul class="nav navbar-nav">
-			<li><a href="/nerds">Nerds</a></li>
-			<li><a href="/geeks">Geeks</a></li>
 			<li><a href="/temperature-list">Temperature List</a></li>
 			<li><a href="/add-device">Add Device</a></li>
+			<li><a href="/list-devices">Show Devices</a></li>
 		</ul>
 	</nav>
 
 	<!-- ANGULAR DYNAMIC CONTENT -->
 	<div ng-view></div>
+
+
 
 </div>
 </body>

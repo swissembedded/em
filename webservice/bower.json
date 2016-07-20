@@ -7,6 +7,9 @@
     "angular-route": "latest",
     "express": "latest",
     "mongoose": "^4.5.4",
-    "body-parser": "^1.15.2"
+    "body-parser": "^1.15.2",
+    "angularjs-geolocation": "0.1.1",
+    "modernizr": "3.0.0",
+    "holderjs": "^2.9.3"
   }
 }

@@ -1,6 +1,6 @@
 
 var temperaturePost = require(__dirname + "/models/Temperature");
-var device = require(__dirname + "/models/Device");
+var Device = require(__dirname + "/models/Device");
 
 
 module.exports = function(app) {
@@ -17,8 +17,8 @@ module.exports = function(app) {
 
 
 	app.post('/addDevice', function(req, res) {
-		
-		var newDevice = new device(
+
+		var newDevice = new Device(
 		{
 			user_id: req.body.user_id,
 			uuid:  req.body.uuid,
@@ -28,21 +28,33 @@ module.exports = function(app) {
 		});
 
      	//save model to MongoDB
-		newDevice.save(function (err) {
-			if (err) {
-				return err;
-			}
-			else {
-				console.log("Post saved");
-			}
-		});
+     	newDevice.save(function (err) {
+     		if (err) {
+     			return err;
+     		}
+     		else {
+     			console.log("Post saved");
+     		}
+     	});
 
- 		console.log(req.body);
-		res.json(req.body);
-
-
-	});
+     	console.log(req.body);
+     	res.json(req.body);
+     });
 	
+	app.get('/getDevices', function(req, res) {
+
+	 	// Uses Mongoose schema to run the search (empty conditions)
+	 	var query = Device.find({});
+	 	query.exec(function(err, users){
+	 		if(err)
+	 			res.send(err);
+
+            // If no errors are found, it responds with a JSON of all users
+            res.json(users);
+        });
+	 });
+
+
 	// frontend routes =========================================================
 	// route to handle all angular requests
 	app.get('*', function(req, res) {

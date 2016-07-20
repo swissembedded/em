@@ -1,4 +1,4 @@
-angular.module('DeviceCtrl', []).controller('DeviceController', function($scope,$http) {
+angular.module('DeviceCtrl', ['geolocation', 'gservice']).controller('DeviceController', function($scope,$http,geolocation, gservice) {
 
 	$scope.title = "Add Device";
 
@@ -9,9 +9,9 @@ $scope.submit  = function(){
 	var datos = JSON.stringify( {
 		uuid: $scope.uuid ,
 		user_id: '12',
-		name:  'name',
-		lat:   '10.0',
-		lon:   '10.0' });
+		name:  $scope.name,
+		lat:   $scope.latitude,
+		lon:   $scope.longitude });
 
 	var req = $http({
 		method : "POST",
@@ -20,11 +20,17 @@ $scope.submit  = function(){
 	})
 	.then(function(response) {
 		
+         //Refresh map
+		gservice.refresh($scope.latitude, $scope.longitude);
+
 		$scope.uuid = '';
 		$scope.user_id = '';
 		$scope.name = '';
 		$scope.latitude = '';
 		$scope.longitude = '';
+
+		
+
 		console.log('Success');
 	})
 	.catch(function(response) {
