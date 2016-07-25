@@ -1,10 +1,24 @@
 {
-  "name": "starter-node-angular",
-  "main": "server.js",
+  "name": "PassportJS",
+  "version": "1.0.0",
+  "description": "Simple PassportJS MEAN Web App",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jose Annunziato",
+  "license": "ISC",
   "dependencies": {
-    "body-parser": "~1.4.2",
-    "express": "~4.5.1",
-    "method-override": "^2.0.2",
-    "mongoose": "~3.8.0"
+    "body-parser": "^1.15.0",
+    "cookie-parser": "^1.3.4",
+    "express": "^4.12.3",
+    "express-session": "^1.10.4",
+    "http": "0.0.0",
+    "mongoose": "^4.4.10",
+    "multer": "^1.1.0",
+    "passport": "^0.3.2",
+    "passport-facebook": "^2.1.0",
+    "passport-google-oauth": "^1.0.0",
+    "passport-local": "^1.0.0"
   }
 }

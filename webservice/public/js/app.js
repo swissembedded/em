@@ -1,1 +1,0 @@
-angular.module('sampleApp', ['ngRoute', 'appRoutes', 'MainCtrl', 'TemperatureListCtrl','TemperatureListService','DeviceCtrl','ListDevicesCtrl','geolocation', 'gservice']);
