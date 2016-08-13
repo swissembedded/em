@@ -3,6 +3,7 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' Phoenix EV electric car charger with excess energy over modbus TCP and RTU
 ' Testet with Wallb-e Pro
+SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
 kW=0.0
 slv%=180
 if$=""
