@@ -12,35 +12,23 @@ SUB eoReceive()
  IF NOT n% THEN    
   'check rx packet 
   'e.g. F6002A42DF20 / 1FFFFFFFF360
+  '     A5005081823D780 / 1FFFFFFFF560
   'first two characters are rorg  
-  eoLog(tp%,da$,oda$,"rx ")  
-  rorg%=val("&H"+left$(da$,2))  
-  print "RORG " rorg%  
+  rorg%=asc(left$(da$,1))  
   select case rorg%
    case &hf6 
     ' Rocker switches come here 
 	' RPS telegram: DB0, Sender ID, Status (page 11)    
-	db0%=val("&H"+mid$(da$,3,2))
-	id%=val("&H"+mid$(da$,5,8))    
-	st%=val("&H"+mid$(da$,11,2))
-    print "rocker" db0% id% st%
-    select case tp%
-     case &h02 
-      eoRxRocker2(id%,db0%,st%)
-     case &h03
-      eoRxRocker4(id%,db0%,,st%)
-     case &h04
-      eoRxPos(id%,db0%,st%)
-     case &h05
-      eoRxDet(id%,db0%,st%)
-     case &h10
-      eoRxMech(id%,db0%,st%)
-    end select
+	db0%=asc(mid$(da$,2,1))
+	id%=conv("bbe/i32",mid$(da$,3,4))    
+	st%=asc(mid$(da$,7,1))
+	eoRxRocker(tp%,id%,db0%,st%)
 	EXIT SUB
    case &hd5
     ' Contacts and Switches
+	eoLog(tp%,da$,oda$,"eo rx")  
 	EXIT SUB
-   case &ha5
+   case &ha5    
     ' Temperature Sensors
 	' Temperature and Humidity Sensor
 	' Barometric Sensor
@@ -58,8 +46,18 @@ SUB eoReceive()
 	' Energy Management
 	' Central Commands
 	' Universal
+	' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
+    eoLog(tp%,da$,oda$,"eo rx") 
+    db3%=asc(mid$(da$,2,1))
+	db2%=asc(mid$(da$,3,1))
+	db1%=asc(mid$(da$,4,1))
+	db0%=asc(mid$(da$,5,1))
+	id%=conv("bbe/i32",mid$(da$,6,4))    
+	st%=asc(mid$(da$,10,1))
+	eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
 	EXIT SUB
    case &hd2
+    eoLog(tp%,da$,oda$,"eo rx")  
     ' Room Control Panel
 	' Electronic switches and dimmers
 	' Sensors for Temperature, Illumination, Occupancy and smoke
@@ -67,6 +65,8 @@ SUB eoReceive()
 	' CO2, Humidity, Temperature, Day / NIght and Autonomy
 	' Blinds Control for Position and Angle
     EXIT SUB
+	case else
+	 eoLog(tp%,da$,oda$,"eo unknown rx ")  
   end select
  ENDIF ' rx
 END SUB
@@ -84,21 +84,41 @@ SUB eoLog(tp%,da$,oda$,msg$)
 END SUB
 
 ' Receive Rocker Switch, 2 Rocker, page 15
-' We get two types of packets
-' &H30) button info
-' &H20) number of buttons pressed
-SUB eoRxRocker2(id%,db0%,st%)
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+SUB eoRxRocker(tp%,id%,db0%,st%)
  select case (st% and &h30)
   case &H30 ' T21=1, NU = 1
-   rock1%=(db% and &he0)/32
-   bow1%=(db% and &h10)/16
-   rock2%=(db% and &h0e)/2
-   ac2%=(db% and &h1)
-   print "eoRxRocker2" hex$(id%) st% rock1% bow1% rock2% ac2%   
-   ' add your code here
+   rock1%=(db0% and &he0)/32
+   bow1%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac2%=(db0% and &h1)
+   print "eoRxRocker30:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
+   ' add your code here press event on rock1% (switch 1-4) ptm210
   case &H20 'T21=1, NU = 0
-   num%=(db% and &he0)/32
-   bow%=(db% and &h10)/16  
-   print "eoRxRocker2" hex$(id%) num% bow%   
+   num%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16  
+   print "eoRxRocker20:" hex$(id%) tp% num% bow%  
+   ' add your code here for release event on bow% ptm210
+  case &H10 'T21=0, NU = 1   
+   rock1%=(db0% and &he0)/32
+   bow1%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac2%=(db0% and &h1)
+   print "eoRxRocker10:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
+   ' add your code here  
+  case &H00 'T21=0, NU = 0   
+   num%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16  
+   print "eoRxRocker00:" hex$(id%) tp% num% bow%  
+   ' add your code here  
  end select
+END SUB
+
+ Receive Sensor info, page 15
+SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
+ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
+ ' add your code here e.g. 255=0 degree celsius, 0=40 degree celsius
+ ' STM3xx from demo kit
+ print db1% (255-db1%)/255.0*40.0
 END SUB
