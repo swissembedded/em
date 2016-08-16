@@ -24,7 +24,7 @@ start:
 ' Tmax is the max boiler temperature set by external control
 FUNC EgoSmartHeater(if$,slv%,kW,st%,T,Tmax)
  ' Read ManufacturerId, ProductId, ProductVersion, FirmwareVersion
- err%= mbFuncRead(slv$,3,&H2000,1,rmId$,500) OR mbFuncRead(slv$,3,&H2001,1,rpId$,500) OR mbFuncRead(slv$,3,&H2002,1,rpV$,500) OR mbFuncRead(slv$,3,&H2003,1,rfV$,500)
+ err%= mbFuncRead(if$,slv%,3,&H2000,1,rmId$,500) OR mbFuncRead(if$,slv%,3,&H2001,1,rpId$,500) OR mbFuncRead(if$,slv%,3,&H2002,1,rpV$,500) OR mbFuncRead(if$,slv%,3,&H2003,1,rfV$,500)
  if err% then
   print "Ego error on read"
   exit func
@@ -39,13 +39,13 @@ FUNC EgoSmartHeater(if$,slv%,kW,st%,T,Tmax)
   ' Set PowerNominalValue to -1 and HomeTotalPower power
   pNv$=conv("i16/bbe",-1)
   hTp$=conv("i16/bbe",kW*1000.0)
-  %err=mbFuncWrite(slv$,6,&H1300,1,pNv$,500) OR mbFuncWrite(slv$,6,&H1301,1,pNv$,500)
+  %err=mbFuncWrite(if$,slv%,6,&H1300,1,pNv$,500) OR mbFuncWrite(if$,slv%,6,&H1301,1,pNv$,500)
   if err% then
    print "Ego error on write"
    exit func
   end if
   ' Read ActualTemperaturBoiler,UserTemperaturNominalValue, RelaisStatus
-  err%= mbFuncRead(slv$,3,&H1404,1,raT$,500) OR mbFuncRead(slv$,3,&H1407,1,ruT$,500) OR mbFuncRead(slv$,3,&H1408,1,rrS$,500)
+  err%= mbFuncRead(if$,slv%,3,&H1404,1,raT$,500) OR mbFuncRead(if$,slv%,3,&H1407,1,ruT$,500) OR mbFuncRead(if$,slv%,3,&H1408,1,rrS$,500)
   if err% then
    print "Ego error on write"
   exit func

@@ -4,12 +4,18 @@
 ' EMDO modbus master library
 
 
-FUNC mbFuncRead(slv$,fc%,addr%,num%,da$,timeout%)
+FUNC mbFuncRead(if$,slv%,fc%,addr%,num%,da$,timeout%)
  err%=0
  da$=""
  ' Check address range to be valid		 
+ if slv% < 0 OR addr% > &HFF then
+  err% = 1 ' slave out of range
+  mbFuncRead=err%
+  exit func			
+ end if
+
  if addr% < 0 OR addr% > &HFFFF then
-  err% = 1 ' address out of range
+  err% = 2 ' address out of range
   mbFuncRead=err%
   exit func			
  end if
@@ -19,13 +25,13 @@ FUNC mbFuncRead(slv$,fc%,addr%,num%,da$,timeout%)
   case 2 ' Read Discrete Inputs
   case 3 ' Read Holding Register
    if num% < 1 OR num% > 125 then
-    err%=2
+    err%=3
     mbFuncRead=err%
     exit func			
    end if
-   tx$=chr$(&H03)+conv("i16/bbe",addr)+conv("i16/bbe",num)
+   tx$=chr$(slv)+chr$(&H03)+conv("i16/bbe",addr)+conv("i16/bbe",num)
    ' send 
-   err%=mbCom(slv$,tx$,rx$,1+2+num*2,timeout%)
+   err%=mbCom(if$,slv%,tx$,rx$,1+2+num*2,timeout%)
    if err% then
     mbFuncRead=err%
 	exit func
@@ -36,7 +42,7 @@ FUNC mbFuncRead(slv$,fc%,addr%,num%,da$,timeout%)
  mbFuncRead=err%
 END FUNC
 
-FUNC mbFuncWrite(slv$,fc%,addr%,len%,da$,timeout%)
+FUNC mbFuncWrite(if$,slv%,fc%,addr%,len%,da$,timeout%)
  err%=0
  select case (st% and &h30)
   case 5 ' Write Single Coil
@@ -47,11 +53,29 @@ FUNC mbFuncWrite(slv$,fc%,addr%,len%,da$,timeout%)
  mbFuncWrite=err%
 END FUNC
 
-FUNC mbCom(slv$,tx$,rx$,rxlen%,timeout%)
+' if$ RTU:RS485:1 or TCP:192.168.0.1:90
+FUNC mbCom(if$,tx$,rx$,rxlen%,timeout%)
  err%=0
- ' parse slv$ for either RTU, TCP on RS485 or ETH
+ ' parse if$ for either RTU, TCP on RS485 or ETH
+ prot$=split(0,if$)
+ if$=split(1,if$)
+ num$=split(2,if$)
  ' add framing with checksum to data
+ if prot$ = "RTU"
+  crc$=CRCCalc$(0,tx$) ' CRC16
+  msg$=tx$+crc$
+ else
+  crc$=CRCCalc$(0,tx$) ' CRC16
+  tn$=conv("i16/bbe", Unixtime())
+  len$=conv("i16/bbe",rxlen)
+  msg$=tn$+chr$(0)+chr$(0)+len$+tx$
+ end if 
  ' send request from tx$
+ if if$="RS485" then
+  ' Send it over rs485
+ else
+  ' Send it over ethernet
+ end if 
  ' wait for response or timeout
  ' update rx$ and validate checksum
  mbCom=err%

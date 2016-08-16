@@ -21,7 +21,7 @@ start:
 ' st% device status
 FUNC PhoenixEV(if$,slv%,kW,st%)
  ' Read EV Status
- err%= mbFuncRead(slv$,3,&H100,8,reG$,500) OR mbFuncRead(slv$,2,&H200,8,reD$,500) OR mbFuncRead(slv$,3,&H300,2,reC$,500) OR mbFuncRead(slv$,1,&H400,16,reR$,500)
+ err%= mbFuncRead(if$,slv%,3,&H100,8,reG$,500) OR mbFuncRead(if$,slv%,2,&H200,8,reD$,500) OR mbFuncRead(if$,slv%,3,&H300,2,reC$,500) OR mbFuncRead(if$,slv%,1,&H400,16,reR$,500)
  if err% then
   print "EV error on read"
   exit func
