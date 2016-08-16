@@ -66,18 +66,31 @@ FUNC mbCom(if$,tx$,rx$,rxlen%,timeout%)
   msg$=tx$+crc$
  else
   crc$=CRCCalc$(0,tx$) ' CRC16
-  tn$=conv("i16/bbe", Unixtime())
+  tn$=conv("i16/bbe", Ticks())
   len$=conv("i16/bbe",rxlen)
   msg$=tn$+chr$(0)+chr$(0)+len$+tx$
  end if 
  ' send request from tx$
- if if$="RS485" then
-  ' Send it over rs485
- else
-  ' Send it over ethernet
- end if 
  ' wait for response or timeout
  ' update rx$ and validate checksum
+ if if$="RS485" then
+  ' Send it over rs485
+  n%=RS485Write(msg$)
+  rx$=RS485Reads(rxlen%,timeout%)
+ else
+  ' Send it over ethernet
+  con%=SocketClient( 1, if$, num$ ) 
+  if con% <=0 then
+   err%=10
+   mbCom=err%	 
+   exit sub 
+  end if
+  n%=SocketOption(con%,"SO_RCVTIMEO",timeout%)
+  n%=SocketOption(con%,"SO_SNDTIMEO",timeout%)    
+  n%=SocketWrite( con%, msg$ )
+  rx$=SockRead$(con%,rxlen%)
+  done%=SocketClose( con% ) 
+ end if 
  mbCom=err%
 END FUNC
 
