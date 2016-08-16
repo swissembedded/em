@@ -3,6 +3,60 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' EMDO modbus master library
 
+
+FUNC mbFuncRead(slv$,fc%,addr%,num%,da$,timeout%)
+ err%=0
+ da$=""
+ ' Check address range to be valid		 
+ if addr% < 0 OR addr% > &HFFFF then
+  err% = 1 ' address out of range
+  mbFuncRead=err%
+  exit func			
+ end if
+ 
+ select case (st% and &h30)
+  case 1 ' Real Coils
+  case 2 ' Read Discrete Inputs
+  case 3 ' Read Holding Register
+   if num% < 1 OR num% > 125 then
+    err%=2
+    mbFuncRead=err%
+    exit func			
+   end if
+   tx$=chr$(&H03)+conv("i16/bbe",addr)+conv("i16/bbe",num)
+   ' send 
+   err%=mbCom(slv$,tx$,rx$,1+2+num*2,timeout%)
+   if err% then
+    mbFuncRead=err%
+	exit func
+   end if   
+   da$=right$(rx$,num*2)
+  case 4 ' Read Input Register 
+ end select
+ mbFuncRead=err%
+END FUNC
+
+FUNC mbFuncWrite(slv$,fc%,addr%,len%,da$,timeout%)
+ err%=0
+ select case (st% and &h30)
+  case 5 ' Write Single Coil
+  case 6 ' Write Single Register
+  case 15 ' Write Multiple Coils   
+  case 16 ' Write Multiple Register   
+ end select
+ mbFuncWrite=err%
+END FUNC
+
+FUNC mbCom(slv$,tx$,rx$,rxlen%,timeout%)
+ err%=0
+ ' parse slv$ for either RTU, TCP on RS485 or ETH
+ ' add framing with checksum to data
+ ' send request from tx$
+ ' wait for response or timeout
+ ' update rx$ and validate checksum
+ mbCom=err%
+END FUNC
+
 '----------------------------------------
 ' ** Read a modbus Holding registers with function 3
 'numRegs= nums registers to read
