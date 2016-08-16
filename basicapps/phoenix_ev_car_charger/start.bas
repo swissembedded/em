@@ -37,10 +37,12 @@ FUNC PhoenixEV(if$,slv%,kW,st%)
  ' Error code
  eE%=conv("bbe/i16",mid$(reG$,15,2))
  ' Discrete inputs 
+ ' Enable, External Release, Lock Detection, Manual Lock, Charger Ready, Locking Request, Vehicle Ready, Error
  eD%=asc(left$(reD$,1)
  ' Charge current
  eC%=conv("bbe/i16",left$(reC$,2))
  ' Charge control register
+ ' Enable charging, request digital communication, charging station available, manual locking
  eR%=conv("bbe/i16",left$(reR$,2))
  select case eS$
   case "A"
