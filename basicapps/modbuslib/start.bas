@@ -77,6 +77,7 @@ FUNC mbCom(if$,tx$,rx$,rxlen%,timeout%)
   ' Send it over rs485
   n%=RS485Write(msg$)
   rx$=RS485Reads(rxlen%,timeout%)
+  mbLog(if$,tx$,rx$,"ETH:")
  else
   ' Send it over ethernet
   con%=SocketClient( 1, if$, num$ ) 
@@ -89,10 +90,25 @@ FUNC mbCom(if$,tx$,rx$,rxlen%,timeout%)
   n%=SocketOption(con%,"SO_SNDTIMEO",timeout%)    
   n%=SocketWrite( con%, msg$ )
   rx$=SockRead$(con%,rxlen%)
+  mbLog(if$,tx$,rx$,"ETH:")
   done%=SocketClose( con% ) 
  end if 
  mbCom=err%
 END FUNC
+
+' log a telegram
+SUB mbLog(if$,tx$,rx$,msg$)
+ s$=msg$+"if:"+if$+" tx:"
+ for i=1 TO len(tx$)
+  s$=s$+hex$(asc(mid$(tx$,i,1)))
+ next
+ print s$
+ s$=" rx:"
+ for i=1 TO len(rx$)
+  s$=s$+hex$(asc(mid$(rx$,i,1)))
+ next
+ print s$
+END SUB
 
 '----------------------------------------
 ' ** Read a modbus Holding registers with function 3

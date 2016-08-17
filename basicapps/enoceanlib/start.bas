@@ -71,6 +71,7 @@ SUB eoReceive()
  ENDIF ' rx
 END SUB
 
+' log a telegram
 SUB eoLog(tp%,da$,oda$,msg$)
  s$=msg$+" tp:"+str$(tp%)+" da:"
   for i=1 TO len(da$)
