@@ -6,7 +6,7 @@
 T = 0.0 ' temperature
 ' Main loop
 START:	
-	T=Temp
+	T=Temperature()
 	PRINT "Temperature is " T
 	PAUSE 60000
 	GOTO START
