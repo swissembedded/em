@@ -2,7 +2,12 @@
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' EMDO enocean library, based on Enocean EPP 2.6.3 specification
-' the document EnOcean_Equipment_Profiles_EEP_V2.6.3_public.pdf
+' the enocean protocol description, see referenced pages below in source code
+' https://www.enocean.com/fileadmin/redaktion/enocean_alliance/pdf/EnOcean_Equipment_Profiles_EEP_V2.6.3_public.pdf
+' Eltako enocean devices (see page 10 and following)
+' http://www.eltako.com/fileadmin/downloads/de/Gesamtkatalog/Eltako_Gesamtkatalog_KapT_low_res.pdf
+' Omnio enocean devices (protocol details see individual modules)
+' http://www.awag.ch/ekat/page_de/awagpg_n_5.html
 start:
  eoReceive()
  goto start
@@ -119,7 +124,45 @@ END SUB
  Receive Sensor info, page 15
 SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
  print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
- ' add your code here e.g. 255=0 degree celsius, 0=40 degree celsius
- ' STM3xx from demo kit
- print db1% (255-db1%)/255.0*40.0
+ ' add your code here you can make subcalls here to your own routines
+ select case id%
+  case &H000000000000 ' your sensor id (from sensor backside)
+   ' Enocean sensor STM3xx from demo kit
+   ' 255=0 degree celsius, 0=40 degree celsius 
+   print db1% (255-db1%)/255.0*40.0
+ end select 
+ 
+ ' The following infos are taken from the Eltako documentation 
+ ' referenced in the header (see page 10))
+ ' Eltako FABH65S+FBH65B+FBH65S+FBH65TFB
+ ' lux = db2% *2048.0/255.0
+ ' lrn% = not (db0% and 8)
+ ' motion% = not (db0% and 2)
+ 
+ ' FAFT60+FIFT65S+FBH65TFB
+ ' charge = db3% * 4.0 / 155.0
+ ' humidity = db2% * 100.0 / 250.0
+ ' temp = (db1% * 80.0 / 250.0)-20.0
+ ' lrn% = not (db0% and 8)
+ 
+ ' FAH60+FAH65S+FIH65S+FAH60B
+ ' 
+ 
+ ' FIH65B 
+ 
+ ' FASM60+FSM14+FSM61+FSU65D
+ 
+ ' FSM60B
+ 
+ ' FCO2TF65
+ 
+ ' FKC+FKF
+ 
+ ' FRW
+ 
+ ' FSS12+FWZ12+FWZ61 
+ 
+ ' F4T65+FT4F+FT55
+ 
+
 END SUB
