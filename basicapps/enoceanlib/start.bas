@@ -5,13 +5,42 @@
 ' the enocean protocol description, see referenced pages below in source code
 ' https://www.enocean.com/fileadmin/redaktion/enocean_alliance/pdf/EnOcean_Equipment_Profiles_EEP_V2.6.3_public.pdf
 ' Eltako enocean devices (see page 10 and following)
-' http://www.eltako.com/fileadmin/downloads/de/Gesamtkatalog/Eltako_Gesamtkatalog_KapT_low_res.pdf
+' http://www.eltako.com/fileadmin/downloads/en/_main_catalogue/Gesamt-Katalog_ChT_gb_highRes.pdf
 ' Omnio enocean devices (protocol details see individual modules)
 ' http://www.awag.ch/ekat/page_de/awagpg_n_5.html
 start:
+ 'Poll the stack 
  eoReceive()
  goto start
+ 
+ ' Send a RPS/1BS message over enocean
+ ' 
+ ' eoTransmitRPS(&H50, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light on
+ ' eoTransmitRPS(&H70, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light off
+SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
+ ' Pls see enocean EEP 2.6.2 specification and ESP3 specification
+ ' Type = 1 is radio
+ ' Data = F6 (RORG = RPS / 1BS), switch state (0x50 = on, 0x70 = off)
+ ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)	 
+  msg$ = chr$(&hF6)
+  msg$ += chr$(db0%)  
+  msg$ += conv("i32/bbe",txid%)
+  ' &H30 'T21=1, NU = 1
+  ' &H20 'T21=1, NU = 0
+  ' &H10 'T21=0, NU = 1   
+  ' &H00 'T21=0, NU = 0   
+  msg$ += chr$(st%) 
+  ' Send  
+  msg$ += chr$(&H03)
+  ' Broadcast &Hffffffff or actuator id
+  msg$+=conv("i32/bbe",rxid%)
+  msg$ += chr$(&HFF)
+  ' no encryption &H00
+  msg$+=chr$(enc%)	
+  num% = EnoceanTransmit(1, msg$)	
+END SUB
 
+' Poll this routine periodically to parse the enocean packets on the stack. EMDO can hold 8 packets on its stack.
 SUB eoReceive()
  n%=EnoceanReceive(tp%,da$,oda$) 
  IF NOT n% THEN    
@@ -126,7 +155,7 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' add your code here you can make subcalls here to your own routines
  select case id%
-  case &H000000000000 ' your sensor id (from sensor backside)
+  case &H01823D78 ' your sensor id (from sensor backside)
    ' Enocean sensor STM3xx from demo kit
    ' 255=0 degree celsius, 0=40 degree celsius 
    print db1% (255-db1%)/255.0*40.0
