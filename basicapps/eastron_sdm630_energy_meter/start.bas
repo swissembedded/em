@@ -16,7 +16,7 @@ start:
 ' kWh1-3 up to three phase energy with sign, negative = excess energy to grid
 FUNC EastronEnergyMeter(if$,slv%,kW1,kW2,kW3, kWh1, kWh2, kWh3)
  ' Read kW
- err%= mbFuncRead(if$,slv%,3,30013,1,rkW1$,500) OR mbFuncRead(if$,slv%,3,30015,1,rkW2$,500) OR mbFuncRead(if$,slv%,3,30017,1,rkW3$,500)
+ err%= mbFuncRead(if$,slv%,3,30013,2,rkW1$,500) OR mbFuncRead(if$,slv%,3,30015,2,rkW2$,500) OR mbFuncRead(if$,slv%,3,30017,2,rkW3$,500)
  if err% then
   print "Eastron error on read"
   exit func
@@ -27,7 +27,7 @@ FUNC EastronEnergyMeter(if$,slv%,kW1,kW2,kW3, kWh1, kWh2, kWh3)
  kW3=conv("bbe/f32",rkW3$) 
 
  ' Read kWh
- err%= mbFuncRead(if$,slv%,3,30359,1,rkWh1$,500) OR mbFuncRead(if$,slv%,3,30361,1,rkWh2$,500) OR mbFuncRead(if$,slv%,3,30363,1,rkWh3$,500)
+ err%= mbFuncRead(if$,slv%,3,30359,2,rkWh1$,500) OR mbFuncRead(if$,slv%,3,30361,2,rkWh2$,500) OR mbFuncRead(if$,slv%,3,30363,2,rkWh3$,500)
  if err% then
   print "Eastron error on read"
   exit func
