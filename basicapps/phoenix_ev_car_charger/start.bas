@@ -42,16 +42,30 @@ FUNC PhoenixEV(if$,slv%,kW,st%)
  ' Charge current
  eC%=conv("bbe/i16",left$(reC$,2))
  ' Charge control register 
- ' Enable charging, request digital communication, charging station available, manual locking
+ ' Enable charge process, reuqest digital communication, manual charging available, manual locking
+ ' Activate overcurrent shutdown
+ ' "Voltage status A/B detected" - function activated
+ ' "Status D, reject vehicle" function activated
+ ' Reset charging controller
+ ' Voltage in status A/B detected
+ ' Status D, reject vehilce
+ ' Configuration of input ML
  eR%=conv("bbe/i16",left$(reR$,2))
- enR%=eR% and 1
- xrR%=eR% and 2
- ldR%=eR% and 4
- mlR%=eR% and 8
- crR%=eR% and 16
- lrR%=eR% and 32
- vrR%=eR% and 64
- erR%=eR% and 128
+ enD%=eD% and 1 ' Enable
+ xrD%=eD% and 2 ' External release
+ ldD%=eD% and 4 ' Lock detection
+ mlD%=eD% and 8 ' Manual lock
+ crD%=eD% and 16 ' Charger Ready
+ lrD%=eD% and 32 ' Locking Request
+ vrD%=eD% and 64 ' Vehicle Ready
+ erD%=eD% and 128 ' Error
+ enR%=eR% and 1 ' Enable charge process
+ rdcR%=eR% and 2 ' Request digital communication
+ csaR%=eR% and 4 ' Charging station available
+ mlR%=eR% and 8 ' Manual locking
+ aosR%=eR% and 512 ' Activate overcurrent shutdown
+ ' Request charging
+ 
  select case eS$
   case "A"
    ' Charger is not connected to car
