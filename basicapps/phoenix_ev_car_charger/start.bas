@@ -41,9 +41,17 @@ FUNC PhoenixEV(if$,slv%,kW,st%)
  eD%=asc(left$(reD$,1)
  ' Charge current
  eC%=conv("bbe/i16",left$(reC$,2))
- ' Charge control register
+ ' Charge control register 
  ' Enable charging, request digital communication, charging station available, manual locking
  eR%=conv("bbe/i16",left$(reR$,2))
+ enR%=eR% and 1
+ xrR%=eR% and 2
+ ldR%=eR% and 4
+ mlR%=eR% and 8
+ crR%=eR% and 16
+ lrR%=eR% and 32
+ vrR%=eR% and 64
+ erR%=eR% and 128
  select case eS$
   case "A"
    ' Charger is not connected to car
