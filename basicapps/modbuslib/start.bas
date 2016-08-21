@@ -3,64 +3,83 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' EMDO modbus master library
 
-
 START:
-	reg$=mbFuncRead$("TCP:192.168.0.1:90",0,3,30015,2,2,500)
+	reg$=mbFuncRead$("TCP:192.168.3.30:90",0,3,30015,2,"2",500)
 	PAUSE 5000
 GOTO start
 
 '----------------------------------------
 ' Parameters
-' itf$  : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
-' slv%  : Slave Address
-' func% : Function Code
-' addr% : Modbus Address
-' num%  : Number of Registers/Bits to Read/Write
-' data$ : Data for Read/Write
-' timeout% is the timeout in ms
-'----------------------------------------
-FUNCtion mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-IF valFunctionCode(func%) then
-   IF valAddress(add%)
-       if valDataValue(func%, data$) then
-         mb_req_pdu$=pdu$(func$, 0, conv("i16/bbe",addr)+conv("i16/bbe",num)+data$)
-         mb_rsp_pdu$=mbCom(itf$,slv%,func,mb_req_pdu$,timeout%)
-       else
-         mb_rsp_pdu$=mbException$(func%, 3)  
-       end if
-   else 
-     mb_rsp_pdu$=mbException$(func%, 2)
-   end if 
-else
-  mb_rsp_pdu$=mbException$(func%, 1)
-end if
-mbFunc=mb_rsp_pdu
-END FUNCTION
-
-'----------------------------------------
-' 
-'
+' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
+' slv%    : Slave Address
+' func%   : Function Code
+' addr%   : Modbus Address. Don't need subtract less 1
+' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
+'           In Func=16 it is not necessary
+' data$   : Data for Read/Write
+' timeout%: is the timeout in ms
 '----------------------------------------
 FUNCTION mbFuncRead$(itf$,slv%,func%,addr%,num%,data$,timeout%)
   mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-  if func=toNum(mid$(mb_rsp_pdu$,1,1))
+  if funcOk(func, mb_rsp_pdu$)
     mbFuncRead$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
   else
-    mbFuncRead$=toNum(mid$(mb_rsp_pdu$,2,1))
+    ' return the error code
+    mbFuncRead$=mid$(mb_rsp_pdu$,2,1) 
   end if 
 end function
 
 '----------------------------------------
-' 
-'
+' Parameters
+' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
+' slv%    : Slave Address
+' func%   : Function Code
+' addr%   : Modbus Address. Don't need subtract less 1
+' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
+'           In Func=16 it is not necessary
+' data$   : Data for Read/Write
+' timeout%: is the timeout in ms
 '----------------------------------------
-FUNCTION mbFuncWrite$(itf$,slv%,fc%,addr%,len%,da$,timeout%)
- mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-  if func=onv("bbe/i8",mid$(mb_rsp_pdu$,1,1))
+FUNCTION mbFuncWrite$(if$,slv%,func%,addr%,num%,data$,timeout%)
+  mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+  if funcOk(func, mb_rsp_pdu$)
     mbFuncWrite$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
   else
   end if 
+END FUNCTION
 
+'----------------------------------------
+' Return the Response or Error PDU
+' Parameters
+' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
+' slv%    : Slave Address
+' func%   : Function Code
+' addr%   : Modbus Address. Don't need subtract less 1
+' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
+'           In Func=16 it is not necessary
+' data$   : Data for Read/Write
+' timeout%: is the timeout in ms
+'----------------------------------------
+FUNCtion mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+IF valFunctionCode(func) then
+  IF valAddress(add)
+    if valDataValue(func, data$) then
+      if func=16 then
+        mb_req_pdu$=pdu$(func, 0, conv("i16/bbe",addr-1)+conv("i16/bbe",num)+data$)
+      else
+        mb_req_pdu$=pdu$(func, 0, conv("i16/bbe",addr-1)+data$)
+      end if
+      mb_rsp_pdu$=mbCom(itf$,slv,func,mb_req_pdu$,timeout%)
+    else
+      mb_rsp_pdu$=mbException$(func, 3)
+    end if
+  else 
+     mb_rsp_pdu$=mbException$(func, 2)
+  end if 
+else
+  mb_rsp_pdu$=mbException$(func, 1)
+end if
+mbFunc$=mb_rsp_pdu
 END FUNCTION
 
 '----------------------------------------
@@ -70,7 +89,7 @@ END FUNCTION
 FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  
  err%=0
- ' parse itf$ for either RTU, TCP on RS485 or ETH
+ ' parse if$ for either RTU, TCP on RS485 or ETH
  prot$=split(0,itf$,":")
  interf$=split(1,itf$,":")
  num$=split(2,itf$,":")
@@ -82,7 +101,7 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  ' update rspLen$ and validate checksum
  rspLen%=getReqLen(mb_req_pdu$)
  
- if itf$="RS485" then
+ if if$="RS485" then
    ' Send it over rs485
    n%=RS485Write(req$)
    mb_rsp_pdu$=RS485Reads(rspLen%,timeout%)
@@ -139,8 +158,15 @@ if prot$ = "RTU" THEN
 else
   tn$=conv("i16/bbe", Ticks())
   len$=conv("i16/bbe",len(pdu$))
-  adu$=tn$+chr$(0)+chr$(0)+len$+pdu$
-end if 
+  adu$=tn$+chr$(0)+chr$(0)+len$+CHR$(slv)+pdu$
+end if
+END FUNCTION
+
+'----------------------------------------
+'Validate if the Response PDU is not an Error PDU
+'----------------------------------------
+FUNCTION funcOk(func%,mb_rsp_pdu$)
+    funcOk=(func=toNum(mid$(mb_rsp_pdu$,1,1)))
 END FUNCTION
 
 '----------------------------------------
@@ -178,8 +204,8 @@ END FUNCTION
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION mbException$(functionCode, exceptionCode)
-    mb_excep_rsp_pdu$ = CHR$(functionCode+128) + convertWordFilled$(exceptionCode)
+FUNCTION mbException$(functionCode%, exceptionCode%)
+    mb_excep_rsp_pdu$=CHR$(functionCode+128) + conv("i16/bbe",exceptionCode)
 END FUNCTION
 
 '----------------------------------------
@@ -241,7 +267,7 @@ FUNCTION getRspData$(func%, pdu$)
 END FUNCTION
 
 '----------------------------------------
-'
+'Convert an String (lenght=1 or =2) to Number
 '----------------------------------------
 FUNCTION toNum(value$)
 if len(value$)=1 then
@@ -249,33 +275,4 @@ if len(value$)=1 then
 else
   toNum=asc(left$(value$,1))*256 + ASC(right$(value$,1))
 endif
-
-'----------------------------------------
-'
-'----------------------------------------
-FUNCTION convertWordFilled$(word, fill$)
-    LOCAL value$=hex$(word)
-    convertWordFilled$=string$(4-len(fill$),"0")+value$
-END FUNCTION
-
-'----------------------------------------
-'
-'----------------------------------------
-FUNCTION registerHex$(register)
-    registerString$=CHR$(val("&H"+left$(register$,2)))+CHR$(val("&H"+right$(register$,2)))
-END FUNCTION
-
-'----------------------------------------
-'
-'----------------------------------------
-FUNCTION registerHexInv$(register)
-    registerString$=CHR$(val("&H"+right$(register$,2)))+CHR$(val("&H"+left$(register$,2)))
-END FUNCTION
-
-'----------------------------------------
-'
-'----------------------------------------
-FUNCTION convertWordFilled$(word, fill$)
-    LOCAL value$=hex$(word)
-    convertWordFilled$=string$(4-len(fill$),"0")+value$
 END FUNCTION
