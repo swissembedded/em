@@ -15,12 +15,16 @@ START:
 	PRINT "kWh1 " kWh1 " kWh2 " kWh2
 	PAUSE 60000
 	GOTO START
-' D0 reader subroutine
+
+'* D0 reader subroutine (polled every 15 minutes)
 SUB D0Reader ( kWh1, kWh2)
 	' Start reading
-	start=D0Start(1000)
+	sc%=D0Start(1000)
 	' Check if the D0 port unused
-	IF start = 0 THEN RETURN
+	IF sc% = 0 THEN RETURN
+    ' wait for D0 readout finished
+	sc%=D0End(5000)
+    
 	' Read line, D0 IEC 62056-21
 	' We read a max of 20 lines if device is in continues mode
 	' We have to parse each line for the register of interest 
@@ -29,20 +33,18 @@ SUB D0Reader ( kWh1, kWh2)
 	' feed in grid:  2.8.0(000058.254*kWh)
 	' in the format direction.8.tarif  0= total, 1=tarif 1 , 2=tarif 2
 	' pls check the readout, there are differences from manufacturer to manufacturer
-    lines = 0
-	kWh1 = 0.0
-	kWh2 = 0.0
 	DO
-	 line$=D0OBISReadLn$(5000)
-	 
-	 PRINT "len " len(line$) " " line$
-	 IF MID$(line$,1,6)="1.8.0(" THEN
-	 	kWh1=VAL(MID$(line$,7,10))
-	 ELSEIF MID$(line$,1,6)="2.8.0(" THEN
-	    kWh2=VAL(MID$(line$,7,10))
-	 ENDIF	 
-	 lines = lines +1
-	 ' Last line is !
-	LOOP UNTIL (len(line$) = 3) OR ( lines > 23 )
-	end=D0End(5000)
+	     line$=RTRIM$(D0ReadLn$(1000))
+         IF len(line$) > 0 THEN
+	        IF MID$(line$,1,6)="1.8.0(" THEN
+	            PRINT "len=" len(line$) " [" line$ "]"
+	 	        kWh1=VAL(MID$(line$,7,10))
+	        ELSEIF MID$(line$,1,6)="2.8.0(" THEN
+	            PRINT "len=" len(line$) " [" line$ "]"
+	            kWh2=VAL(MID$(line$,7,10))
+	        ENDIF	 
+        ELSE
+            EXIT
+        ENDIF
+	LOOP UNTIL 0
 END SUB
