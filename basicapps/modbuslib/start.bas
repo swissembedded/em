@@ -12,7 +12,7 @@ GOTO start
 ' Parameters
 ' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
 ' slv%    : Slave Address
-' func%   : Function Code
+' func%   : FUNCTION Code
 ' addr%   : Modbus Address. Don't need subtract less 1
 ' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
 '           In Func=16 it is not necessary
@@ -21,19 +21,19 @@ GOTO start
 '----------------------------------------
 FUNCTION mbFuncRead$(itf$,slv%,func%,addr%,num%,data$,timeout%)
   mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-  if funcOk(func, mb_rsp_pdu$)
+  IF funcOk(func, mb_rsp_pdu$) THEN
     mbFuncRead$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
-  else
+  ELSE
     ' return the error code
     mbFuncRead$=mid$(mb_rsp_pdu$,2,1) 
-  end if 
-end function
+  ENDIF 
+END FUNCTION
 
 '----------------------------------------
 ' Parameters
 ' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
 ' slv%    : Slave Address
-' func%   : Function Code
+' func%   : FUNCTION Code
 ' addr%   : Modbus Address. Don't need subtract less 1
 ' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
 '           In Func=16 it is not necessary
@@ -42,10 +42,10 @@ end function
 '----------------------------------------
 FUNCTION mbFuncWrite$(if$,slv%,func%,addr%,num%,data$,timeout%)
   mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-  if funcOk(func, mb_rsp_pdu$)
+  IF funcOk(func, mb_rsp_pdu$)
     mbFuncWrite$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
-  else
-  end if 
+  ELSE
+  ENDIF
 END FUNCTION
 
 '----------------------------------------
@@ -53,32 +53,32 @@ END FUNCTION
 ' Parameters
 ' itf$    : Interface with string.Example "RTU:RS485:1" or "TCP:192.168.0.1:90"
 ' slv%    : Slave Address
-' func%   : Function Code
+' func%   : FUNCTION Code
 ' addr%   : Modbus Address. Don't need subtract less 1
 ' num%    : Number of Registers/Bits to Read/Write or single value to Read/Write. 
 '           In Func=16 it is not necessary
 ' data$   : Data for Read/Write
 ' timeout%: is the timeout in ms
 '----------------------------------------
-FUNCtion mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-IF valFunctionCode(func) then
+FUNCTION mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+IF valFuncCode(func) THEN
   IF valAddress(add)
-    if valDataValue(func, data$) then
-      if func=16 then
+    IF valDataValue(func, data$) THEN
+      IF func=16 THEN
         mb_req_pdu$=pdu$(func, 0, conv("i16/bbe",addr-1)+conv("i16/bbe",num)+data$)
-      else
+      ELSE
         mb_req_pdu$=pdu$(func, 0, conv("i16/bbe",addr-1)+data$)
-      end if
+      ENDIF
       mb_rsp_pdu$=mbCom(itf$,slv,func,mb_req_pdu$,timeout%)
-    else
+    ELSE
       mb_rsp_pdu$=mbException$(func, 3)
-    end if
-  else 
+    ENDIF
+  ELSE 
      mb_rsp_pdu$=mbException$(func, 2)
-  end if 
-else
+  ENDIF 
+ELSE
   mb_rsp_pdu$=mbException$(func, 1)
-end if
+ENDIF
 mbFunc$=mb_rsp_pdu
 END FUNCTION
 
@@ -101,15 +101,15 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  ' update rspLen$ and validate checksum
  rspLen%=getReqLen(mb_req_pdu$)
  
- if if$="RS485" then
+ IF if$="RS485" THEN
    ' Send it over rs485
    n%=RS485Write(req$)
    mb_rsp_pdu$=RS485Reads(rspLen%,timeout%)
    mbLog(interf$,reg$,mb_rsp_pdu$,"ETH:")
- else
+ ELSE
    ' Send it over ethernet
    con%=SocketClient( 1, interf$, num$ ) 
-   if con% >0 then
+   IF con% >0 THEN
      n%=SocketOption(con%,"SO_RCVTIMEO",timeout%)
      n%=SocketOption(con%,"SO_SNDTIMEO",timeout%)    
      n%=SocketWrite( con%, reg$ )
@@ -117,12 +117,12 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
      mb_req_pdu$=SockRead$(con%,rspLen%)
      done%=SocketClose( con% )
      mbLog(itf$,req$,mb_req_pdu$,"ETH:")
-   else
+   ELSE
      mb_rsp_pdu=mbException$(func%, 10)
-   end if
- end if 
+   ENDIF
+ ENDIF 
  mbCom=mb_rsp_pdu$
-END FUNC
+END FUNCTION
 
 '----------------------------------------
 ' log a telegram
@@ -130,21 +130,21 @@ END FUNC
 '----------------------------------------
 SUB mbLog(itf$,tx$,rx$,msg$)
  s$=msg$+"itf:"+itf$+" tx:"
- for i=1 TO len(tx$)
+ FOR i=1 TO len(tx$)
   s$=s$+hex$(asc(mid$(tx$,i,1)))
- next
+ NEXT
  print s$
  s$=" rx:"
- for i=1 TO len(rx$)
+ FOR i=1 TO LEN(rx$)
   s$=s$+hex$(asc(mid$(rx$,i,1)))
- next
- print s$
+ NEXT
+ PRINT s$
 END SUB
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION pdu$(functionCode, functionSubcode, data$)
-    pdu$=CHR$(functionCode)+data$
+FUNCTION pdu$(FUNCTIONCode, FUNCTIONSubcode, data$)
+    pdu$=CHR$(FUNCTIONCode)+data$
 END FUNCTION
 
 '----------------------------------------
@@ -152,14 +152,14 @@ END FUNCTION
 '----------------------------------------
 FUNCTION adu$(prot$, itf$, slv, pdu$)
 
-if prot$ = "RTU" THEN
+IF prot$ = "RTU" THEN
   msg$=CHR$(slv)+pdu$
   adu$=reg$+CRCCalc$(0,msg$) ' CRC16
-else
+ELSE
   tn$=conv("i16/bbe", Ticks())
   len$=conv("i16/bbe",len(pdu$))
   adu$=tn$+chr$(0)+chr$(0)+len$+CHR$(slv)+pdu$
-end if
+ENDIF
 END FUNCTION
 
 '----------------------------------------
@@ -172,8 +172,8 @@ END FUNCTION
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION valFunctionCode(func%)
-    validateFunctionCode=((func>=1 AND func<=6) OR (func>=15 AND func<=16) OR (func>=22 AND func<=23))
+FUNCTION valFuncCode(func%)
+    validateFUNCTIONCode=((func>=1 AND func<=6) OR (func>=15 AND func<=16) OR (func>=22 AND func<=23))
 END FUNCTION
 
 '----------------------------------------
@@ -204,8 +204,8 @@ END FUNCTION
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION mbException$(functionCode%, exceptionCode%)
-    mb_excep_rsp_pdu$=CHR$(functionCode+128) + conv("i16/bbe",exceptionCode)
+FUNCTION mbException$(FUNCTIONCode%, exceptionCode%)
+    mb_excep_rsp_pdu$=CHR$(FUNCTIONCode+128) + conv("i16/bbe",exceptionCode)
 END FUNCTION
 
 '----------------------------------------
@@ -270,9 +270,9 @@ END FUNCTION
 'Convert an String (lenght=1 or =2) to Number
 '----------------------------------------
 FUNCTION toNum(value$)
-if len(value$)=1 then
+IF len(value$)=1 THEN
   toNum=asc(value$)
-else
+ELSE
   toNum=asc(left$(value$,1))*256 + ASC(right$(value$,1))
-endif
+ENDIF
 END FUNCTION
