@@ -7,6 +7,7 @@
 ' e.g. Easymeter use 9600 baud, pls check that example program too
 ' Set autoread mode for automatic iec6205621 OBIS protocol polling (Mode C).
 ' Init vars
+SYS.SET "d0", "mode=C autoread=1"
 kWh1=0.0
 kWh2=0.0
 ' Main loop
