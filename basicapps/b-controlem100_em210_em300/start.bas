@@ -17,13 +17,15 @@ start:
 ' B-Control EM100, EM210, EM300 energy meter
 ' if$ modbus interface (see EMDO modbus library for details)
 ' slv% B-Control energy meter slave address default 247 
-' kW1-3 up to three phase power with sign, negative = excess power to grid
-' kWh1-3 up to three phase energy with sign, negative = excess energy to grid
+' kWI power imported from the grid
+' kWE power exported to the grid
+' kWhI energy imported from the grid
+' kWhE energy exported to the grid
 FUNC BControlEnergyMeter(itf$,slv%, kWI,kWE, kWhI, kWhE)
  ' Read kW
  err%= mbFuncRead(itf$,slv%,3,0,2,rkWI$,500) OR mbFuncRead(itf$,slv%,3,2,2,rkWE$,500)
  if err% then
-  print "Eastron error on read"
+  print "B-Control error on read"
   exit func
  end if
  ' Convert register values to int32
@@ -33,7 +35,7 @@ FUNC BControlEnergyMeter(itf$,slv%, kWI,kWE, kWhI, kWhE)
  ' Read kWh
  err%= mbFuncRead(itf$,slv%,3,512,2,rkWhI$,500) OR mbFuncRead(itf$,slv%,3,516,2,rkWhE$,500)
  if err% then
-  print "Eastron error on read"
+  print "B-Control error on read"
   exit func
  end if
  ' Convert register values to int32
