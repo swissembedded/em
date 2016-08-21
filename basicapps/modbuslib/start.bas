@@ -54,7 +54,7 @@ end function
 ' 
 '
 '----------------------------------------
-FUNCTION mbFuncWrite$(if$,slv%,fc%,addr%,len%,da$,timeout%)
+FUNCTION mbFuncWrite$(itf$,slv%,fc%,addr%,len%,da$,timeout%)
  mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
   if func=onv("bbe/i8",mid$(mb_rsp_pdu$,1,1))
     mbFuncWrite$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
@@ -64,13 +64,13 @@ FUNCTION mbFuncWrite$(if$,slv%,fc%,addr%,len%,da$,timeout%)
 END FUNCTION
 
 '----------------------------------------
-' if$ RTU:RS485:1 or TCP:192.168.0.1:90
+' itf$ RTU:RS485:1 or TCP:192.168.0.1:90
 '
 '----------------------------------------
 FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  
  err%=0
- ' parse if$ for either RTU, TCP on RS485 or ETH
+ ' parse itf$ for either RTU, TCP on RS485 or ETH
  prot$=split(0,itf$,":")
  interf$=split(1,itf$,":")
  num$=split(2,itf$,":")
@@ -82,7 +82,7 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  ' update rspLen$ and validate checksum
  rspLen%=getReqLen(mb_req_pdu$)
  
- if if$="RS485" then
+ if itf$="RS485" then
    ' Send it over rs485
    n%=RS485Write(req$)
    mb_rsp_pdu$=RS485Reads(rspLen%,timeout%)

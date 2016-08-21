@@ -6,22 +6,22 @@
 SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
 kW=0.0
 slv%=180
-if$="TCP:192.168.0.114:502"
+itf$="TCP:192.168.0.114:502"
 start:
- PhoenixEV(if$,slv%,kW,st%)
+ PhoenixEV(itf$,slv%,kW,st%)
  print "Phoenix " st% T
  pause 30000
  goto start
  
 ' Phoenix EV electric car charger controller
 ' This function must be called at least every 60 seconds,
-' if$ modbus interface (see EMDO modbus library for details)
+' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% slave address of charger (default 180)
 ' kW home energy at energy meter neg. value = excess energy
 ' st% device status
-FUNC PhoenixEV(if$,slv%,kW,st%)
+FUNC PhoenixEV(itf$,slv%,kW,st%)
  ' Read EV Status
- err%= mbFuncRead(if$,slv%,3,&H100,8,reG$,500) OR mbFuncRead(if$,slv%,2,&H200,8,reD$,500) OR mbFuncRead(if$,slv%,3,&H300,2,reC$,500) OR mbFuncRead(if$,slv%,1,&H400,16,reR$,500)
+ err%= mbFuncRead(itf$,slv%,3,&H100,8,reG$,500) OR mbFuncRead(itf$,slv%,2,&H200,8,reD$,500) OR mbFuncRead(itf$,slv%,3,&H300,2,reC$,500) OR mbFuncRead(itf$,slv%,1,&H400,16,reR$,500)
  if err% then
   print "EV error on read"
   exit func

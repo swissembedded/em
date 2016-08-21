@@ -6,9 +6,9 @@
 SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=e"
 kW=0.0
 slv%=247
-if$=""
+itf$="RS485:1"
 start:
- EgoSmartHeater(if$,slv%,kW,st%,T%,Tmax%)
+ EgoSmartHeater(itf$,slv%,kW,st%,T%,Tmax%)
  print "Ego " st% T% Tmax%
  pause 30000
  goto start
@@ -16,15 +16,15 @@ start:
 ' Ego smart heater controller
 ' This function must be called at least every 60 seconds,
 ' otherwise the ego smart heater will switch off
-' if$ modbus interface (see EMDO modbus library for details)
+' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% ego smart heater slave address default 247, 
 ' kW home energy at energy meter neg. value = excess energy
 ' st% 1=500W on, 2=1000W on, 4=2000W on, e.g. 3=500+1000W
 ' T is the boiler temperature
 ' Tmax is the max boiler temperature set by external control
-FUNC EgoSmartHeater(if$,slv%,kW,st%,T,Tmax)
+FUNC EgoSmartHeater(itf$,slv%,kW,st%,T,Tmax)
  ' Read ManufacturerId, ProductId, ProductVersion, FirmwareVersion
- err%= mbFuncRead(if$,slv%,3,&H2000,1,rmId$,500) OR mbFuncRead(if$,slv%,3,&H2001,1,rpId$,500) OR mbFuncRead(if$,slv%,3,&H2002,1,rpV$,500) OR mbFuncRead(if$,slv%,3,&H2003,1,rfV$,500)
+ err%= mbFuncRead(itf$,slv%,3,&H2000,1,rmId$,500) OR mbFuncRead(itf$,slv%,3,&H2001,1,rpId$,500) OR mbFuncRead(itf$,slv%,3,&H2002,1,rpV$,500) OR mbFuncRead(itf$,slv%,3,&H2003,1,rfV$,500)
  if err% then
   print "Ego error on read"
   exit func
@@ -39,13 +39,13 @@ FUNC EgoSmartHeater(if$,slv%,kW,st%,T,Tmax)
   ' Set PowerNominalValue to -1 and HomeTotalPower power
   pNv$=conv("i16/bbe",-1)
   hTp$=conv("i16/bbe",kW*1000.0)
-  %err=mbFuncWrite(if$,slv%,6,&H1300,1,pNv$,500) OR mbFuncWrite(if$,slv%,6,&H1301,1,pNv$,500)
+  %err=mbFuncWrite(itf$,slv%,6,&H1300,1,pNv$,500) OR mbFuncWrite(itf$,slv%,6,&H1301,1,pNv$,500)
   if err% then
    print "Ego error on write"
    exit func
   end if
   ' Read ActualTemperaturBoiler,UserTemperaturNominalValue, RelaisStatus
-  err%= mbFuncRead(if$,slv%,3,&H1404,1,raT$,500) OR mbFuncRead(if$,slv%,3,&H1407,1,ruT$,500) OR mbFuncRead(if$,slv%,3,&H1408,1,rrS$,500)
+  err%= mbFuncRead(itf$,slv%,3,&H1404,1,raT$,500) OR mbFuncRead(itf$,slv%,3,&H1407,1,ruT$,500) OR mbFuncRead(itf$,slv%,3,&H1408,1,rrS$,500)
   if err% then
    print "Ego error on write"
   exit func
