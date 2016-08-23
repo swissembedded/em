@@ -33,7 +33,7 @@ start:
 ' tP%     total power [wh/Wp]
 FUNC SolarlogReader(itf$,slv%,lUp%, Pac%, Pdc%, Uac%, Udc%, dY%, ldY%, mY%, yY%,PacCon%, dYCon%, ldYCon%, mYCon%, yYCon%, tYCon%, tP%)
  ' Page 251(appendix)
- err%= mbFuncRead(itf$,slv%,3,0,30,rD$,500)
+ err%= mbFuncRead(itf$,slv%,4,0,30,rD$,500)
  if err% then
   print "Solarlog error on read"
   exit func
