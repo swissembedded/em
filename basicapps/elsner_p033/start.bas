@@ -30,7 +30,7 @@ FUNC EastronEnergyMeter(itf$,slv%,Tout,SunS%,SunW%, SunE%, Lgt%, Wind, Rain%)
   print "Elsner error on read"
   exit func
  end if
- ' Convert register values to float32
+ ' Convert register values to int16
  Tout=conv("bbe/i16",mid$(rD$,0,2)/10.0
  SunS%=conv("bbe/i16",mid$(rD$,2,2)
  SunW%=conv("bbe/i16",mid$(rD$,4,2)
