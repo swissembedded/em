@@ -3,6 +3,7 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' Solarlog 200,300,500,1000,1200,2000
 ' Documentation http://www.solar-log.uk/gb-en/service-support/downloads/manuals/united-kingdom.html 
+' Firmware > Version 3 required
 slv%=1
 itf$="TCP:192.168.0.1:502"
 
