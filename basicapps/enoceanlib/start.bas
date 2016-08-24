@@ -3,7 +3,7 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' EMDO enocean library, based on Enocean EPP 2.6.3 specification
 ' the enocean protocol description, see referenced pages below in source code
-' https://www.enocean.com/fileadmin/redaktion/enocean_alliance/pdf/EnOcean_Equipment_Profiles_EEP_V2.6.3_public.pdf
+' http://www.enocean-alliance.org/eep
 ' Eltako enocean devices (see page 10 and following)
 ' http://www.eltako.com/fileadmin/downloads/en/_main_catalogue/Gesamt-Katalog_ChT_gb_highRes.pdf
 ' Omnio enocean devices (protocol details see individual modules)
@@ -51,8 +51,8 @@ SUB eoReceive()
   rorg%=asc(left$(da$,1))  
   select case rorg%
    case &hf6 
-    ' Rocker switches come here 
-	' RPS telegram: DB0, Sender ID, Status (page 11)    
+   ' RPS telegram: DB0, Sender ID, Status (page 11)    
+    ' Rocker switches come here 	
 	db0%=asc(mid$(da$,2,1))
 	id%=conv("bbe/i32",mid$(da$,3,4))    
 	st%=asc(mid$(da$,7,1))
@@ -60,9 +60,11 @@ SUB eoReceive()
 	EXIT SUB
    case &hd5
     ' Contacts and Switches
+	' 1BS telegram: DB0, Sender ID, Status (page 11)
 	eoLog(tp%,da$,oda$,"eo rx")  
 	EXIT SUB
-   case &ha5    
+   case &ha5  
+    ' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
     ' Temperature Sensors
 	' Temperature and Humidity Sensor
 	' Barometric Sensor
@@ -79,8 +81,7 @@ SUB eoReceive()
 	' Digital Input
 	' Energy Management
 	' Central Commands
-	' Universal
-	' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
+	' Universal	
     eoLog(tp%,da$,oda$,"eo rx") 
     db3%=asc(mid$(da$,2,1))
 	db2%=asc(mid$(da$,3,1))
@@ -91,13 +92,19 @@ SUB eoReceive()
 	eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
 	EXIT SUB
    case &hd2
-    eoLog(tp%,da$,oda$,"eo rx")  
+    ' VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
     ' Room Control Panel
 	' Electronic switches and dimmers
 	' Sensors for Temperature, Illumination, Occupancy and smoke
 	' Light, Switching + Blind Control
 	' CO2, Humidity, Temperature, Day / NIght and Autonomy
 	' Blinds Control for Position and Angle
+    eoLog(tp%,da$,oda$,"eo rx")  
+	db$=mid$(da$, 2,len(da$)-7)
+	id%=conv("bbe/i32",mid$(da$,len(da$)-6,4))    
+	st%=asc(mid$(da$,len(da$)-1,1))
+	crc8%=asc(right$(da$,1))
+	eoRxVariable(tp%,id%,db$,st%,crc8%)
     EXIT SUB
 	case else
 	 eoLog(tp%,da$,oda$,"eo unknown rx ")  
@@ -150,7 +157,7 @@ SUB eoRxRocker(tp%,id%,db0%,st%)
  end select
 END SUB
 
- Receive Sensor info, page 15
+' Receive Sensor info, page 15
 SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
  print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' add your code here you can make subcalls here to your own routines
@@ -160,6 +167,21 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
    ' 255=0 degree celsius, 0=40 degree celsius 
    print db1% (255-db1%)/255.0*40.0
  end select 
+ ' Pressac Version 1 CT Clamp A5-12-01
+ ' http://www.pressac.com/current-transducer-enocean-ct-clamp
+ ' scale% = db0 AND 3 
+ ' meter = (db3%*256 + db2%)*256 + db1%
+ ' if scale% = 1 then
+ '  meter = ((db3%*256 + db2%)*256 + db1%)*0.1
+ ' else if scale% = 2 then
+ '  meter = ((db3%*256 + db2%)*256 + db1%)*0.01
+ ' else if scale% = 3 then
+ '  meter = ((db3%*256 + db2%)*256 + db1%)*0.001
+ ' else 
+ '  meter = ((db3%*256 + db2%)*256 + db1%)
+ ' end if
+ ' cum% = db0% and 4
+ ' lrn% =  not (db0% and 8)
  
  ' The following infos are taken from the Eltako documentation 
  ' referenced in the header (see page 10))
@@ -175,23 +197,92 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' lrn% = not (db0% and 8)
  
  ' FAH60+FAH65S+FIH65S+FAH60B
- ' 
+ ' lux  = db3%*100.0
+ ' lux2 = 300 + db2%*(30000-300)/255.0
+ ' lrn% =  not (db0% and 8)
  
  ' FIH65B 
+ ' lux = db2%*1024.0/255.0
+ ' lrn% =  not (db0% and 8)
  
  ' FASM60+FSM14+FSM61+FSU65D
+ ' status = db3%
  
  ' FSM60B
- 
+ ' status1 = db3%
+ ' status2 = db1%
+
  ' FCO2TF65
- 
+ ' humidity = db3%*100.0/200.0*40
+ ' co2      = db2%*2550.0/255.0
+ ' temperature = db1%*51.0/255.5
+  
  ' FKC+FKF
+ ' status = db3%
  
  ' FRW
+ ' status = db3%
  
  ' FSS12+FWZ12+FWZ61 
+ ' value = db3% * &HFFFF
+ ' value += db2% * &HFF
+ ' value += db1%
+ ' tariff = db0 and 16
+ ' LRN_Button = db0 and 8
+ ' switchover = db0 and 4
+ '  if(db0% = 0x09){
+ '     meterstatus$ = "meter status normal rate"
+ ' }
+ ' else if(db0% = 0x19){
+ '     meterstatus$ = "meter status off-peak rate"
+ ' }
+ '  else if(db0% = 0x0C){
+ '     meterstatus$ = "momentary power in W, normal"
+ ' }
+ ' else if(db0% = 0x1C){
+ '     meterstatus$ = "momentary power in W, off-peak"
+ ' }
  
  ' F4T65+FT4F+FT55
+ ' status = db3%
  
+END SUB
 
+' Receibe variable length telegram
+SUB eoRxVariable(tp%,id%,db$,st%,crc8%)
+print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
+ ' add your code here you can make subcalls here to your own routines
+ ' Versions 2&3 Single Phase CT Clamps -  D2-32-00
+ ' http://www.pressac.com/enocean-single-phase-ct-clamp-v2
+ ' pf% = asc(left$(db$,1)) AND 128
+ ' div% = asc(left$(db$,1)) 64
+ ' meter = (asc(mid$(db$,2,1))*16)+ (asc(right$(db$,1))/16)
+ ' if div% then
+ '   meter = meter * 0.1
+ ' end if
+ 
+ ' Version 2 &3 Dual Phase CT Clamps - D2-32-01         
+ ' http://www.pressac.com/2-phase-current-transducer-enocean-ct-clamp
+ ' pf% = asc(left$(db$,1)) AND 128
+ ' div% = asc(left$(db$,1)) 64
+ ' meter1 = (asc(mid$(db$,2,1))*16)+ (asc(mid$(db$,3,1))/16)
+ ' meter2 = ((asc(mid$(db$,3,1)) AND &H0f)*256)+ asc(right$(db$,1))
+ ' if div% then
+ '   meter1 = meter1 * 0.1
+ '   meter2 = meter2 * 0.1
+ ' end if
+ 
+ ' Version 2 &3 Three phase CT Clamps - D2-32-02
+ ' http://www.pressac.com/3-phase-current-transducer-enocean-ct-clamp
+ ' pf% = asc(left$(db$,1)) AND 128
+ ' div% = asc(left$(db$,1)) 64
+ ' meter1 = (asc(mid$(db$,2,1))*16)+ ((asc(mid$(db$,3,1)) and &Hf0) /16)
+ ' meter2 = ((asc(mid$(db$,3,1)) AND &H0f)*256)+ asc(mid$(db$,4,1))
+ ' meter3 = (asc(mid$(db$,5,1))*16)+ (asc(right$(db$,1))/16)
+ ' if div% then
+ '   meter1 = meter1 * 0.1
+ '   meter2 = meter2 * 0.1
+ '   meter3 = meter3 * 0.1
+ ' end if
+ 
 END SUB
