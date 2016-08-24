@@ -1,10 +1,10 @@
 ' This script is an example of the EMDO101 energy manager
-' Please visit us at www.swissembedded.com
+' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' EMDO modbus master library
 
 START:
-	reg$=mbFuncRead$("TCP:192.168.3.30:90",0,3,30015,2,"2",500)
+	reg$=mbFuncRead$("RTU:RS485:1",0,3,30015,2,"2",500)
 	PAUSE 5000
 GOTO start
 
@@ -19,15 +19,15 @@ GOTO start
 ' data$   : Data for Read/Write
 ' timeout%: is the timeout in ms
 '----------------------------------------
-FUNCTION mbFuncRead$(itf$,slv%,func%,addr%,num%,data$,timeout%)
-  mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+FUNC mbFuncRead$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+  mb_rsp_pdu$=mbFunc$(itf$,slv,func,addr,num,data$,timeout)
   IF funcOk(func, mb_rsp_pdu$) THEN
     mbFuncRead$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
   ELSE
     ' return the error code
     mbFuncRead$=mid$(mb_rsp_pdu$,2,1) 
   ENDIF 
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 ' Parameters
@@ -40,13 +40,13 @@ END FUNCTION
 ' data$   : Data for Read/Write
 ' timeout%: is the timeout in ms
 '----------------------------------------
-FUNCTION mbFuncWrite$(if$,slv%,func%,addr%,num%,data$,timeout%)
-  mb_rsp_pdu$=mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+FUNC mbFuncWrite$(if$,slv%,func%,addr%,num%,data$,timeout%)
+  mb_rsp_pdu$=mbFunc$(itf$,slv,func,addr,num,data$,timeout)
   IF funcOk(func, mb_rsp_pdu$)
     mbFuncWrite$=right$(mb_rsp_pdu$,getRspLen(mb_req_pdu$))
   ELSE
   ENDIF
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 ' Return the Response or Error PDU
@@ -60,7 +60,7 @@ END FUNCTION
 ' data$   : Data for Read/Write
 ' timeout%: is the timeout in ms
 '----------------------------------------
-FUNCTION mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
+FUNC mbFunc$(itf$,slv%,func%,addr%,num%,data$,timeout%)
 IF valFuncCode(func) THEN
   IF valAddress(add)
     IF valDataValue(func, data$) THEN
@@ -69,7 +69,7 @@ IF valFuncCode(func) THEN
       ELSE
         mb_req_pdu$=pdu$(func, 0, conv("i16/bbe",addr-1)+data$)
       ENDIF
-      mb_rsp_pdu$=mbCom(itf$,slv,func,mb_req_pdu$,timeout%)
+      mb_rsp_pdu$=mbCom(itf$,slv,func,mb_req_pdu$,timeout)
     ELSE
       mb_rsp_pdu$=mbException$(func, 3)
     ENDIF
@@ -80,13 +80,13 @@ ELSE
   mb_rsp_pdu$=mbException$(func, 1)
 ENDIF
 mbFunc$=mb_rsp_pdu
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 ' itf$ RTU:RS485:1 or TCP:192.168.0.1:90
 '
 '----------------------------------------
-FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
+FUNC mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  
  err%=0
  ' parse if$ for either RTU, TCP on RS485 or ETH
@@ -104,7 +104,7 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
  IF if$="RS485" THEN
    ' Send it over rs485
    n%=RS485Write(req$)
-   mb_rsp_pdu$=RS485Reads(rspLen%,timeout%)
+   mb_rsp_pdu$=RS485Reads(rspLen,timeout)
    mbLog(interf$,reg$,mb_rsp_pdu$,"ETH:")
  ELSE
    ' Send it over ethernet
@@ -122,7 +122,7 @@ FUNCTION mbCom(itf$,slv%,func%,mb_req_pdu$,timeout%)
    ENDIF
  ENDIF 
  mbCom=mb_rsp_pdu$
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 ' log a telegram
@@ -143,14 +143,14 @@ END SUB
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION pdu$(FUNCTIONCode, FUNCTIONSubcode, data$)
+FUNC pdu$(FUNCTIONCode, FUNCTIONSubcode, data$)
     pdu$=CHR$(FUNCTIONCode)+data$
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION adu$(prot$, itf$, slv, pdu$)
+FUNC adu$(prot$, itf$, slv, pdu$)
 
 IF prot$ = "RTU" THEN
   msg$=CHR$(slv)+pdu$
@@ -160,33 +160,33 @@ ELSE
   len$=conv("i16/bbe",len(pdu$))
   adu$=tn$+chr$(0)+chr$(0)+len$+CHR$(slv)+pdu$
 ENDIF
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 'Validate if the Response PDU is not an Error PDU
 '----------------------------------------
-FUNCTION funcOk(func%,mb_rsp_pdu$)
+FUNC funcOk(func%,mb_rsp_pdu$)
     funcOk=(func=toNum(mid$(mb_rsp_pdu$,1,1)))
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION valFuncCode(func%)
+FUNC valFuncCode(func%)
     validateFUNCTIONCode=((func>=1 AND func<=6) OR (func>=15 AND func<=16) OR (func>=22 AND func<=23))
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION valAddress(address)
+FUNC valAddress(address)
     validateAddress=(address>=&H00 AND address<=&HFFFF)
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION valDataValue(func%, num%, data$)
+FUNC valDataValue(func%, num%, data$)
 validateDataValue=((func=1 or func=2) and (num >= 1 and num <= 2000)) OR
                   ((func=3 or func=4) and (num >= 1 and num <=  125)) OR
                   ((func=5 ) and (num  = 0  OR num  = &HFF00)) OR
@@ -199,19 +199,19 @@ validateDataValue=((func=1 or func=2) and (num >= 1 and num <= 2000)) OR
                   ((func=23) and (num >= 1 and num <= &H007D) and len(data$)=5+toNum(mid$(data$,5,1)) and 
                     toNum(mid$(data$,1,2))>=0 and toNum(mid$(data$,1,2)) <= &HFFFF AND    
                     toNum(mid$(data$,3,2))>=1 and toNum(mid$(data$,3,2)) <= &H0079)
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION mbException$(FUNCTIONCode%, exceptionCode%)
+FUNC mbException$(FUNCTIONCode%, exceptionCode%)
     mb_excep_rsp_pdu$=CHR$(FUNCTIONCode+128) + conv("i16/bbe",exceptionCode)
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION getReqLen(func%, pdu$)
+FUNC getReqLen(func%, pdu$)
     SELECT CASE func
         CASE 1
             getResponseSize=2+toNum(mid$(pdu$,4,2))
@@ -235,12 +235,12 @@ FUNCTION getReqLen(func%, pdu$)
             getResponseSize=2+toNum(mid$(pdu$,4,2))*2
         ELSE
     END SELECT
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 '
 '----------------------------------------
-FUNCTION getRspData$(func%, pdu$)
+FUNC getRspData$(func%, pdu$)
     SELECT CASE func
         CASE 1
             getRspData$=right$(pdu$, toNum(mid$(pdu$,2,1)))
@@ -264,15 +264,15 @@ FUNCTION getRspData$(func%, pdu$)
             getRspData$=2+toNum(mid$(pdu$,4,2))*2
         ELSE
     END SELECT
-END FUNCTION
+END FUNC
 
 '----------------------------------------
 'Convert an String (lenght=1 or =2) to Number
 '----------------------------------------
-FUNCTION toNum(value$)
+FUNC toNum(value$)
 IF len(value$)=1 THEN
   toNum=asc(value$)
 ELSE
   toNum=asc(left$(value$,1))*256 + ASC(right$(value$,1))
 ENDIF
-END FUNCTION
+END FUNC
