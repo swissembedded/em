@@ -7,7 +7,7 @@ Further information are available at the [wiki](https://github.com/swissembedded
 
 Pls support our [kickstarter]
 (https://www.kickstarter.com/projects/1983254852/emdo-can-do-your-energy-manager-for-renewable-ener)
- project or visit us at our [shop](http://www.solar-komplett.ch/de/swissEmbedded_EMDO101_Steuergeraet.a3037.2.html)
+ project or visit us at our [shop](http://www.solar-komplett.ch/de/swissEmbedded_EMDO101_Steuergeraet.a3037.2.html).
  <br>
  If you like EMDO please [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8ERF2479UAYDE)
   for our project.

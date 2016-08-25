@@ -179,7 +179,7 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  '  meter = ((db3%*256 + db2%)*256 + db1%)*0.001
  ' else 
  '  meter = ((db3%*256 + db2%)*256 + db1%)
- ' end if
+ ' endif
  ' cum% = db0% and 4
  ' lrn% =  not (db0% and 8)
  
@@ -259,7 +259,7 @@ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' meter = (asc(mid$(db$,2,1))*16)+ (asc(right$(db$,1))/16)
  ' if div% then
  '   meter = meter * 0.1
- ' end if
+ ' endif
  
  ' Version 2 &3 Dual Phase CT Clamps - D2-32-01         
  ' http://www.pressac.com/2-phase-current-transducer-enocean-ct-clamp
@@ -270,7 +270,7 @@ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' if div% then
  '   meter1 = meter1 * 0.1
  '   meter2 = meter2 * 0.1
- ' end if
+ ' endif
  
  ' Version 2 &3 Three phase CT Clamps - D2-32-02
  ' http://www.pressac.com/3-phase-current-transducer-enocean-ct-clamp
@@ -283,6 +283,6 @@ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  '   meter1 = meter1 * 0.1
  '   meter2 = meter2 * 0.1
  '   meter3 = meter3 * 0.1
- ' end if
+ ' endif
  
 END SUB
