@@ -4,7 +4,7 @@
 ' EMDO modbus master library
 
 START:
-	reg$=mbFuncRead$("RTU:RS485:1",0,3,30015,2,"2",500)
+	reg$=mbFuncRead$("RTU:RS485:1",0,0,3,30015,2,"2",500)
 	PAUSE 5000
 GOTO start
 
