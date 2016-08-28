@@ -22,35 +22,36 @@ start:
 ' st% 1=500W on, 2=1000W on, 4=2000W on, e.g. 3=500+1000W
 ' T is the boiler temperature
 ' Tmax is the max boiler temperature set by external control
-FUNC EgoSmartHeater(itf$,slv%,kW,st%,T,Tmax)
+SUB EgoSmartHeater(itf$,slv%,kW,st%,T%,Tmax%)
  ' Read ManufacturerId, ProductId, ProductVersion, FirmwareVersion
- err%= mbFuncRead(itf$,slv%,3,&H2000,1,rmId$,500) OR mbFuncRead(itf$,slv%,3,&H2001,1,rpId$,500) OR mbFuncRead(itf$,slv%,3,&H2002,1,rpV$,500) OR mbFuncRead(itf$,slv%,3,&H2003,1,rfV$,500)
- if err% then
-  print "Ego error on read"
-  exit func
- end if
+ err%= mbFunc(itf$,slv%,3,&H2000,1,rmId$,500) OR mbFunc(itf$,slv%,3,&H2001,1,rpId$,500) 
+ IF err% THEN
+  print "Ego error on read" err%
+  EXIT SUB
+ ENDIF
  ' Check if Ego is known
- mId%=conv("bbe/i16",rmId$)
- pId%=conv("bbe/i16",rpId$)
- pV%=conv("bbe/i16",rpV$) 
- fV%=conv("bbe/i16",rfV$) 
- if mId% = &H14ef and pId% = &Hff37 and pV% = &Hebaf and fV% = &H0000 then
+ mId%=conv("bbe/u16",rmId$)
+ pId%=conv("bbe/u16",rpId$)
+ 
+ IF mId% = &H14ef AND pId% = &Hff37 THEN
   ' Power Regulation
   ' Set PowerNominalValue to -1 and HomeTotalPower power
   pNv$=conv("i16/bbe",-1)
-  hTp$=conv("i16/bbe",kW*1000.0)
-  %err=mbFuncWrite(itf$,slv%,6,&H1300,1,pNv$,500) OR mbFuncWrite(itf$,slv%,6,&H1301,1,pNv$,500)
-  if err% then
+  hTp$=conv("i32/bbe",kW*1000.0)
+  err%=mbFunc(itf$,slv%,6,&H1300,1,pNv$,500) OR mbFunc(itf$,slv%,16,&H1301,2,hTp$,500)  
+  IF err% THEN
    print "Ego error on write"
-   exit func
-  end if
+   EXIT SUB
+  ENDIF
   ' Read ActualTemperaturBoiler,UserTemperaturNominalValue, RelaisStatus
-  err%= mbFuncRead(itf$,slv%,3,&H1404,1,raT$,500) OR mbFuncRead(itf$,slv%,3,&H1407,1,ruT$,500) OR mbFuncRead(itf$,slv%,3,&H1408,1,rrS$,500)
-  if err% then
+  err%= mbFunc(itf$,slv%,3,&H1404,1,raT$,500) OR mbFunc(itf$,slv%,3,&H1407,1,ruT$,500) OR mbFunc(itf$,slv%,3,&H1408,1,rrS$,500)
+  print err%
+  IF err% THEN
    print "Ego error on write"
-  exit func
+   EXIT SUB
+  ENDIF 
   T%=conv("bbe/i16",raT$)
   Tmax%=conv("bbe/i16",ruT$)
-  st%=conv("bbe/i16",rrS$) 
- end if  
-END FUNC
+  st%=conv("bbe/u16",rrS$) 
+ ENDIF
+END SUB

@@ -31,6 +31,8 @@
 '       4=Read Input Registers 
 '		5=Write Single Coil (bits)
 '		6=Write Single Register
+'      15=Write Multiple Coils (bits)
+'      16=Write Multiple Register
 ' addr% Modbus Address
 ' num%  Number of Registers/Bits
 ' data$ Data for Read/Write (fnc%=5 data must be &HFF00 or &H0000)
@@ -62,6 +64,15 @@ FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
   ' Write single coil and write single register needs one word of data
   mbFunc=-15
   EXIT FUNCTION 
+ ELSE IF (fnc%=15) AND (len(dta$)*8)<(num%) THEN 
+  ' Write single coil and write single register needs one word of data
+  mbFunc=-16
+  EXIT FUNCTION 
+ ELSE IF (fnc%=16) AND len(dta$)<>(num%*2) THEN 
+  ' Write single coil and write single register needs one word of data
+  mbFunc=-16
+  EXIT FUNCTION 
+
  ENDIF
  
  ' Make request
@@ -84,6 +95,11 @@ FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
   rq$=chr$(fnc%)+conv("u16/bbe",addr%)+dta$  
   rpl%=5
   py%=2
+ ELSE IF fnc% = 15 OR fnc%=16 THEN 
+  ' Function code 15
+  rq$=chr$(fnc%)+conv("u16/bbe",addr%)+conv("u16/bbe",num%)+CHR$(len(dta$))+dta$  
+  rpl%=5
+  py%=0
  ENDIF  
  ' Send request and receive response 
  err%=mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%) 
