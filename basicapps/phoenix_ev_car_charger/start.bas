@@ -50,7 +50,7 @@ SUB PhoenixEV(itf$,slv%,kW,st%)
  ' Voltage in status A/B detected
  ' Status D, reject vehilce
  ' Configuration of input ML
- eR%=conv("bbe/u16",left$(reR$,2))
+ eR%=conv("ble/u16",left$(reR$,2))
  enaD%=eD% and 1 ' Enable
  xrD%=eD% and 2 ' External release
  ldD%=eD% and 4 ' Lock detection
