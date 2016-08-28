@@ -72,9 +72,11 @@ FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
   ' Write single coil and write single register needs one word of data
   mbFunc=-16
   EXIT FUNCTION 
-
  ENDIF
  
+ Local rq$
+ Local n%, rpl%, py%, err%
+
  ' Make request
  IF fnc%=1 OR fnc%=2 THEN
   ' Function code 1 (8 bits in a byte, round up bytes)
@@ -118,7 +120,10 @@ END FUNCTION
 ' tmo%  Timeout in ms
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
- err%=0
+
+LOCAL interf$, ln$, msg$, num$, prot$, req$, rp$, rsp$, tn$
+LOCAL n%, con%, err%, rpl%, trans%
+
  ' parse if$ for either RTU, TCP on RS485 or ETH 
  prot$=split$(0,itf$,":")
  interf$=split$(1,itf$,":")
@@ -187,7 +192,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    EXIT FUNCTION
   ENDIF
   ' cut the response data out
-  rp$=mid$(rsp$,len(rp$)-py%,py%)  
+  rp$=mid$(rsp$,len(rp$)-py%,py%)
  ELSE
   ' Check if this is an exception  
   IF len(rsp$) = 9 THEN
@@ -223,6 +228,8 @@ END FUNCTION
 ' print a modbus telegram on the console
 '----------------------------------------
 SUB mbLog(itf$,tx$,rx$,msg$)
+LOCAL s$, h$
+LOCAL i
  s$=msg$+":"+itf$+" tx:"
  FOR i=1 TO len(tx$)
   h$=hex$(asc(mid$(tx$,i,1)))
@@ -242,4 +249,3 @@ SUB mbLog(itf$,tx$,rx$,msg$)
  NEXT
  PRINT s$
 END SUB
-
