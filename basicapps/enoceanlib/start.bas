@@ -24,7 +24,7 @@ SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
  ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)	 
   msg$ = chr$(&hF6)
   msg$ += chr$(db0%)  
-  msg$ += conv("i32/bbe",txid%)
+  msg$ += conv("u32/bbe",txid%)
   ' &H30 'T21=1, NU = 1
   ' &H20 'T21=1, NU = 0
   ' &H10 'T21=0, NU = 1   
@@ -33,7 +33,7 @@ SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
   ' Send  
   msg$ += chr$(&H03)
   ' Broadcast &Hffffffff or actuator id
-  msg$+=conv("i32/bbe",rxid%)
+  msg$+=conv("u32/bbe",rxid%)
   msg$ += chr$(&HFF)
   ' no encryption &H00
   msg$+=chr$(enc%)	
@@ -54,7 +54,7 @@ SUB eoReceive()
    ' RPS telegram: DB0, Sender ID, Status (page 11)    
     ' Rocker switches come here 	
 	db0%=asc(mid$(da$,2,1))
-	id%=conv("bbe/i32",mid$(da$,3,4))    
+	id%=conv("bbe/u32",mid$(da$,3,4))    
 	st%=asc(mid$(da$,7,1))
 	eoRxRocker(tp%,id%,db0%,st%)
 	EXIT SUB
@@ -87,7 +87,7 @@ SUB eoReceive()
 	db2%=asc(mid$(da$,3,1))
 	db1%=asc(mid$(da$,4,1))
 	db0%=asc(mid$(da$,5,1))
-	id%=conv("bbe/i32",mid$(da$,6,4))    
+	id%=conv("bbe/u32",mid$(da$,6,4))    
 	st%=asc(mid$(da$,10,1))
 	eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
 	EXIT SUB
@@ -101,7 +101,7 @@ SUB eoReceive()
 	' Blinds Control for Position and Angle
     eoLog(tp%,da$,oda$,"eo rx")  
 	db$=mid$(da$, 2,len(da$)-7)
-	id%=conv("bbe/i32",mid$(da$,len(da$)-6,4))    
+	id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))    
 	st%=asc(mid$(da$,len(da$)-1,1))
 	crc8%=asc(right$(da$,1))
 	eoRxVariable(tp%,id%,db$,st%,crc8%)
@@ -115,12 +115,20 @@ END SUB
 ' log a telegram
 SUB eoLog(tp%,da$,oda$,msg$)
  s$=msg$+" tp:"+str$(tp%)+" da:"
-  for i=1 TO len(da$)
-   s$=s$+hex$(asc(mid$(da$,i,1)))
-  next
-  s$=s$+" oda:"
-  for i=1 TO len(oda$)
-  s$=s$+hex$(asc(mid$(oda$,i,1)))
+ for i=1 TO len(da$)
+  h$=hex$(asc(mid$(da$,i,1)))
+  IF len(h$)=1 THEN 
+   h$="0"+h$
+  ENDIF
+  s$=s$+h$
+ next
+ s$=s$+" oda:"
+ for i=1 TO len(oda$)
+  h$=hex$(asc(mid$(oda$,i,1)))
+  IF len(h$)=1 THEN 
+   h$="0"+h$
+  ENDIF
+  s$=s$+h$
  next
  print s$
 END SUB
@@ -246,6 +254,322 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' F4T65+FT4F+FT55
  ' status = db3%
  
+ ' FTF65S
+ ' temperature = (&HFF - db1%)*40.0/255.0
+ ' lrn% = not (db9% and 8)
+ 
+ ' FHF
+ ' windowsstate% = db3%
+ 
+ ' FTK+FTKB
+ ' if db3% = &H09 then
+ '     contact% = 0
+ ' 
+ ' else if db3% = &H08 then
+ '     contact% = 1
+ ' endif
+ 
+ ' FTKE
+ ' if db3% = &HF0 then
+ '     windows% = 0
+ ' 
+ ' else if db3% = &HFE then
+ '     windows% = 1
+ ' endif
+ 
+ ' FTR65DS+FTR65HS+FUTH65D
+ ' select case db3%
+ '    case &H00
+ '        nightreduct% = &h0
+ '    case &H06
+ '        nightreduct% = &h1
+ '    case &H0C
+ '        nightreduct% = &h2
+ '    case &H13
+ '        nightreduct% = &h3
+ '    case &H19
+ '        nightreduct% = &h4
+ '    case &H1F
+ '        nightreduct% = &h5
+ ' end select
+ ' ref_temperature% = (&HFF - db1%)*40.0
+ ' temperature% = (&HFF - db1%)*40.0
+ ' lrn% = not (db0% and 8)
+ 
+ ' FTR78S (EEP: A5-10-03)
+ ' ref_temperature% = 8 + db2%*(22.0)/255.0
+ ' temperature%      = (255.0 -db1%)*40.0/255.0
+ 
+ ' FTS14EM (only telegrams for the Eltako-RS485-Bus)
+ ' select case (db3%)
+ '     case &H70
+ '     controlof$ = "+E1"
+ '     case &H50
+ '     controlof$ = "+E2"
+ '     case &H30
+ '     controlof$ = "+E3"
+ '     case &H10
+ '     controlof$ = "+E4"
+ '     case &H70
+ '     controlof$ = "+E5"
+ '     case &H50
+ '     controlof$ = "+E6"
+ '     case &H30
+ '     controlof$ = "+E7"
+ '     case &H10
+ '     controlof$ = "+E8"
+ '     case &H70
+ '     controlof$ = "+E9"
+ '     case &H50
+ '     controlof$ = "+E10"
+ ' end select
+ 
+ ' FWS61 (EEP: A5-13-01 u. 02)
+
+ 'DSZ14DRS, DSZ14WDRS, FWZ14, FSDG14 (EEP: A5-12-01)
+ ' value% = db3% * &HFFFF
+ ' value% += db2% * &HFF
+ ' value% += db1%
+ ' tariff% = db0 and 16
+ ' LRN_Button% = db0 and 8
+ ' switchover% = db0 and 4
+ '  if db0% = 0x09 then
+ '     meterstatus$ = "meter status normal rate"
+ ' 
+ ' else if db0% = 0x19 then
+ '     meterstatus$ = "meter status off-peak rate"
+ ' 
+ ' else if db0% = 0x0C then
+ '     meterstatus$ = "momentary power in W, normal"
+ ' 
+ ' else if db0% = 0x1C then
+ '     meterstatus$ = "momentary power in W, off-peak"
+ ' endif
+
+ ' FSR61VA, FSVA-230V (EEP: A5-12-01)
+ ' value% = db3% * &HFFFF
+ ' value% += db2% * &HFF
+ ' value% += db1%
+ ' LRN_Button% = db0 and 8
+ ' switchover% = db0 and 4
+ ' if db0% = 0x0C then
+ '     meterstatus$ = "momentary power in W, normal"
+ ' endif
+
+ ' FZS
+ ' status% = db3%
+ 
+ ' FLC61-230V
+ ' lrn% = not (db0% and 8)
+ ' blksw% = db0% and 4
+ ' swoutput% = db0% and 1
+ 
+ ' FSB14, FSB61, FSB71
+ ' runtime% = db2%
+ ' command% = db1%
+ ' lrn% = not (db0% and 8)
+
+ ' FHK61SSR
+ ' pwmval% = db2%
+ ' pwmbasic% = db1%*10
+ ' lrn% = not (db0% and 8)
+ ' repeat% = db0% and 2
+ ' pwmon%  = db0% and 1
+
+ ' FSR14-2x, FSR14-4x, FSR14SSR, FSR71
+ ' lrn% = not (db0% and 8)
+ ' blksw% = db0% and 4
+ ' swoutput% = db0% and 1
+
+ ' FUD14, FUD14-800W, FUD61NP, FUD61NPN, FUD71,
+ ' FSG14/1-10V, FSG71/1-10V, FRGBW71L, FSUD-230V
+ ' dimval% = db2%
+ ' if db1% = &H0 then
+ '    dimspeed$ = "dimming normal"
+ ' else if db1% = 0x01 then
+ '    dimspeed$ = "dimming fast"
+ ' else if db1% = 0xFF then
+ '    dimspeed$ = "dimming slow"
+ ' endif
+ ' lrn% = not (db0% and 8)
+ ' dim_on% = db0% and 1
+ ' dim_block% = db0% and 4
+
+ ' FADS60-230V 
+ ' if db3% = &H70 then
+ '    relay$ = "relay on"
+ ' else if db3% = 0x01 then
+ '    relay$ = "relay off"
+ ' else
+ '    relay$ = "relay release"
+ ' endif
+
+ ' FFR61-230V, FZK61NP-230V
+ ' select case (db3%)
+ '     case &H70
+ ' 	    channelst$ = "channel 1 ON"
+ ' 	case &H50
+ ' 	    channelst$ = "channel 1 OFF"
+ ' 	case &H30
+ ' 	    channelst$ = "channel 2 ON"
+ ' 	case &H10
+ ' 	    channelst$ = "channel 2 OFF"
+ ' 	case &H00
+ ' 	    channelst$ = "released"
+ ' end select
+
+ ' FHK61U-230V
+ ' if db3% = &H70 then
+ '    relay$ = "relay on"
+ ' else if db3% = 0x01 then
+ '    relay$ = "relay off"
+ ' else
+ '    relay$ = "relay release"
+ ' endif
+
+ ' FHK61-230V, FHK61SSR-230V
+ ' select case (db3%)
+ '     case &H70
+ ' 	    mode$ = "normal mode"
+ ' 	case &H50
+ ' 	    mode$ = "night reduction"
+ ' 	case &H30
+ ' 	    mode$ = "setback mode"
+ ' end select
+
+ ' FHK61SSR-230V
+ ' select case (db3%)
+ '     case &H70
+ ' 	    signalmode$ = "thaw signal input active"
+ ' 	case &H50
+ ' 	    signalmode$ = "thaw signal input inactive"
+ ' end select
+
+ ' FMS61NP-230V
+ ' select case (db3%)
+ '     case &H70
+ ' 	    channelst$ = "channel 1 ON"
+ ' 	case &H50
+ ' 	    channelst$ = "channel 1 OFF"
+ ' 	case &H30
+ ' 	    channelst$ = "channel 2 ON"
+ ' 	case &H10
+ ' 	    channelst$ = "channel 2 OFF"
+ ' 	case &H00
+ ' 	    channelst$ = "released"
+ ' end select
+ 
+ ' FMZ61-230V
+ ' if db3% = &H70 then
+ '    relay$ = "relay on"
+ ' else if db3% = 0x01 then
+ '    relay$ = "relay off"
+ ' else
+ '    relay$ = "relay release"
+ ' endif
+
+ ' FSB61NP-230V, FSB71
+ ' select case (db3%)
+ '  case &H70
+ ' 	    position$ = "upper stop position"
+ ' 	case &H50
+ ' 	    position$ = "lower stop position"
+ ' 	case &H10
+ ' 	    position$ = "Start up"
+ ' 	case &H20
+ ' 	    position$ = "Start down"
+ ' end select
+
+ ' FSR61NP-230V, FSR61-230V, FSR61/8-24V, FSR61LN-230V,
+ ' FSR61VA-10A, FTN61NP-230V, FLC61NP-230V, FSSA-230 V,
+ ' FSVA-230 V, FSR71
+ ' if db3% = &H70 then
+ '    relay$ = "relay on"
+ ' else if db3% = 0x50 then
+ '    relay$ = "relay off"
+ ' else
+ '    relay$ = "relay release"
+ ' endif
+
+ ' FUD61NP-230V, FUD61NPN-230V, FUD71, FSG71/1-10V, FRGBW71L,
+ ' FSUD-230 V
+ ' ORG5
+ ' select case (db3%)
+ '  case &H70
+ ' 	    dimstat$ = "dimmer on"
+ ' 	case &H50
+ ' 	    dimstat$ = "dimmer off"
+ ' end select
+ ' ORG = 0x07
+ ' dimval = db2%
+ ' select case (db3%)
+ '  case &H09
+ ' 	    dimstat$ = "dimmer on"
+ ' 	case &H08
+ ' 	    dimstat$ = "dimmer off"
+ ' end select
+ 
+ ' FUD14, FUD14/800W, FSG14/1-10V
+ ' ORG5
+ ' select case (db3%)
+ '  case &H70
+ ' 	    dimstat$ = "dimmer on"
+ ' 	case &H50
+ ' 	    dimstat$ = "dimmer off"
+ ' end select
+ ' ORG = 0x07
+ ' dimval% = db2%
+ ' select case (db3%)
+ '  case &H09
+ ' 	    dimstat$ = "dimmer on"
+ ' 	case &H08
+ ' 	    dimstat$ = "dimmer off"
+ ' end select
+
+ ' FSB14
+ ' select case (db3%)
+ '  case &H70
+ ' 	    position$ = "upper stop position"
+ ' 	case &H50
+ ' 	    position$ = "lower stop position"
+ ' 	case &H10
+ ' 	    position$ = "Start up"
+ ' 	case &H20
+ ' 	    position$ = "Start down"
+ ' end select
+
+ ' F4HK14, FHK14, FAE14LPR, FAE14SSR
+ ' select case (db3%)
+ '  case &H70
+ ' 	    mode$ = "normal mode"
+ ' 	case &H50
+ ' 	    mode$ = "night reduction"
+ ' 	case &H30
+ ' 	    mode$ = "setback mode"
+ ' 	case &H10
+ ' 	    mode$ = "OFF"
+ ' end select
+
+ ' FMSR14
+ ' FSU14
+ ' if db3% = &H70 then
+ '    switch$ = "switch ON"
+ ' else if db3% = 0x50 then 
+ '    switch$ = "switch OFF"
+ ' else
+ '    switch$ = "switch OFF"
+ ' endif
+ 
+ ' FSR14-2x, FSR14-4x, FSR14SSR, FFR14, FMS14, FMZ14, FTN14,
+ ' FZK14, F2L14
+ ' if db3% = &H70 then
+ '    relay$ = "relay on"
+ ' else if db3% = 0x50 then
+ '    relay$ = "relay off"
+ ' else
+ '    relay$ = "relay release"
+ ' endif
+
 END SUB
 
 ' Receibe variable length telegram

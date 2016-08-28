@@ -1,7 +1,7 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
-' Eastron SDM630 energy meter EMDO modbus example
+' Kostal Inverter EMDO modbus example
 ' Documentation available from Kostal (NDA required)
 addr%=255
 server$="192.168.1.1"
@@ -30,6 +30,6 @@ FUNC KostalReaderTotalEnergy(server$,addr%, timeout%, kWh)
  IF len(rsp$) <> 11 then
   EXIT SUB 0 ' inverter response is too long
  Endif
- kWh=conv("ble/i32",mid$(rsp$,6,4))/1000.0
+ kWh=conv("ble/u32",mid$(rsp$,6,4))/1000.0
  done=SocketClose( con% )  
 END FUNC

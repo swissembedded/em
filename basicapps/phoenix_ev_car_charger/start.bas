@@ -3,7 +3,7 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' Phoenix EV electric car charger with excess energy over modbus TCP and RTU
 ' Testet with Wallb-e Pro
-SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
+SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
 kW=0.0
 slv%=180
 itf$="TCP:192.168.0.114:502"
@@ -19,28 +19,28 @@ start:
 ' slv% slave address of charger (default 180)
 ' kW home energy at energy meter neg. value = excess energy
 ' st% device status
-FUNC PhoenixEV(itf$,slv%,kW,st%)
+SUB PhoenixEV(itf$,slv%,kW,st%)
  ' Read EV Status
- err%= mbFuncRead(itf$,slv%,3,&H100,8,reG$,500) OR mbFuncRead(itf$,slv%,2,&H200,8,reD$,500) OR mbFuncRead(itf$,slv%,3,&H300,2,reC$,500) OR mbFuncRead(itf$,slv%,1,&H400,16,reR$,500)
+ err%= mbFunc(itf$,slv%,4,100,8,reG$,500) OR mbFunc(itf$,slv%,2,200,8,reD$,500) OR mbFunc(itf$,slv%,3,300,2,reC$,500) OR mbFunc(itf$,slv%,1,400,16,reR$,500)
  if err% then
   print "EV error on read"
-  exit func
+  exit sub
  end if
  ' Status 
  eS$=mid$(reG$,2,1)
  ' Proximity charge current in A
- eP%=conv("bbe/i16",mid$(reG$,3,2))
+ eP%=conv("bbe/u16",mid$(reG$,3,2))
  ' Charging time in s
- eT%=conv("bbe/i32",mid$(reG$,5,4))
+ eT%=conv("bbe/u32",mid$(reG$,5,4))
  ' Firmware version e.g. 430 = 4.30
- eV%=conv("bbe/i32",mid$(reG$,11,4))
+ eV%=conv("bbe/u32",mid$(reG$,11,4))
  ' Error code
- eE%=conv("bbe/i16",mid$(reG$,15,2))
+ eE%=conv("bbe/u16",mid$(reG$,15,2))
  ' Discrete inputs 
  ' Enable, External Release, Lock Detection, Manual Lock, Charger Ready, Locking Request, Vehicle Ready, Error
- eD%=asc(left$(reD$,1)
+ eD%=asc(left$(reD$,1))
  ' Charge current
- eC%=conv("bbe/i16",left$(reC$,2))
+ eC%=conv("bbe/u16",left$(reC$,2))
  ' Charge control register 
  ' Enable charge process, reuqest digital communication, manual charging available, manual locking
  ' Activate overcurrent shutdown
@@ -50,8 +50,8 @@ FUNC PhoenixEV(itf$,slv%,kW,st%)
  ' Voltage in status A/B detected
  ' Status D, reject vehilce
  ' Configuration of input ML
- eR%=conv("bbe/i16",left$(reR$,2))
- enD%=eD% and 1 ' Enable
+ eR%=conv("bbe/u16",left$(reR$,2))
+ enaD%=eD% and 1 ' Enable
  xrD%=eD% and 2 ' External release
  ldD%=eD% and 4 ' Lock detection
  mlD%=eD% and 8 ' Manual lock
@@ -82,5 +82,4 @@ FUNC PhoenixEV(itf$,slv%,kW,st%)
   case else  
    ' Unknown status
  end select
-END FUNC
- 
+END SUB
