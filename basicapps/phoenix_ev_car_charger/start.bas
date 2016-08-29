@@ -9,7 +9,7 @@ slv%=180
 itf$="TCP:192.168.0.114:502"
 start:
  PhoenixEV(itf$,slv%,kW,st%)
- print "Phoenix " st% T
+ print "Phoenix " st%
  pause 30000
  goto start
  
