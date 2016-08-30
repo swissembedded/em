@@ -7,8 +7,29 @@
 addr%=255
 server$="192.168.1.1"
 start:
- err%=KostalReaderTotalEnergy(server$,addr%,2000,kWh)
- print "Kostal " kWh
+ err%=KostalVoltageCurrentPower(server$,addr%, timeout%, Udc1, Idc1, Pdc1, Udc2, Idc2, Pdc2, Udc3, Idc3, Pdc3, Uac1, Iac1, Pac1, Uac2, Iac2, Pac2, Uac3, Iac3, Pac3)
+ print "Kostal " err% Udc1 Idc1 Pdc1 Udc2 Idc2 Pdc2 Udc3 Idc3 Pdc3 Uac1 Iac1 Pac1 Uac2 Iac2 Pac2 Uac3 Iac3 Pac3
+ err%=KostalTotalEnergy(server$, timeout%, kWh)
+ print "Kostal " err% kWh
+ err%=KostalStatus(server$, timeout%, status%, fault%, code%)
+ print "Kostal " err% status%, fault%, code%
+ err%=KostalName(server$, timeout%, iName$)
+ print "Kostal " err% iName$
+ err%=KostalSerialOld(server$, timeout%, iSerial$)
+ print "Kostal " err% iSerial$
+ err%=KostalSerial(server$, timeout%, iSerial$)
+ print "Kostal " err% iSerial$
+ err%=KostalDailyEnergy(server$, timeout%, kWh)
+ print "Kostal " err% kWh
+ err%=KostalPropertiesOld(server$, timeout%, sNum%, pNum%)
+ print "Kostal " err% sNum% pNum%
+ err%=KostalProperties(server$, timeout%, tDe$,sNum%, pNum%, pC%)
+ print "Kostal " err% tDe$ sNum% pNum% pC%
+ err%=KostalAnalog(server$, timeout%, aNa1, aNa2, aNa3, aNa4)
+ print "Kostal " err% aNa1 aNa2 aNa3 aNa4
+ err%=KostalFeedin(server$, timeout%, Tfeed%)
+ print "Kostal " err% Tfeed%
+
  pause 30000
  goto start
 
