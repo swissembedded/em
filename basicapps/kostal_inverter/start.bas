@@ -211,7 +211,7 @@ FUNCTION KostalFeedin(server$, timeout%, Tfeed%)
  IF err% =0 THEN
   Tfeed%=conv("ble/i32",mid$(rp$,6,4))
  ENDIF 
- KostalAnalog=err%  
+ KostalFeedin=err%  
 END FUNCTION
 
 ' Kostal inverter data transfer
