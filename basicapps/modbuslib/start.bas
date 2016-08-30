@@ -73,7 +73,7 @@ FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
   mbFunc=-16
   EXIT FUNCTION 
  ENDIF
- 
+
  Local rq$
  Local n%, rpl%, py%, err%
 
@@ -114,15 +114,15 @@ END FUNCTION
 ' slv%  Slave Address
 ' fnc%  Function Code
 ' rq$   Request Data
-' rpl%  Expected response length
 ' py%   Expected payload length
+' rpl%  Expected response length
 ' rp$   Response Data
 ' tmo%  Timeout in ms
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
 
-LOCAL interf$, ln$, msg$, num$, prot$, req$, rp$, rsp$, tn$
-LOCAL n%, con%, err%, rpl%, trans%
+LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$
+LOCAL n%, con%, err%, trans%
 
  ' parse if$ for either RTU, TCP on RS485 or ETH 
  prot$=split$(0,itf$,":")
