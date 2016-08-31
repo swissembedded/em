@@ -39,6 +39,8 @@
 ' tmo%  Timeout in ms
 ' return   0 = ok, negative value = error
 FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
+ Local rq$, n%, rpl%, py%, err%
+
  ' Validate call first 
  IF NOT ((addr% >= 0 AND addr%<=&HFFFF)) THEN
   ' Address is out of range
@@ -73,9 +75,6 @@ FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
   mbFunc=-16
   EXIT FUNCTION 
  ENDIF
-
- Local rq$
- Local n%, rpl%, py%, err%
 
  ' Make request
  IF fnc%=1 OR fnc%=2 THEN
@@ -121,8 +120,7 @@ END FUNCTION
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
 
-LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$
-LOCAL n%, con%, err%, trans%
+ LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$, n%, con%, err%, trans%
 
  ' parse if$ for either RTU, TCP on RS485 or ETH 
  prot$=split$(0,itf$,":")
@@ -153,7 +151,7 @@ LOCAL n%, con%, err%, trans%
    n%=SocketOption(con%,"SO_SNDTIMEO",tmo%)    
    n%=SocketWrite( con%, req$ )    
    rsp$=SocketRead$(con%,rpl%+7)
-   done%=SocketClose( con% )
+   n%=SocketClose( con% )
    mbLog(interf$,req$,rsp$,"ETH")   
   ELSE
    mbCom=-20
@@ -228,8 +226,8 @@ END FUNCTION
 ' print a modbus telegram on the console
 '----------------------------------------
 SUB mbLog(itf$,tx$,rx$,msg$)
-LOCAL s$, h$
-LOCAL i
+ LOCAL s$, h$, i
+ 
  s$=msg$+":"+itf$+" tx:"
  FOR i=1 TO len(tx$)
   h$=hex$(asc(mid$(tx$,i,1)))
