@@ -21,8 +21,8 @@ START:
 	PAUSE 5000
 GOTO start
 ' Sunspec reader for Solaredge, SMA, Fronius
-FUNCTION SunspecReader ( itf%, slv%, kW, kWh, opst )
- LOCAL err%, rSun$, sun$, rMan
+FUNCTION SunspecReader ( itf%, slv%, pNum%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, Tdc, Status%, Code% )
+ LOCAL err%, rSun$, sun$, rRsp$, Iacsf, Uacsf, Pacsf, Facsf, VAsf, VARsf, PFsf, Esf, Idcsf, Udcsf, Pdcsf, Tsf
  ' Pls see the referenced document below for manufacturer dependent registers
  ' Check common sunspec registers
  err%=mbFunc(itf$,slv%,3,40001-1,3,rSun$,500)
@@ -47,6 +47,47 @@ FUNCTION SunspecReader ( itf%, slv%, kW, kWh, opst )
 
  ' Read from long to start manufacturer names
  IF mid$(rMan$,1,10)="SolarEdge" THEN
+ ' Technical Note - SunSpec Logging in SolarEdge Inverters, 
+  err%=mbFunc(itf$,slv%,3,40070-1,40,rRsp$,500)
+  IF err% THEN
+   SunspecReader=err%
+   EXIT FUNCTION
+  ENDIF
+  
+  pNum%=conv("bbe/u16",mid$(rRsp$,1,2))-100
+  Iacsf=10.0^conv("bbe/i16",mid$(rRsp$,13,2))
+  Iac1=conv("bbe/u16",mid$(rRsp$,7,2))*Iacsf
+  Iac2=conv("bbe/u16",mid$(rRsp$,9,2))*Iacsf
+  Iac3=conv("bbe/u16",mid$(rRsp$,11,2))*Iacsf
+  Uacsf=10.0^conv("bbe/i16",mid$(rRsp$,27,2))
+  Uac1=conv("bbe/u16",mid$(rRsp$,21,2))*Uacsf
+  Uac2=conv("bbe/u16",mid$(rRsp$,23,2))*Uacsf
+  Uac3=conv("bbe/u16",mid$(rRsp$,25,2))*Uacsf
+  Pacsf=10.0^conv("bbe/i16",mid$(rRsp$,31,2))
+  Pac=conv("bbe/i16",mid$(rRsp$,29,2))*Pacsf
+  Facsf=10.0^conv("bbe/i16",mid$(rRsp$,35,2))
+  Fac=conv("bbe/u16",mid$(rRsp$,33,2))*Facsf
+  VAsf=10.0^conv("bbe/i16",mid$(rRsp$,39,2))
+  VA=conv("bbe/i16",mid$(rRsp$,37,2))*VAsf
+  VARsf=10.0^conv("bbe/i16",mid$(rRsp$,43,2))
+  VAR=conv("bbe/i16",mid$(rRsp$,41,2))*VARsf
+  PFsf=10.0^conv("bbe/i16",mid$(rRsp$,47,2))
+  PF=conv("bbe/i16",mid$(rRsp$,45,2))*PFsf
+  Esf=10.0^conv("bbe/u16",mid$(rRsp$,53,4))
+  E=conv("bbe/u32",mid$(rRsp$,49,4))*Esf
+  Idcsf=10.0^conv("bbe/i16",mid$(rRsp$,57,2))
+  Idc=conv("bbe/u16",mid$(rRsp$,55,2))*Idcsf
+  Udcsf=10.0^conv("bbe/i16",mid$(rRsp$,61,2))
+  Udc=conv("bbe/u16",mid$(rRsp$,59,2))*Udcsf
+  Pdcsf=10.0^conv("bbe/i16",mid$(rRsp$,65,2))
+  Pdc=conv("bbe/i16",mid$(rRsp$,63,2))*Pdcsf
+  Tsf=10.0^conv("bbe/i16",mid$(rRsp$,69,2))
+  Tdc=conv("bbe/i16",mid$(rRsp$,67,2))*Tsf
+  ' 0=off
+  ' 1=night mode
+  ' 4=inverter on, power production
+  Status%=conv("bbe/u16",mid$(rRsp$,73,2))
+  Code%=conv("bbe/u16",mid$(rRsp$,71,2))
  ELSEIF mid$(rMan$,1,7)="Fronius" THEN
  ELSEIF mid$(rMan$,1,3)="SMA" THEN
  ELSE
@@ -56,8 +97,9 @@ FUNCTION SunspecReader ( itf%, slv%, kW, kWh, opst )
  ENDIF
  
  IF type = 0 THEN 'SOLAREDGE SUNSPEC
- ' Technical Note - SunSpec Logging in SolarEdge Inverters, 
+ ' Technical Note - SunSpec Logging in SolarEdge Inverters
  ' Protocol page 6
+ err%=
  '     SL FC ADDR NUM    CRC   - All modbus address have an offset of -1 to the modbus address
  ' Tx: 01 03 9C 40 00 7A EB AD - Read 122 (0x7a) registers starting at address 40001 (0x9c41).
  ' Rx: 01 03 F4 53 75 ... [Registers data] ... FF FF 12 1B (53 75 is SunS value)
@@ -117,4 +159,6 @@ FUNCTION SunspecReader ( itf%, slv%, kW, kWh, opst )
  ENDIF 
 END FUNCTION
 
+
+ 
 ' Modbus library goes here
