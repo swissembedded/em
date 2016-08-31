@@ -1,26 +1,60 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
-' This example reads a sunspec compatible inverter such as Solaregde
-' over modbus. Please make sure that the RS485 interface and Solaredge 
-' inverters are configured correctly.
+' Copyright (c) 2015 - 20116 swissEmbedded GmbH, All rights reserved.
+' This example reads a sunspec compatible inverter over modbus
+' Please make sure that the inverters RS485 interface 
+' is configured correctly. If multiple inverters are connected on a serial
+' line make sure each device has a unique modbus slave address configured.
+' Cable must be twisted pair with correct end termination on both ends
+SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
 kW = 0.0
 kWh = 0.0
 opst = 0
+itf$="RTU:rs485:1"
+slv1%=1
+slv2%=1
 START:
-	SunspecReader 0, 1, kW,kWh, opst
-	PRINT "kW1:"  kW " kWh1:" kWh " State:" opst
-	SunspecReader 0, 2, kW,kWh, opst
-	PRINT "kW2:"  kW " kWh2:" kWh " State:" opst
+	SunspecReader (ift$, slv1%, kW,kWh, opst)
+	PRINT "Inverter1 kW1:"  kW " kWh1:" kWh " State:" opst
+	SunspecReader (itf$, slv2%, kW,kWh, opst
+	PRINT "Inverter2 kW2:"  kW " kWh2:" kWh " State:" opst
 	PAUSE 5000
 GOTO start
 ' Sunspec reader for Solaredge, SMA, Fronius
-SUB SunspecReader ( type, slv, kW, kWh, opst )
-' Pls see the following document below for reference
-' and make sure inverters and EMDO101 are properly configured
-' Other manufacturers use same mechanism, but use different register addresses
-' which requires manual adjustment of the following source code
-' Modbus telegram, pls see "MODBUS Application Protocol Specification V1.1b3 page 15, available at www.modbus.org
+FUNCTION SunspecReader ( itf%, slv%, kW, kWh, opst )
+ LOCAL err%, rSun$, sun$, rMan
+ ' Pls see the referenced document below for manufacturer dependent registers
+ ' Check common sunspec registers
+ err%=mbFunc(itf$,slv%,3,40001-1,3,rSun$,500)
+ IF err% THEN
+  SunspecReader=err%
+  EXIT FUNCTION
+ ENDIF
+ ' Expect sunspec magic
+ sun$=conv("u32/bbe",&H053756e53)+conv("u16/bbe",&H0001)
+ IF rSun$<>sun$ THEN
+  SunspecReader=-100
+  EXIT FUNCTION
+ ENDIF
+
+ 
+ ' Check manufacturer
+ err%=mbFunc(itf$,slv%,3,40005-1,16,rMan$,500)
+ IF err% THEN
+  SunspecReader=err%
+  EXIT FUNCTION
+ ENDIF
+
+ ' Read from long to start manufacturer names
+ IF mid$(rMan$,1,10)="SolarEdge" THEN
+ ELSEIF mid$(rMan$,1,7)="Fronius" THEN
+ ELSEIF mid$(rMan$,1,3)="SMA" THEN
+ ELSE
+  ' Manufacturer not supported yet
+  SunspecReader=-101
+  EXIT FUNCTION  
+ ENDIF
+ 
  IF type = 0 THEN 'SOLAREDGE SUNSPEC
  ' Technical Note - SunSpec Logging in SolarEdge Inverters, 
  ' Protocol page 6
@@ -81,61 +115,6 @@ SUB SunspecReader ( type, slv, kW, kWh, opst )
 	ModbusFC3Read slv, 40118-1, opst
 
  ENDIF 
-END SUB
-' ** Read a modbus register with function 3
-SUB ModbusFC3Read ( slv, register, value )
-    ' convert the register number to hex string and fill it up with 0 at the start for 4 chars
-	regs$=hex$(register)
-	regs$=string$(4-len(regs$),"0")+regs$
-	msg$=CHR$(slv)+CHR$(&H03)+CHR$(val("&H"+left$(regs$,2)))+CHR$(val("&H"+right$(regs$,2)))+CHR$(&H00)+CHR$(&H01)
-	crc$=CRCCalc$(0,msg$)
-	req$=msg$+crc$
-	num=RS485Write(req$)
-	n=1000
-	DO
-	 num=RS485Rq
-	 if num<7 then Pause 1
-	 n=n-1
-	LOOP UNTIL num>=7 OR n=0
-	rsp$=RS485Read$(RS485Rq)
-	if n > 0 then
-		value=peek(VAR rsp$,4)*256+peek(VAR rsp$,5)
-	else	
-		Hexdump rsp$, out$
-		print "modbus problem " len(rsp$)  "hex " out$
-		value = 0
-	endif
-END SUB
-' ** Convert scale factor to multiplier
-SUB SunSpecScale ( sf, factor )
-if sf < 10 then 
-factor = 10^sf
-elseif sf > 65525 then
- factor = 10^(sf-65536)
-else
- factor= 1
-endif
-END SUB
-' ** Convert the readout of two 16bit registers into a float value
-SUB ModbusFloat32 ( hi, lo, value )
-	e=hi/128
-	m=((hi mod 127)*65535.0)+lo
-	if e >= 256 then 
-		s=-1.0
-		e=e-256
-	else
-		s=1.0
-	endif
-	' we ignore infinity and other stuff
-	e=e-127
-	value=s*m*(2^e)
-END SUB
-' ** Dump a string in hex 
-SUB Hexdump ( msg$, out$ )
-	out$=""
-	for i = 1 TO len(msg$)
-	h$=hex$(peek(VAR msg$,i))
-	if len(h$) = 1 then h$="0"+h$
-	 out$=out$+h$
-	next i 
-END SUB
+END FUNCTION
+
+' Modbus library goes here
