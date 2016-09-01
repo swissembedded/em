@@ -21,32 +21,51 @@ START:
 	PAUSE 5000
 GOTO start
 ' Sunspec reader for Solaredge, SMA, Fronius
-FUNCTION SunspecReader ( itf%, slv%, pNum%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, Tdc, Status%, Code% )
- LOCAL err%, rSun$, sun$, rRsp$, Iacsf, Uacsf, Pacsf, Facsf, VAsf, VARsf, PFsf, Esf, Idcsf, Udcsf, Pdcsf, Tsf
+FUNCTION SunspecReader ( itf%, slv%, iMan$, iMod$, iVer$, iSer$, pNum%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, Tdc, Status%, Code% )
+ LOCAL err%, base%, sun$, rRsp$, ln%,Iacsf, Uacsf, Pacsf, Facsf, VAsf, VARsf, PFsf, Esf, Idcsf, Udcsf, Pdcsf, Tsf
  ' Pls see the referenced document below for manufacturer dependent registers
  ' Check common sunspec registers
- err%=mbFunc(itf$,slv%,3,40001-1,3,rSun$,500)
+ ' Free documents SunSpec-EPRI-CA-Rule-21-Interface-Profile, SunSpec-Inverter-Models-12020 and
+ ' SunSpec-Information-Models-12041
+ ' we try 40001, 50001 and 00001
+ base%=40001
+ err%=mbFunc(itf$,slv%,3,base%-1,4,rRsp$,500)
  IF err% THEN
-  SunspecReader=err%
-  EXIT FUNCTION
+  ' Base not working try next
+  base%=50001
+  err%=mbFunc(itf$,slv%,3,base%-1,4,rRsp$,500)
+  IF err% THEN
+   base%=1
+   err%=mbFunc(itf$,slv%,3,base%-1,4,rRsp$,500)
+   IF err% THEN
+    ' We finally give up
+    SunspecReader=err%
+    EXIT FUNCTION
+   ENDIF  
+  ENDIF  
  ENDIF
- ' Expect sunspec magic
+ 
+ 
+ ' Expect SunSpec "SunS" magic and Common Model Block (1)  
+ ' Block is at least 65 registers
  sun$=conv("u32/bbe",&H053756e53)+conv("u16/bbe",&H0001)
- IF rSun$<>sun$ THEN
+ ln%=conv("bbe/u16",right$(rRsp$,2))
+ IF left$(rRsp$,3)<>sun$ OR ln%<65 THEN
   SunspecReader=-100
   EXIT FUNCTION
  ENDIF
-
  
- ' Check manufacturer
- err%=mbFunc(itf$,slv%,3,40005-1,16,rMan$,500)
+ ' Common Model Block is common for all models  
+ ' Parse manufacturer, Model, Version, SerialNumer
+ err%=mbFunc(itf$,slv%,3,base%+4-1,32,iMan$,500) OR mbFunc(itf$,slv%,3,base%+20-1,32,iMod$,500) OR mbFunc(itf$,slv%,3,base%+44-1,16,iVer$,500) OR mbFunc(itf$,slv%,3,base%+52-1,32,iSer$,500)
  IF err% THEN
   SunspecReader=err%
   EXIT FUNCTION
  ENDIF
 
+ ' Now we iterate through the blocks
+ 
  ' Read from long to start manufacturer names
- IF mid$(rMan$,1,10)="SolarEdge" THEN
  ' Technical Note - SunSpec Logging in SolarEdge Inverters, 
   err%=mbFunc(itf$,slv%,3,40070-1,40,rRsp$,500)
   IF err% THEN
@@ -88,13 +107,6 @@ FUNCTION SunspecReader ( itf%, slv%, pNum%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, 
   ' 4=inverter on, power production
   Status%=conv("bbe/u16",mid$(rRsp$,73,2))
   Code%=conv("bbe/u16",mid$(rRsp$,71,2))
- ELSEIF mid$(rMan$,1,7)="Fronius" THEN
- ELSEIF mid$(rMan$,1,3)="SMA" THEN
- ELSE
-  ' Manufacturer not supported yet
-  SunspecReader=-101
-  EXIT FUNCTION  
- ENDIF
  
  IF type = 0 THEN 'SOLAREDGE SUNSPEC
  ' Technical Note - SunSpec Logging in SolarEdge Inverters
