@@ -111,14 +111,14 @@ FUNCTION SunspecReader ( itf%, slv%, iMan$, iMod$, iVer$, iSer$, pNum%, Iac1, Ia
   IF id% = 1 THEN
    ' Common Model Block is common for all models  
    ' Parse manufacturer, Model, Version, SerialNumer
-   err%=mbFunc(itf$,slv%,3,base%+4-1,32,iMan$,500) OR mbFunc(itf$,slv%,3,base%+20-1,32,iMod$,500) OR mbFunc(itf$,slv%,3,base%+44-1,16,iVer$,500) OR mbFunc(itf$,slv%,3,base%+52-1,32,iSer$,500)
+   err%=mbFunc(itf$,slv%,3,base%+4-1,ln%,iMan$,500) OR mbFunc(itf$,slv%,3,base%+20-1,32,iMod$,500) OR mbFunc(itf$,slv%,3,base%+44-1,16,iVer$,500) OR mbFunc(itf$,slv%,3,base%+52-1,32,iSer$,500)
    IF err% THEN
     SunspecReader=err%
     EXIT FUNCTION
    ENDIF
   ELSEIF id%=101 OR id%=102 OR id% = 103 THEN  
    ' Sunspec Inverter Modbus Map
-   err%=mbFunc(itf$,slv%,3,base%+2-1,40,rRsp$,500)
+   err%=mbFunc(itf$,slv%,3,base%+2-1,ln%,rRsp$,500)
    IF err% THEN
     SunspecReader=err%
     EXIT FUNCTION
@@ -161,7 +161,7 @@ FUNCTION SunspecReader ( itf%, slv%, iMan$, iMod$, iVer$, iSer$, pNum%, Iac1, Ia
    EXIT FUNCTION
   ELSEIF id%=111 OR id%=112 OR id% = 113 THEN 
    ' Sunspec Inverter Modbus Map (float, Fronius Style)
-   err%=mbFunc(itf$,slv%,3,base%+2-1,40,rRsp$,500)
+   err%=mbFunc(itf$,slv%,3,base%+2-1,ln%,rRsp$,500)
    IF err% THEN
     SunspecReader=err%
     EXIT FUNCTION
