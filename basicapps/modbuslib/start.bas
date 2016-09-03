@@ -119,9 +119,7 @@ END FUNCTION
 ' tmo%  Timeout in ms
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
-
  LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$, n%, con%, err%, trans%
-
  ' parse if$ for either RTU, TCP on RS485 or ETH 
  prot$=split$(0,itf$,":")
  interf$=split$(1,itf$,":")
@@ -130,7 +128,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
  ' add framing
  IF prot$ = "RTU" THEN
   msg$=CHR$(slv%)+rq$
-  req$=msg$+CRCCalc$(0,msg$) ' CRC16
+  req$=msg$+CRC$(0,msg$) ' CRC16
  ELSE
   trans% = Ticks() and &HFFFF
   tn$=conv("u16/bbe", trans%)
@@ -139,9 +137,14 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
  ENDIF
  
  IF interf$="RS485" THEN
-  ' Send it over rs485
+  ' Send it over rs485  
+  pause(1000.0*3.5*12.0/SYS.Get("rs485", "baud")+1)
+  DO WHILE RS485Read(1,0) >=0
+  LOOP
   n%=RS485Write(req$)
-  rsp$=RS485Reads(rpl%+3,tmo%)
+  pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
+  rsp$=RS485Read$(rpl%+3,tmo%)
+  pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
   mbLog(interf$,req$,rsp$,"RS485")
  ELSE
   ' Send it over ethernet
@@ -165,7 +168,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    ' Size fits exception
    IF asc(mid$(rsp$,1,1))=slv% AND asc(mid$(rsp$,2,1))=(fnc% OR &H80) THEN
     ' This is an exception
-    IF CRCCalc$(0,mid$(rsp$,2,2)<>mid$(rsp$,2,2) THEN
+    IF CRC$(0,left$(rsp$,len(rsp$)-2))<>mid$(rsp$,2,2) THEN
 	 ' Checksum bad
 	 mbCom=-31
 	 EXIT FUNCTION
@@ -184,13 +187,13 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    ' check slv address must match
    mbCom=-33
    EXIT FUNCTION
-  ELSE IF CRCCalc$(0,mid$(rsp$,2,rpl%)<>right$(rsp$,2) THEN
-   ' Checksum bad
+  ELSE IF CRC$(0,left$(rsp$,len(rsp$)-2))<>right$(rsp$,2) THEN
+   ' Checksum bad   
    mbCom=-34
    EXIT FUNCTION
   ENDIF
   ' cut the response data out
-  rp$=mid$(rsp$,len(rp$)-py%,py%)
+  rp$=mid$(rsp$,len(rsp$)-2-py%+1,py%)
  ELSE
   ' Check if this is an exception  
   IF len(rsp$) = 9 THEN
@@ -226,24 +229,24 @@ END FUNCTION
 ' print a modbus telegram on the console
 '----------------------------------------
 SUB mbLog(itf$,tx$,rx$,msg$)
- LOCAL s$, h$, i
+ LOCAL s$, h$, i, srx$, stx$
  
- s$=msg$+":"+itf$+" tx:"
+ s$=msg$+":"+itf$
+ stx$="tx:"
  FOR i=1 TO len(tx$)
   h$=hex$(asc(mid$(tx$,i,1)))
   IF len(h$) = 1 THEN 
    h$="0"+h$
   ENDIF
-  s$=s$+h$
+  stx$=stx$+h$
  NEXT
- print s$
- s$=" rx:"
+ srx$="rx:"
  FOR i=1 TO LEN(rx$)
    h$=hex$(asc(mid$(rx$,i,1)))
    IF len(h$) = 1 THEN 
     h$="0"+h$
    ENDIF
-  s$=s$+h$
+  srx$=srx$+h$
  NEXT
- PRINT s$
+ PRINT s$ " " stx$ " " srx$
 END SUB

@@ -3,15 +3,15 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' Phoenix EV electric car charger with excess energy over modbus TCP and RTU
 ' Testet with Wallb-e Pro
-SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
-kW=0.0
-slv%=180
-itf$="TCP:192.168.0.114:502"
-start:
- PhoenixEV(itf$,slv%,kW,st%)
- print "Phoenix " st%
- pause 30000
- goto start
+'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
+'kW=0.0
+'slv%=180
+'itf$="TCP:192.168.0.114:502"
+'start:
+' err%=PhoenixEV(itf$,slv%,kW,st%)
+' print "Phoenix " err% st%
+' pause 30000
+' goto start
  
 ' Phoenix EV electric car charger controller
 ' This function must be called at least every 60 seconds,
@@ -19,13 +19,14 @@ start:
 ' slv% slave address of charger (default 180)
 ' kW home energy at energy meter neg. value = excess energy
 ' st% device status
-SUB PhoenixEV(itf$,slv%,kW,st%)
+FUNCTION PhoenixEV(itf$,slv%,kW,st%)
+ LOCAL err%, reG$, reD$, reC$, reR$
  ' Read EV Status
  err%= mbFunc(itf$,slv%,4,100,8,reG$,500) OR mbFunc(itf$,slv%,2,200,8,reD$,500) OR mbFunc(itf$,slv%,3,300,2,reC$,500) OR mbFunc(itf$,slv%,1,400,16,reR$,500)
- if err% then
-  print "EV error on read"
-  exit sub
- end if
+ IF err% THEN
+  PhoenixEV=err%
+  EXIT FUNCTION
+ ENDIF
  ' Status 
  eS$=mid$(reG$,2,1)
  ' Proximity charge current in A
@@ -82,4 +83,5 @@ SUB PhoenixEV(itf$,slv%,kW,st%)
   case else  
    ' Unknown status
  end select
-END SUB
+ PhoenixEV=0
+END FUNCTION
