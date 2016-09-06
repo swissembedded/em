@@ -10,6 +10,11 @@ start:
  print "Soladin " err% slv%
  err%=MastervoltInfo(slv%,iId%,iVer%,iDate%)
  print "Soladin " err% slv% iId% iVer% iDate%
+ err%=MastervoltStatistic(slv%, iFlags%, Udc, Idc, Fac, Uac, Pac, Eac, Td, Top)
+ print "Soladin " err% iFlags% Udc Idc Fac Uac Pac Eac Td Top
+ err%=MastervoltMaxPower(slv%,Pac)
+ print "Soladin " err% Pac
+ 'err%=MastervoltResetMaxPower(slv%)
  pause 30000
  goto start
 
@@ -26,7 +31,7 @@ FUNCTION MastervoltProbe(addr%)
   EXIT FUNCTION
  ENDIF 
  ' No clue about multiple devices on the bus
- addr%=conv("bbe/u16",mid$(rsp$,3,2))
+ addr%=conv("ble/u16",mid$(rsp$,3,2))
  MastervoltProbe=0
 END FUNCTION
 
@@ -45,13 +50,88 @@ FUNCTION MastervoltInfo(addr%, iId%, iVer%, iDate%)
   MastervoltInfo=err% 
   EXIT FUNCTION
  ENDIF 
- ' No clue about multiple devices on the bus
- iId%=conv("bbe/u16",mid$(rsp$,14,2))
- iVer%=conv("bbe/u16",mid$(rsp$,16,2))
- iDate%=conv("bbe/u16",mid$(rsp$,18,2))
+ iId%=conv("ble/u16",mid$(rsp$,14,2))
+ iVer%=conv("ble/u16",mid$(rsp$,16,2))
+ iDate%=conv("ble/u16",mid$(rsp$,18,2))
  MastervoltInfo=0
 END FUNCTION
 
+' Mastervolt Soladin Device Statistic
+' addr%    Inverter address 
+' iFlags%  Inverter flags
+'          1=Udc too high
+'          2=Udc too low
+'          4=No grid
+'          8=Uac too high
+'       &H10=Uac too low
+'       &H20=Frequency AC too high
+'       &H40=Frequency AC too low
+'       &H80=Temperature too high
+'      &H100=Hardware failure
+'      &H200=Starting
+'      &H400=Max power (limit)
+'      &H800=Max current (limit)
+' Udc      Inverter DC voltage
+' Idc      Inverter DC current
+' Fac      Grid AC frequency
+' Uac      Inverter AC voltage
+' Pac      Inverter AC power [kW]
+' Eac      Inverter AC Energy [kWh]
+' Td       Inverter Device Temperature
+' Top      Operation time [hours]
+' return   < 0 on error
+TX: 11 00 00 00 B6 00 00 00 C7
+RX: 00 00 11 00 B6 F3 00 00 04 03 35 00 8A 13 F4 00 00 00 24 00 90 0B 00 1F DB BC 01 00 00 00 FD
+FUNCTION MastervoltStatistic(addr%, iFlags%, Udc, Idc, Fac, Uac, Pac, Eac, Td, Top)
+ LOCAL err%, rsp$ 
+ err%=MastervoltTransfer(addr%,0, &HB6, 31, rsp$)
+ IF err% <0 THEN
+  MastervoltStatistic=err% 
+  EXIT FUNCTION
+ ENDIF 
+ iFlags%=conv("ble/u16",mid$(rsp$,7,2))
+ Udc=conv("ble/u16",mid$(rsp$,9,2))/10.0
+ Idc=conv("ble/u16",mid$(rsp$,11,2))/100.0
+ Fac=conv("ble/u16",mid$(rsp$,13,2))/100.0
+ Uac=conv("ble/u16",mid$(rsp$,15,2))
+ Pac=conv("ble/u16",mid$(rsp$,19,2))/1000.0
+ Eac=conv("ble/u32",mid$(rsp$,21,3)+chr$(0))
+ Td=asc(mid$(rsp$,24,1))
+ Top=conv("ble/u16",mid$(rsp$,25,4))/60.0
+ MastervoltStatistic=0
+END FUNCTION
+
+' Mastervolt Soladin Read Maximum Power
+' addr%    Inverter address 
+' Pac     Inverter maximum power [kW]
+' return   < 0 on error
+' TX: 11 00 00 00 B9 00 00 CA
+' RX: 00 00 11 00 B9 F3 00 00 20 00 00 00 1B 00 21 00 22 00 00 00 E5 02 7E 48 36 00 00 00 00 00 1E
+FUNCTION MastervoltMaxPower(addr%, Pac)
+ LOCAL err%, rsp$ 
+ err%=MastervoltTransfer(addr%,0, &HB9, 31, rsp$)
+ IF err% <0 THEN
+  MastervoltMaxPower=err% 
+  EXIT FUNCTION
+ ENDIF 
+ Pac%=conv("ble/u16",mid$(rsp$,25,2)) / 1000.0
+ MastervoltMaxPower=0
+END FUNCTION
+
+' Mastervolt Soladin Reset Maximum Power
+' addr%    Inverter address 
+' return   < 0 on error
+' TX: 11 00 00 00 97 01 00 00 A9
+' RX: 00 00 11 00 97 01 00 00 A9
+FUNCTION MastervoltResetMaxPower(addr%)
+ LOCAL err%, rsp$ 
+ err%=MastervoltTransfer(addr%,0, &H97, 9, rsp$)
+ IF err% <0 THEN
+  MastervoltResetMaxPower=err% 
+  EXIT FUNCTION
+ ENDIF 
+ MastervoltResetMaxPower=0
+END FUNCTION
 
 ' Mastervolt Soladin data transfer
 ' sAddr% Source Address (typically 0)
