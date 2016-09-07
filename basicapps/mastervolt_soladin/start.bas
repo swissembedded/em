@@ -15,6 +15,8 @@ start:
  err%=MastervoltMaxPower(slv%,Pac)
  print "Soladin " err% Pac
  'err%=MastervoltResetMaxPower(slv%)
+ err%=MastervoltHistory(slv%,0,Eac, Top)
+ print "Soladin " err% Eac Top
  pause 30000
  goto start
 
@@ -95,7 +97,7 @@ FUNCTION MastervoltStatistic(addr%, iFlags%, Udc, Idc, Fac, Uac, Pac, Eac, Td, T
  Fac=conv("ble/u16",mid$(rsp$,13,2))/100.0
  Uac=conv("ble/u16",mid$(rsp$,15,2))
  Pac=conv("ble/u16",mid$(rsp$,19,2))/1000.0
- Eac=conv("ble/u32",mid$(rsp$,21,3)+chr$(0))
+ Eac=conv("ble/u32",mid$(rsp$,21,3)+chr$(0))*100.0
  Td=asc(mid$(rsp$,24,1))
  Top=conv("ble/u16",mid$(rsp$,25,4))/60.0
  MastervoltStatistic=0
@@ -133,6 +135,26 @@ FUNCTION MastervoltResetMaxPower(addr%)
  MastervoltResetMaxPower=0
 END FUNCTION
 
+' Mastervolt Soladin History Data
+' addr%    Inverter address
+' dHist%   History, 0=today, 1=yesterday...9=9days before today
+' Eac      Energie Production (kWh)
+' Top      Daily operation time (hours) 
+' return   < 0 on error
+' TX: 11 00 00 00 9A 00 00 AB
+' RX: 00 00 11 00 9A 54 05 04
+FUNCTION MastervoltHistory(addr%,dHist%,Eac, Top)
+ LOCAL err%, rsp$ 
+ err%=MastervoltTransfer(addr%,0, &H9A+(dHist%*256), 8, rsp$)
+ IF err% <0 THEN
+  MastervoltHistory=err% 
+  EXIT FUNCTION
+ ENDIF 
+ Top=asc(mid$(rsp$,5,1))*5.0/60.0
+ Eac=conv("ble/u16",mid$(rsp$,6,2)) * 100.0
+ MastervoltHistory=0
+END FUNCTION
+
 ' Mastervolt Soladin data transfer
 ' sAddr% Source Address (typically 0)
 ' dAddr% Destination Address
@@ -144,7 +166,11 @@ FUNCTION MastervoltTransfer(sAddr%, dAddr%, cmd%,rspl%, rsp$)
  ' Send it over rs485    
  DO WHILE RS485Read(1,0) >=0
  LOOP
- dta$=conv("u16/ble",sAddr%)+conv("u16/ble",dAddr%)+chr$(cmd%)+chr$(0)+chr$(0)+chr$(0)
+ dta$=conv("u16/ble",sAddr%)+conv("u16/ble",dAddr%)+conv("u16/ble",cmd%)+chr$(0)
+ ' Some commands are 8 some are 9 bytes long
+ IF cmd%=&HC1 OR cmd%=&HB4 OR cmd%=B6 THEN
+  dta$=dta$+chr$(0)
+ ENDIF
  s%=0
  for i=1 to len(dta$)
   s%=s%+asc(mid$(dta$,i,1))
