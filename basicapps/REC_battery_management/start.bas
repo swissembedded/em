@@ -8,9 +8,38 @@ slv%=1
 itf$="RS485:1"
 
 start:
+ err%=RecMainData(itf$,slv%,UCmin, UCmax, Ibat, Tmax, Ubat, SoC, SoH)
+ print "RecMainData " err% UCmin UCmax Ibat Tmax Ubat SoC SoH
  pause 30000
  goto start
 
+' REC BMS Main Data
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' UCmin  Min cell voltage
+' UCmax  Max cell voltage
+' Ibat   Battery current
+' Tmax   Battery maximal temperature
+' Ubat   Battery voltage
+' SoC   Battery state of charge
+' SoH   Battery state of health
+ FUNCTION RecMainData(itf$,slv%,UCmin, UCmax, Ibat, Tmax, Ubat, SoC, SoH)
+  LOCAL err%,rp$  
+  err%=RecTransfer(itf$,slv%,"LCD1?",rp$,1000)
+  IF err% OR (len(rp$)<>(5+7*4)) OR (asc(mid$(rp$,3,1))!=28) THEN
+   RecMainData=err%
+   EXIT FUNCTION
+  ENDIF
+  UCmin=conv("ble/f32", mid$(rp$,4,4))
+  UCmax=conv("ble/f32", mid$(rp$,8,4))
+  Ibat=conv("ble/f32", mid$(rp$,12,4))
+  Tmax= conv("ble/f32", mid$(rp$,16,4))
+  Ubat=conv("ble/f32", mid$(rp$,20,4))
+  SoC=conv("ble/f32", mid$(rp$,24,4))
+  SoH=conv("ble/f32", mid$(rp$,28,4))
+  RecMainData=0
+ END FUNCTION
+ 
 ' REC BMS Data Transfer
 ' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' slv%  Slave Address
