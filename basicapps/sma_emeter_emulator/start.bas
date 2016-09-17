@@ -4,26 +4,26 @@
 ' SMA energy meter emulator EMDO example
 ' Documentation http://www.sma.de/fileadmin/content/global/Partner/Documents/SMA_Labs/EMETER-Protokoll-TI-en-10.pdf
 
-server$="192.168.3.2"
+server$="239.12.255.254"
 susyid%=&H010E
 serno%=&H0102
 kWh1=0.0
 kWh2=0.0
 start:
  ts%=Ticks()
- err%=SMAEnergyMeter(server$, susyid%, serno% ,ts%,kWh1,kWh2)
+ err%=SMAEnergyMeterData(server$, susyid%, serno% ,ts%,kWh1,kWh2)
  print "SMA " err% kWh1 kWh2
  kWh1=kWh1+1.0
  kWh2=kWh2+1.0
  pause 30000
  goto start
 
-' SMA energy meter emulator
+' SMA energy meter data emulator
 ' id$ energy meter identifier string
 ' ts% timestamp [ms]
 ' kWh1 energy consumed from grid 
 ' kWh2 energy feed into grid
-FUNCTION SMAEnergyMeter(server$,susyid%, serno% ,ts%,kWh1,kWh2)
+FUNCTION SMAEnergyMeterData(server$,susyid%, serno% ,ts%,kWh1,kWh2)
  LOCAL id$,msg$, con%,num%
  ' id, idlen, tag, group, length two entries,tag, protocol id
  id$="SMA"+CHR$(0)
@@ -38,15 +38,15 @@ FUNCTION SMAEnergyMeter(server$,susyid%, serno% ,ts%,kWh1,kWh2)
  msg$=msg$+chr$(0)+chr$(0)+chr$(0)+chr$(0)
  con%=SocketClient( 0, server$, 9522 )
  IF con% < 0 THEN
-  SMAEnergyMeter=con%
+  SMAEnergyMeterData=con%
   EXIT FUNCTION
  ENDIF
  num%=SocketWrite( con%, msg$ )
  IF num%<>len(msg$) THEN
-  SMAEnergyMeter=-1
+  SMAEnergyMeterData=-1
   num%=SocketClose( con% )
   EXIT FUNCTION
  ENDIF 
  num%=SocketClose( con% ) 
- SMAEnergyMeter=0
+ SMAEnergyMeterData=0
 END FUNCTION
