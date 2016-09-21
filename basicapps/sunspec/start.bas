@@ -10,6 +10,7 @@
 ' SunSpec-EPRI-Rule21-Interface-Profile
 ' Fronius Datamanager TCP & RTU
 ' SMA SunSpec Modbus Schnittstelle
+' Kaco Modbus Protocol - Application Note -
 ' Technical Note SunSpec Logging in Solaredge Inverters
 SYS.Set "rs485", "baud=115200 data=8 stop=1 parity=n term=1"
 itf$="RTU:RS485:1"
@@ -155,7 +156,7 @@ END FUNCTION
 ' T4    Temperature 4 (other)
 ' Status% Device Status
 '  Solaredge only supports 1,2,4:
-'  Fronius/SMA all:
+'  Fronius/SMA/Kaco all:
 '  1=off
 '  2=auto shutdown
 '  3=starting
