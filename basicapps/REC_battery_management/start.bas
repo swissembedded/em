@@ -10,10 +10,12 @@ itf$="RS485:1"
 start:
  err%=RecMainData1(itf$,slv%,UCmin, UCmax, Ibat, Tmax, Ubat, SoC, SoH)
  print "RecMainData " err% UCmin UCmax Ibat Tmax Ubat SoC SoH
+ err%=RecMainData3(itf$,slv%,, minBMSa, minBMSn, maxBMSa, maxBMSn, maxtBMSa, maxtBMSn, Ah)
+ print "RecMainData " err% minBMSa minBMSn maxBMSa maxBMSn maxtBMSa maxtBMSn Ah
  pause 30000
  goto start
 
-' REC BMS Main Data
+' REC BMS Main Data 1
 ' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' slv%  Slave Address
 ' UCmin Min cell voltage
@@ -27,7 +29,7 @@ start:
   LOCAL err%,rp$  
   err%=RecTransfer(itf$,slv%,"LCD1?",rp$,1000)
   '*** NOTE: i dont know if it receive the instruction+values or only values. I assume it only values
-  IF err% OR (len(rp$)<>(3+7*4)) OR (asc(mid$(rp$,3,1))!=28) THEN
+  IF err% OR (len(rp$)<>(3+7*4)) THEN
    RecMainData1=err%
    EXIT FUNCTION
   ENDIF
@@ -38,26 +40,34 @@ start:
   Ubat =conv("ble/f32", mid$(rp$,20,4))
   SoC  =conv("ble/f32", mid$(rp$,24,4))
   SoH  =conv("ble/f32", mid$(rp$,28,4))
-  RecMainData=0
+  RecMainData1=0
  END FUNCTION
  
- FUNCTION RecMainData3(itf$,slv%, minBMSa$, minBMSn$, maxBMSa$, maxBMSn$, maxtBMSa$, maxtBMSn$, msb$, lsb$)
+' REC BMS Main Data 3
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' minBMSa min cell BMS address
+' minBMSn min cell number
+' maxBMSa max cell BMS address
+' maxBMSn max cell number
+' maxtBMSa max temperature sense BMS address
+' maxtBMSn max temperature sense number
+' Ah Ampere hours
+ FUNCTION RecMainData3(itf$,slv%, minBMSa, minBMSn, maxBMSa, maxBMSn, maxtBMSa, maxtBMSn, Ah)
   LOCAL err%,rp$  
   err%=RecTransfer(itf$,slv%,"LCD3?",rp$,1000)
-  '*** NOTE: i dont know if it receive the instruction+values or only values. I assume it only values
-  IF err% OR (len(rp$)<>(3+8)) OR (asc(mid$(rp$,3,1))!=8) THEN
+  IF err% OR (len(rp$)<>(3+8)) THEN
    RecMainData3=err%
    EXIT FUNCTION
   ENDIF
-  minBMSa$  = mid$(rp$, 4,1)
-  minBMSn$  = mid$(rp$, 5,1)
-  maxBMSa$  = mid$(rp$, 6,1)
-  maxBMSn$  = mid$(rp$, 7,1)
-  maxtBMSa$ = mid$(rp$, 8,1)
-  maxtBMSn$ = mid$(rp$, 9,1)
-  msb$      = mid$(rp$,10,1)
-  lsb$      = mid$(rp$,11,1)
-  RecMainData=0
+  minBMSa  = asc(mid$(rp$, 4,1))
+  minBMSn  = asc(mid$(rp$, 5,1))
+  maxBMSa  = asc(mid$(rp$, 6,1))
+  maxBMSn  = asc(mid$(rp$, 7,1))
+  maxtBMSa = asc(mid$(rp$, 8,1))
+  maxtBMSn = asc(mid$(rp$, 9,1))
+  Ah        = conv("bbe/u16",mid$(rp$,10,2))
+  RecMainData3=0
  END FUNCTION
  
 ' REC BMS Data Transfer
