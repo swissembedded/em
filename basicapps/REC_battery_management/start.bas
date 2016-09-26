@@ -129,12 +129,12 @@ FUNCTION RecError(itf$,slv%,cmd$,errNum%)
  RecError=0
 END FUNCTION
 
-' REC BMS Error 
+' REC BMS Get/Set  a Byte Value
 ' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' slv%  Slave Address
 ' intr$    Request send to the BMS
 ' cmd$   "GET"/"SET"
-' errNum% error number (1-13) in
+' value% Byte value to GET/SET
 FUNCTION RecByteValue(itf$,slv%,intr$,cmd$,value%)
  LOCAL err%,rp$
  if cmd$="GET"
