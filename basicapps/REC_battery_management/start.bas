@@ -15,6 +15,24 @@ start:
  pause 30000
  goto start
 
+' REC BMS Identification 
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+'if err%=0 then Identification is sucefull("REC - BATERY MANAGEMENT SYSTEM"). 
+ FUNCTION RecIdentification(itf$,slv%)
+  LOCAL err%,rp$
+  err%=RecTransfer(itf$,slv%,"*IDN?",rp$,1000)
+  IF err%
+   RecIdentification=err%
+   EXIT FUNCTION
+  ENDIF
+  IF (rp$<>"REC - BATERY MANAGEMENT SYSTEM") THEN
+   RecIdentification=-4
+   EXIT FUNCTION
+  ENDIF
+  RecIdentification=0
+ END FUNCTION
+ 
 ' REC BMS Main Data 1
 ' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' slv%  Slave Address
@@ -70,6 +88,110 @@ start:
   RecMainData3=0
  END FUNCTION
  
+' REC BMS GetError 
+' itf$    Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%    Slave Address
+' isErr%  0 – no error; 1 – error
+' bms%    BMS unit
+' errNum% error number (1-13) in
+' idNum%  number of the cell, temp. sensor where the error occurred
+FUNCTION RecGetError(itf$,slv%,isErr%,bms%,errNum%,idNum%)
+ LOCAL err%,rp$
+ err%=RecTransfer(itf$,slv%,"ERRO?",rp$,1000)
+ IF err%
+  RecGetError=err%
+  EXIT FUNCTION
+ ENDIF
+ isErr%  = asc(mid$(rp$, 4,1))
+ bms%    = asc(mid$(rp$, 5,1))
+ errNum% = asc(mid$(rp$, 6,1))
+ idNum%  = asc(mid$(rp$, 7,1))
+ RecGetError= 0
+END FUNCTION
+
+' REC BMS Error 
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' cmd$   "GET"/"SET"
+' errNum% error number (1-13) in
+FUNCTION RecError(itf$,slv%,cmd$,errNum%)
+ LOCAL err%,rp$
+ if cmd$="GET"
+   err%=RecTransfer(itf$,slv%,"ERRD?",rp$,1000)
+ else if cmd$="SET"
+   err%=RecTransfer(itf$,slv%,"ERRD"+chr$(errNum%),rp$,1000)
+ else   
+ endif
+ IF err%
+  RecError=err%
+ EXIT FUNCTION
+ errNum% = asc(mid$(rp$, 4,1))
+ RecError=0
+END FUNCTION
+
+' REC BMS Error 
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' intr$    Request send to the BMS
+' cmd$   "GET"/"SET"
+' errNum% error number (1-13) in
+FUNCTION RecByteValue(itf$,slv%,intr$,cmd$,value%)
+ LOCAL err%,rp$
+ if cmd$="GET"
+   err%=RecTransfer(itf$,slv%,intr$,rp$,1000)
+ else if cmd$="SET"
+   err%=RecTransfer(itf$,slv%,intr$+chr$(value%),rp$,1000)
+ else   
+ endif
+ IF err%
+  RecByteValue=err%
+ EXIT FUNCTION
+ errNum% = asc(mid$(rp$, 4,1))
+ RecByteValue=0
+END FUNCTION
+
+' REC BMS Get/Set  a Integer Value
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' intr$    Request send to the BMS
+' cmd$   "GET"/"SET"
+' value% Integer value to GET/SET
+FUNCTION RecIntValue(itf$,slv%,intr$,cmd$,value%)
+ LOCAL err%,rp$
+ if cmd$="GET"
+   err%=RecTransfer(itf$,slv%,intr$,rp$,1000)
+ else if cmd$="SET"
+   err%=RecTransfer(itf$,slv%,intr$+conv("i16/ble", value%),rp$,1000)
+ else
+ endif
+ IF err%
+  RecIntValue=err%
+ EXIT FUNCTION
+ value=conv("ble/i16", mid$(rp$, 4,2))
+ RecIntValue=0
+END FUNCTION
+
+' REC BMS Get/Set  a Float Value
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' intr$    Request send to the BMS
+' cmd$   "GET"/"SET"
+' value Float value to GET/SET
+FUNCTION RecFloatValue(itf$,slv%,intr$,cmd$,value)
+ LOCAL err%,rp$
+ if cmd$="GET"
+   err%=RecTransfer(itf$,slv%,intr$,rp$,1000)
+ else if cmd$="SET"
+   err%=RecTransfer(itf$,slv%,intr$+conv("f32/ble", value),rp$,1000)
+ else
+ endif
+ IF err%
+  RecFloatValue=err%
+ EXIT FUNCTION
+ value=conv("ble/f32", mid$(rp$, 4,4))
+ RecFloatValue=0
+END FUNCTION
+
 ' REC BMS Data Transfer
 ' itf$   Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' dAdrr% Destination Address
