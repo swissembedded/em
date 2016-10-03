@@ -1,7 +1,7 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
-' REC battery management system
+' REC battery management system 4-16S
 ' Documentation available from manufacturer
 SYS.Set "rs485", "baud=56000 data=8 stop=1 parity=n"
 slv%=1
@@ -18,7 +18,7 @@ start:
 ' REC BMS Identification 
 ' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
 ' slv%  Slave Address
-'if err%=0 then Identification is sucefull("REC - BATERY MANAGEMENT SYSTEM"). 
+' return 0 if Identification equals("REC - BATERY MANAGEMENT SYSTEM")
  FUNCTION RecIdentification(itf$,slv%)
   LOCAL err%,rp$
   err%=RecTransfer(itf$,slv%,"*IDN?",rp$,1000)
@@ -46,7 +46,6 @@ start:
  FUNCTION RecMainData1(itf$,slv%,UCmin, UCmax, Ibat, Tmax, Ubat, SoC, SoH)
   LOCAL err%,rp$  
   err%=RecTransfer(itf$,slv%,"LCD1?",rp$,1000)
-  '*** NOTE: i dont know if it receive the instruction+values or only values. I assume it only values
   IF err% OR (len(rp$)<>(3+7*4)) THEN
    RecMainData1=err%
    EXIT FUNCTION
@@ -98,7 +97,7 @@ start:
 FUNCTION RecGetError(itf$,slv%,isErr%,bms%,errNum%,idNum%)
  LOCAL err%,rp$
  err%=RecTransfer(itf$,slv%,"ERRO?",rp$,1000)
- IF err%
+ IF err% THEN
   RecGetError=err%
   EXIT FUNCTION
  ENDIF
@@ -122,9 +121,10 @@ FUNCTION RecError(itf$,slv%,cmd$,errNum%)
    err%=RecTransfer(itf$,slv%,"ERRD"+chr$(errNum%),rp$,1000)
  else   
  endif
- IF err%
+ IF err% THEN 
   RecError=err%
- EXIT FUNCTION
+  EXIT FUNCTION
+ ENDIF 
  errNum% = asc(mid$(rp$, 4,1))
  RecError=0
 END FUNCTION
@@ -143,9 +143,10 @@ FUNCTION RecByteValue(itf$,slv%,intr$,cmd$,value%)
    err%=RecTransfer(itf$,slv%,intr$+chr$(value%),rp$,1000)
  else   
  endif
- IF err%
+ IF err% THEN
   RecByteValue=err%
- EXIT FUNCTION
+  EXIT FUNCTION
+ ENDIF
  errNum% = asc(mid$(rp$, 4,1))
  RecByteValue=0
 END FUNCTION
@@ -164,9 +165,10 @@ FUNCTION RecIntValue(itf$,slv%,intr$,cmd$,value%)
    err%=RecTransfer(itf$,slv%,intr$+conv("i16/ble", value%),rp$,1000)
  else
  endif
- IF err%
+ IF err% THEN
   RecIntValue=err%
- EXIT FUNCTION
+  EXIT FUNCTION
+ ENDIF
  value=conv("ble/i16", mid$(rp$, 4,2))
  RecIntValue=0
 END FUNCTION
@@ -185,9 +187,10 @@ FUNCTION RecFloatValue(itf$,slv%,intr$,cmd$,value)
    err%=RecTransfer(itf$,slv%,intr$+conv("f32/ble", value),rp$,1000)
  else
  endif
- IF err%
+ IF err% THEN
   RecFloatValue=err%
- EXIT FUNCTION
+  EXIT FUNCTION
+ ENDIF
  value=conv("ble/f32", mid$(rp$, 4,4))
  RecFloatValue=0
 END FUNCTION
