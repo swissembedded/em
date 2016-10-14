@@ -1,7 +1,7 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
-' Phoenix Contact EEM-MA200 and EEM-MA250 energy meter EMDO modbus example
+' Phoenix Contact EEM-MA250 (EEM-MA200 without modbus interface) energy meter EMDO modbus example
 ' See phoenix contact homepage at www.phoenixcontact.com under the product at the download section
 SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
 slv%=1
@@ -12,7 +12,7 @@ start:
  pause 30000
  goto start
 
-' Phoenix Contact energy meter EEM-MA200 and EEM-MA250
+' Phoenix Contact energy meter EEM-MA250
 ' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% Phoenix energy meter sdm630 slave address default 1 
 ' kW1-3 up to three phase power with sign, negative = excess power to grid
