@@ -119,8 +119,16 @@ END FUNCTION
 ' tmo%  Timeout in ms
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
+
  LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$, n%, con%, err%, trans%
- ' parse if$ for either RTU, TCP on RS485 or ETH 
+
+ ' rpl and py not checked for validity
+ IF rpl% < 0 OR py% < 0 OR py% > rpl% THEN
+     mbCom = -1
+     EXIT FUNCTION
+ ENDIF
+ 
+  ' parse if$ for either RTU, TCP on RS485 or ETH 
  prot$=split$(0,itf$,":")
  interf$=split$(1,itf$,":")
  num$=split$(2,itf$,":")
@@ -144,14 +152,12 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
   n%=RS485Write(req$)
   pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
   rsp$=RS485Read$(rpl%+3,tmo%)
-  pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
   mbLog(interf$,req$,rsp$,"RS485")
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
-   n%=SocketOption(con%,"SO_SNDTIMEO",tmo%)    
    n%=SocketWrite( con%, req$ )    
    rsp$=SocketRead$(con%,rpl%+7)
    n%=SocketClose( con% )
@@ -171,26 +177,30 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
     IF CRC$(0,left$(rsp$,len(rsp$)-2))<>mid$(rsp$,2,2) THEN
 	 ' Checksum bad
 	 mbCom=-31
+     mLogError "BAD CHECKSUM"
 	 EXIT FUNCTION
 	ENDIF 
 	' return exception code
-    print "Exception"
+    mLogError "EXCEPTION"
 	mbCom=-asc(mid$(rsp$,3,1))
 	EXIT FUNCTION
    ENDIF
   ENDIF
   ' Check if regular message
   IF len(rsp$)<(rpl%+3) THEN
-   mbCom=-32
-   EXIT FUNCTION
+    mbCom=-32
+    mLogError "SIZE NOT MATCH: "+Str$(len(rsp$))+" <> "+Str$(rpl%+3)
+    EXIT FUNCTION
   ELSE IF slv% <> asc(left$(rsp$,1)) THEN
-   ' check slv address must match
-   mbCom=-33
-   EXIT FUNCTION
+    ' check slv address must match
+    mbCom=-33
+    mLogError "ADDRESS NOT MATCH:"
+    EXIT FUNCTION
   ELSE IF CRC$(0,left$(rsp$,len(rsp$)-2))<>right$(rsp$,2) THEN
-   ' Checksum bad   
-   mbCom=-34
-   EXIT FUNCTION
+    ' Checksum bad   
+    mbCom=-34
+    mLogError "BAD CHECKSUM"
+    EXIT FUNCTION
   ENDIF
   ' cut the response data out
   rp$=mid$(rsp$,len(rsp$)-2-py%+1,py%)
@@ -200,23 +210,26 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    ' Size fits exception      
    IF left$(rsp$,2)=tn$ AND asc(mid$(rsp$,7,1))=slv% AND asc(mid$(rsp$,8,1))=(fnc% OR &H80) THEN
 	' return exception code
-    print "Exception"
-	mbCom=-asc(mid$(rsp$,9,1))	
-	EXIT FUNCTION
+     mLogError "EXCEPTION"
+	 mbCom=-asc(mid$(rsp$,9,1))	
+	 EXIT FUNCTION
    ENDIF
   ENDIF
   ' Check if regular message
   IF len(rsp$)<(rpl%+7) THEN
-   mbCom=-22
-   EXIT FUNCTION
+    mbCom=-22
+    mLogError "SIZE NOT MATCH:"
+    EXIT FUNCTION
   ELSE IF tn$ <> left$(rsp$,2) THEN
-   ' check slv address must match
-   mbCom=-23
-   EXIT FUNCTION
+    ' check slv address must match
+    mbCom=-23
+    mLogError "SLAVE ADDRESS NOT MATCH:"
+    EXIT FUNCTION
   ELSE IF slv% <> asc(mid$(rsp$,7,1)) THEN
-   ' check slv address must match
-   mbCom=-24
-   EXIT FUNCTION  
+    ' check slv address must match
+    mbCom=-24
+    mLogError "SLAVE ADDRESS NOT MATCH:"
+    EXIT FUNCTION  
   ENDIF
   ' cut the response data out
   rp$=right$(rsp$,py%)  
@@ -250,3 +263,9 @@ SUB mbLog(itf$,tx$,rx$,msg$)
  NEXT
  PRINT s$ " " stx$ " " srx$
 END SUB
+
+SUB mLogError(msg$)
+ PRINT "ERROR:", msg$
+ 'PAUSE 10000
+ 'ERROR "MODBUS RX ERROR"
+END SUB 
