@@ -7,6 +7,7 @@ SYS.Set "rs485", "baud=56000 data=8 stop=1 parity=n"
 slv%=1
 itf$="RS485:1"
 
+ DIM valArray(16) 
 start:
  err%=RecMainData1(itf$,slv%,UCmin, UCmax, Ibat, Tmax, Ubat, SoC, SoH)
  print "RecMainData " err% UCmin UCmax Ibat Tmax Ubat SoC SoH
@@ -147,7 +148,7 @@ FUNCTION RecByteValue(itf$,slv%,intr$,cmd$,value%)
   RecByteValue=err%
   EXIT FUNCTION
  ENDIF
- errNum% = asc(mid$(rp$, 4,1))
+ value% = asc(mid$(rp$, 4,1))
  RecByteValue=0
 END FUNCTION
 
@@ -193,6 +194,71 @@ FUNCTION RecFloatValue(itf$,slv%,intr$,cmd$,value)
  ENDIF
  value=conv("ble/f32", mid$(rp$, 4,4))
  RecFloatValue=0
+END FUNCTION
+
+' REC BMS Get several Float Values ()
+' itf$  Interface with string.Example "RS485:1" or "192.168.0.1:90"
+' slv%  Slave Address
+' intr$    Request send to the BMS (value: CELL?, PTEM?, RINT? or BTEM?)
+' count%   num of float values returned in valArray Variable
+FUNCTION RecFloatValuesArrays(itf$,slv%,intr$,count%)
+ LOCAL err%,rp$
+ err%=RecTransfer(itf$,slv%,intr$,rp$,1000)
+ IF err% THEN
+  RecFloatValuesArrays=err%
+  EXIT FUNCTION
+ ENDIF
+ count%=ASC(MID$(rp$, 3,1))
+ IF count% >=1 THEN
+ valArray(1)=conv("ble/f32", mid$(rp$, 4,4))
+ END IF
+ IF count% >=2 THEN
+ valArray(2)=conv("ble/f32", mid$(rp$, 8,4))
+ END IF
+ IF count% >=3 THEN
+ valArray(3)=conv("ble/f32", mid$(rp$, 12,4))
+ END IF
+ IF count% >=4 THEN
+ valArray(4)=conv("ble/f32", mid$(rp$, 16,4))
+ END IF
+ IF count% >=5 THEN
+ valArray(5)=conv("ble/f32", mid$(rp$, 20,4))
+ END IF
+ IF count% >=6 THEN
+ valArray(6)=conv("ble/f32", mid$(rp$, 24,4))
+ END IF
+ IF count% >=7 THEN
+ valArray(7)=conv("ble/f32", mid$(rp$, 28,4))
+ END IF
+ IF count% >=8 THEN
+ valArray(8)=conv("ble/f32", mid$(rp$, 32,4))
+ END IF
+ IF count% >=9 THEN
+ valArray(9)=conv("ble/f32", mid$(rp$, 36,4))
+ END IF
+ IF count% >=10 THEN
+ valArray(10)=conv("ble/f32", mid$(rp$,40,4))
+ END IF
+ IF count% >=11 THEN
+ valArray(11)=conv("ble/f32", mid$(rp$,44,4))
+ END IF
+ IF count% >=12 THEN
+ valArray(12)=conv("ble/f32", mid$(rp$,48,4))
+ END IF
+ IF count% >=13 THEN
+ valArray(13)=conv("ble/f32", mid$(rp$,52,4))
+ END IF
+ IF count% >=14 THEN
+ valArray(14)=conv("ble/f32", mid$(rp$,56,4))
+ END IF
+ IF count% >=15 THEN
+ valArray(15)=conv("ble/f32", mid$(rp$,60,4))
+ END IF
+ IF count% >=16 THEN
+ valArray(16)=conv("ble/f32", mid$(rp$,64,4))
+ END IF
+ 
+ RecFloatValuesArrays=0
 END FUNCTION
 
 ' REC BMS Data Transfer
