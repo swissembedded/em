@@ -12,16 +12,21 @@
 ' SMA SunSpec Modbus Schnittstelle
 ' Kaco Modbus Protocol - Application Note -
 ' Technical Note SunSpec Logging in Solaredge Inverters
-SYS.Set "rs485", "baud=115200 data=8 stop=1 parity=n term=1"
-itf$="RTU:RS485:1"
-slv%=1
-start:
- err%=SunspecCommon( itf$, slv%, iMan$, iMod$, iOpt$, iVer$, iSer$, iAddr%)
- print "Common" err% iMan$ iMod$ iOpt$, iVer$ iSer$ iAddr%
- err%=SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code% )
- print "Inverter" err% Iac1 Iac2 Iac3 Uac1 Uac2 Uac3 Pac Fac VA VAR PF E Idc Udc Pdc T1 T2 T3 T4 Status% Code%
- pause 30000
- goto start
+
+' Loading Modbus library, make sure it is installed on EMDO
+LIBRARY LOAD "modbus"
+
+'Some examples on usage:
+'SYS.Set "rs485", "baud=115200 data=8 stop=1 parity=n term=1"
+'itf$="RTU:RS485:1"
+'slv%=1
+'start:
+'err%=SunspecCommon( itf$, slv%, iMan$, iMod$, iOpt$, iVer$, iSer$, iAddr%)
+'print "Common" err% iMan$ iMod$ iOpt$, iVer$ iSer$ iAddr%
+'err%=SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code% )
+'print "Inverter" err% Iac1 Iac2 Iac3 Uac1 Uac2 Uac3 Pac Fac VA VAR PF E Idc Udc Pdc T1 T2 T3 T4 Status% Code%
+'pause 30000
+'goto start
 
 ' Sunspec Read block and check for magic
 ' itf$ Modbus Interface
@@ -31,10 +36,15 @@ start:
 FUNCTION SunspecMagic(itf$,slv%,bAddr%)
   LOCAL err%, rsp$
   err%=mbFunc(itf$,slv%,3,bAddr%-1,2,rsp$,1000)  
-  IF err% OR len(rsp$)<>4 THEN
-   SunspecMagic=err%
-   EXIT FUNCTION
+  IF err% THEN
+    SunspecMagic=err%    ' jho: this can result in return zero (Ok) in case of len(rsp$)<>4
+    EXIT FUNCTION
   ENDIF 
+  IF len(rsp$)<>4 THEN
+    SunspecMagic=-1
+    EXIT FUNCTION
+  ENDIF 
+
   ' Expect SunSpec "SunS" magic and Common Model Block (1)  
   ' Block is at least 65 registers                                                  
   IF conv("bbe/u32", rsp$)<> &H53756e53 THEN
@@ -289,4 +299,3 @@ SUB SunspecTrim(stg$)
  NEXT i
 END SUB
 
-' Modbus library comes here
