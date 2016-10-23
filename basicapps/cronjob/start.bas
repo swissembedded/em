@@ -11,6 +11,8 @@
 ' 17 6 * * * daily at 6:17
 ' 17 18 * * 5 is every friday at 18:17
 ' 0 0 1 * *  is monthly on the 1st
+' */5 * * * * every 5 minuts
+' * * * * 1 every monday
 
 ' start cron job every minute
 clid%=CrontabAdd("* * * * *")
