@@ -1,6 +1,8 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015 - 20116 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO sunspec library
+' @VERSION 1.0
 ' This example reads a sunspec compatible inverter over modbus
 ' Please make sure that the inverters RS485 interface 
 ' is configured correctly. If multiple inverters are connected on a serial
@@ -37,7 +39,7 @@ FUNCTION SunspecMagic(itf$,slv%,bAddr%)
   LOCAL err%, rsp$
   err%=mbFunc(itf$,slv%,3,bAddr%-1,2,rsp$,1000)  
   IF err% THEN
-    SunspecMagic=err%    ' jho: this can result in return zero (Ok) in case of len(rsp$)<>4
+    SunspecMagic=err% 
     EXIT FUNCTION
   ENDIF 
   IF len(rsp$)<>4 THEN

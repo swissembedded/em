@@ -2,7 +2,8 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
-' EMDO modbus master library
+' @DESCRIPTION EMDO modbus master library
+' @VERSION 1.0
 ' Protocols are freely available from www.modbus.org
 ' http://www.modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 ' Overview https://en.wikipedia.org/wiki/Modbus
