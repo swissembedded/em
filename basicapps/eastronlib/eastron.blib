@@ -6,12 +6,13 @@
 ' @DESCRIPTION EMDO Eastron SDM630 energy meter library
 ' @VERSION 1.0
 LIBRARY LOAD "modbus"
+
+'Some examples on usage:
 'LIBRARY UNLOAD "modbus"
 'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
-slv%=1
+'slv%=1
 'itf$="RTU:RS485:1"
-itf$="TCP:192.168.0.250:502"
-
+'itf$="TCP:192.168.0.250:502"
 'start:
 ' err%=EastronEnergyMeter(itf$,slv%, Uac1, Uac2, Uac3, Iac1, Iac2, Iac3, kW1, kW2, kW3, kWhI1, kWhI2, kWhI3, kWhE1, kWhE2, kWhE3)
 ' print "Eastron " err% Uac1 Uac2 Uac3 Iac1 Iac2 Iac3 kW1 kW2 kW3 kWhI1 kWhI2 kWhI3 kWhE1 kWhE2 kWhE3
