@@ -40,7 +40,10 @@ END FUNCTION
 ' msg$ message to publish
 FUNCTION EdPublish(msg$)
  LOCAL sc%
- sc%=MQTTPublish("0","EMDO/"+SYS.GET("asset","serial"),msg$,5000)
+ sc%=MQTTPublish("0","EMDO/devices/"+SYS.GET("asset","serial"),msg$,5000)
+  IF sc% < 0 THEN  
+  PRINT "Publish to Edmne failed" sc%
+ ENDIF 
  EdPublish=sc%
 END FUNCTION
 
@@ -54,3 +57,4 @@ FUNCTION EdSubscription(q$,topic$,payload$)
  sc%=MQTTSubscription(q$,topic$,payload$)
  EdSubscription=sc%
 END FUNCTION
+
