@@ -15,7 +15,7 @@ FUNCTION EdConnect(user$, pass$)
   EdConnect=sc%
   EXIT FUNCTION
  ENDIF
- sc%=MQTTSubscribe("0","EMDO/"+SYS.GET("asset","serial"),5000);
+ sc%=MQTTSubscribe("0","EMDO/"+SYS.GET("asset","serial"),5000)
  IF sc% < 0 THEN
   PRINT "Subscribe to Ednme failed"
   EdConnect=sc%
