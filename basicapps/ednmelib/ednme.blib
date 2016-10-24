@@ -1,0 +1,56 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO MQTT library for communication with www.ednme.com portal
+' @VERSION 1.0
+
+' Connect to Ednme web service
+' user$   user
+' pass$   password
+FUNCTION EdConnect(user$, pass$)
+ LOCAL sc%
+ sc%=MQTTConnect(SYS.GET("ip","mqtt"), 1883, "EMDO", "C0",user$,pass$,"","",5000)
+ IF sc% < 0 THEN
+  PRINT "Connect to Ednme failed"
+  EdConnect=sc%
+  EXIT FUNCTION
+ ENDIF
+ sc%=MQTTSubscribe("0","EMDO/"+SYS.GET("asset","serial"),5000);
+ IF sc% < 0 THEN
+  PRINT "Subscribe to Ednme failed"
+  EdConnect=sc%
+  EXIT FUNCTION
+ ENDIF
+ EdConnect=0
+END FUNCTION
+
+' Disconnect from Ednme web service and unsubscribe
+FUNCTION EdDisconnect()
+ LOCAL sc%
+ sc%=MQTTUnsubscribe("EMDO/"+SYS.GET("asset","serial"),5000)
+ IF sc% < 0 THEN
+  ' We disconnect anyhow, this is just for being nice
+  PRINT "Unsubscribe to Edmne failed" sc%
+ ENDIF 
+ sc%=MQTTDisconnect(5000)
+ EdDisconnect=sc%
+END FUNCTION
+
+' Publish to Ednme web service
+' msg$ message to publish
+FUNCTION EdPublish(msg$)
+ LOCAL sc%
+ sc%=MQTTPublish("0","EMDO/"+SYS.GET("asset","serial"),msg$,5000)
+ EdPublish=sc%
+END FUNCTION
+
+' Poll Subscription from Ednme web service
+' q$       message quality
+' topic$   message topic
+' payload$ message payload
+' return positive number of received messages or negative on error
+FUNCTION EdSubscription(q$,topic$,payload$)
+ LOCAL sc%
+ sc%=MQTTSubscription(q$,topic$,payload$)
+ EdSubscription=sc%
+END FUNCTION
