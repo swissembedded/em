@@ -4,6 +4,11 @@
 ' @DESCRIPTION EMDO MQTT library for communication with www.ednme.com portal
 ' @VERSION 1.0
 
+' Some examples on usage:
+' err%=EdConnect("", "")
+' msg$="{"+chr$(34)+"kWh1"+chr$(34)+":"+str$(kW1+kW2+kW2)+"}"
+' err%=EdPublish(msg$)
+
 ' Connect to Ednme web service
 ' user$   user
 ' pass$   password
