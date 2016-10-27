@@ -1,0 +1,37 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO http lib to access devices over REST and JSON
+' @VERSION 1.0
+
+' Some examples on usage:
+
+' Connect to Ednme web service
+' user$   user
+' pass$   password
+FUNCTION HTTPGet(server$, port%, qry$, rsp$, tmo%)
+ LOCAL con%, err%, n%
+ ' Open connection to the server
+ con%=SocketClient( 1, server$, port% )    
+ IF con% < 0 THEN
+  PRINT "Connect to " server$ " failed"
+  HTTPGet=con%
+  EXIT FUNCTION
+ ENDIF
+ ' set timeout
+ n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
+ 
+ ' Write request
+ n%=SocketWrite( sc%,  "GET ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: text/html,application/xml",13,10,13,10 )
+ 
+ ' Read until timeout or closed
+ rsp$=SocketRead$(con%)
+ 'DO
+ ' n%=SocketRead(sc%)
+ 'LOOP
+ 
+ ' Close connection again
+ n%=SocketClose( con% )  
+ HTTPGet=0
+END FUNCTION
+
