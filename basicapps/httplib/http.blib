@@ -3,14 +3,24 @@
 ' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO http lib to access devices over REST and JSON
 ' @VERSION 1.0
+' Documentation RFC2616 and others
 
 ' Some examples on usage:
 
-' Connect to Ednme web service
-' user$   user
-' pass$   password
-FUNCTION HTTPGet(server$, port%, qry$, rsp$, tmo%)
+' Connect to  a http server
+' con%    Server connection
+' cmd$    GET, PUT, DELETE, POST....
+' server$ server name ( ip or dns), e.g. www.google.com or 192.168.2.3
+' port%   server port default 80
+' conn$   Connection type close or keep-alive
+' acc$    Accept string e.g. text/html,application/xml
+' qry$    query string e.g. /report
+FUNCTION HTTPRequest(con%, cmd$, server$, port%, conn$, acc$, qry$, tmo%)
  LOCAL con%, err%, n%
+ ' default server port is 80
+ IF port% = 0 THEN
+  port = 80
+ ENDIF
  ' Open connection to the server
  con%=SocketClient( 1, server$, port% )    
  IF con% < 0 THEN
@@ -21,17 +31,41 @@ FUNCTION HTTPGet(server$, port%, qry$, rsp$, tmo%)
  ' set timeout
  n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
  
+ ' default is HTTP GET
+ IF cmd$="" THEN
+  cmd$="GET"
+ ENDIF
+ 
+ ' default close conn at the end
+ IF conn$="" THEN
+  conn$="close"
+ ENDIF
+ 
+ ' accept string
+ IF acc$="" THEN
+  acc$="text/html,application/xml"
+ ENDIF
+ 
  ' Write request
- n%=SocketWrite( sc%,  "GET ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: text/html,application/xml",13,10,13,10 )
- 
- ' Read until timeout or closed
- rsp$=SocketRead$(con%)
- 'DO
- ' n%=SocketRead(sc%)
- 'LOOP
- 
- ' Close connection again
- n%=SocketClose( con% )  
+ n%=SocketWrite( con%,  cmd$," ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: ",acc$,13,10,13,10 )
+  
  HTTPGet=0
 END FUNCTION
 
+' Read response string from http server
+' con% Server connection
+' rsp$ Server response
+FUNCTION HTTPResponse(con%,rsp$)
+ ' Read until timeout or closed
+ rsp$=SocketRead$(con%)
+ HTTPResponse=0
+END FUNCTION
+
+' Close http server
+' con% Server connection
+FUNCTION HTTPClose(con%)
+ LOCAL err%
+ ' Close connection again
+ err%=SocketClose( con% )  
+ HTTPClose=0
+END FUNCTION
