@@ -3,50 +3,66 @@
 ' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
 ' This example controls MyStrom WLAN (ip power plug) switches. 
 ' Please make sure the switch is configured correctly
-server$="192.168.2.3"
+' @DESCRIPTION EMDO mystrom lib to control wireless power switch with power meter
+' @VERSION 1.0
+' Documentation of the API see https://mystrom.ch/de/
+' "WLAN Energy Control Switch REST API"
+
+'Loading Http library, make sure it is installed on EMDO
+LIBRARY LOAD "http"
+
+' Some examples on usage 
+' server$="192.168.2.3"
 ' Allow network to come up
-pause 5000
-relay=0
-start:
-	MyStromState P, relay, server$
-	IF relay = 1 THEN
-		relay = 0
-    ELSE 
-        relay = 1
-	ENDIF
-	MyStromSwitch relay, server$
-    print "Current power " + str$(P) + " state " + str$(relay)
-	PAUSE 10000
-GOTO start
-' * Get MyStrom current state (power, relay)
-SUB MyStromState ( P, relay, server$ )
-	' For further details see "WLAN Energy Control Switch REST API"
-	con=SocketClient( 1, server$, 80 )    
-	IF con <=0.0 THEN		
-        EXIT SUB ' server not available try next time again
-	Endif 
-	num=SocketWrite( con,  "GET /report HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: keep-alive",13,10,"Accept: text/html,application/xml",13,10,13,10 )
-	' Parse entries in the form "token" : value, the order is important
-    ' "power"    : 123.4,
-    ' "relay"    : true or false
-    P=val(StreamSearch$(SocketRead(con),CHR$(34)+"power"+CHR$(34)+":"+CHR$(9),",",5000))
-	ry$=StreamSearch$(SocketRead(con),CHR$(34)+"relay"+CHR$(34)+":"+CHR$(9),CHR$(10),1000)                
+'pause 5000
+'relay=0
+'start:
+'	err%=MyStromState(server$, power, relay%)
+'   print "Current power " err% str$(power) " state " str$(relay%)
+'	IF relay% = 1 THEN
+'		relay% = 0
+'    ELSE 
+'        relay% = 1
+'	ENDIF
+'	err%=MyStromSwitch(server$, relay%)
+'   print "Current power " err%
+'	PAUSE 10000
+'GOTO start
+
+' Get MyStrom current state
+' server$ mystrom device url
+' power current power in kW
+' relay% relay state
+FUNCTION MyStromState ( server$, power, relay% )
+    LOCAL err%, con%, ry$
+	err%=HTTPRequest(server$, 80, con%, "GET","/report", "", "" , 5000)
+	IF err% <0 THEN
+	 MyStromState=err%
+	 EXIT FUNCTION
+	ENDIF	
+	' Parse stream from device with power and state
+	power=val(StreamSearch$(HTTPResponse(con%),CHR$(34)+"power"+CHR$(34)+":"+CHR$(9),",",5000))/1000.0
+	ry$=StreamSearch$(HTTPResponse(con%),CHR$(34)+"relay"+CHR$(34)+":"+CHR$(9),CHR$(10),1000)                
 	IF ry$="true" THEN
-	 relay=1
+	 relay%=1
 	ELSE
-	 relay=0
+	 relay%=0
 	ENDIF
-	done=SocketClose( con )  
-END SUB
-' * Set MyStrom relay 
-SUB MyStromSwitch ( relay, server$ )
-	' For further details see "WLAN Energy Control Switch REST API"
-	con=SocketClient( 1, server$, 80 )
-	IF con <= 0 THEN
-		EXIT SUB ' server not available try next time again
-	Endif 
-	y$="/relay?state="+str$(relay)
-	num=SocketWrite( con,  "GET ",y$," HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: keep-alive",13,10,"Accept: text/html,application/xml",13,10,13,10 )
-    'pause 1000
-	done=SocketClose( con )
-END SUB
+	err%=HTTPClose(con%)
+    MyStromState=err%	
+END FUNCTION
+
+' Set MyStrom relay state
+' server$ mystrom device url 
+' relay%  new relay state
+FUNCTION MyStromSwitch ( server$, relay% )
+    LOCAL err%, con%, y$
+    y$="/relay?state="+str$(relay%)
+	err%=HTTPRequest(server$, 80, con%, "GET",y$, "", "" , 5000)
+	IF err% <0 THEN
+	 MyStromSwitch=err%
+	 EXIT FUNCTION
+	ENDIF
+	err%=HTTPClose(con%)
+    MyStromSwitch=err%	
+END FUNCTION

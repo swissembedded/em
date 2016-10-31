@@ -8,14 +8,15 @@
 ' Some examples on usage:
 
 ' Connect to  a http server
-' con%    Server connection
-' cmd$    GET, PUT, DELETE, POST....
 ' server$ server name ( ip or dns), e.g. www.google.com or 192.168.2.3
 ' port%   server port default 80
+' con%    Server connection
+' cmd$    GET, PUT, DELETE, POST....
+' qry$    query string e.g. /report
 ' conn$   Connection type close or keep-alive
 ' acc$    Accept string e.g. text/html,application/xml
-' qry$    query string e.g. /report
-FUNCTION HTTPRequest(con%, cmd$, server$, port%, conn$, acc$, qry$, tmo%)
+' tmo%    Timeout in ms
+FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%)
  LOCAL con%, err%, n%
  ' default server port is 80
  IF port% = 0 THEN
@@ -25,40 +26,35 @@ FUNCTION HTTPRequest(con%, cmd$, server$, port%, conn$, acc$, qry$, tmo%)
  con%=SocketClient( 1, server$, port% )    
  IF con% < 0 THEN
   PRINT "Connect to " server$ " failed"
-  HTTPGet=con%
+  HTTPRequest=con%
   EXIT FUNCTION
  ENDIF
  ' set timeout
  n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
- 
  ' default is HTTP GET
  IF cmd$="" THEN
   cmd$="GET"
  ENDIF
- 
  ' default close conn at the end
  IF conn$="" THEN
   conn$="close"
  ENDIF
- 
  ' accept string
  IF acc$="" THEN
   acc$="text/html,application/xml"
  ENDIF
- 
  ' Write request
  n%=SocketWrite( con%,  cmd$," ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: ",acc$,13,10,13,10 )
-  
- HTTPGet=0
+ HTTPRequest=n%
 END FUNCTION
 
 ' Read response string from http server
 ' con% Server connection
-' rsp$ Server response
-FUNCTION HTTPResponse(con%,rsp$)
+FUNCTION HTTPResponse(con%)
+ LOCAL rsp%
  ' Read until timeout or closed
- rsp$=SocketRead$(con%)
- HTTPResponse=0
+ rsp%=SocketRead(con%)
+ HTTPResponse=rsp%
 END FUNCTION
 
 ' Close http server
@@ -67,5 +63,5 @@ FUNCTION HTTPClose(con%)
  LOCAL err%
  ' Close connection again
  err%=SocketClose( con% )  
- HTTPClose=0
+ HTTPClose=err%
 END FUNCTION
