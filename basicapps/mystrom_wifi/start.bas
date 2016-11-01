@@ -1,10 +1,9 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
-' This example controls MyStrom WLAN (ip power plug) switches. 
-' Please make sure the switch is configured correctly
 ' @DESCRIPTION EMDO mystrom lib to control wireless power switch with power meter
 ' @VERSION 1.0
+' Please make sure the switch is configured correctly
 ' Documentation of the API see https://mystrom.ch/de/
 ' "WLAN Energy Control Switch REST API"
 
@@ -30,9 +29,10 @@ LIBRARY LOAD "http"
 'GOTO start
 
 ' Get MyStrom current state
-' server$ mystrom device url
+' server$ mystrom device ip
 ' power current power in kW
 ' relay% relay state
+' return error code if negative value
 FUNCTION MyStromState ( server$, power, relay% )
     LOCAL err%, con%, ry$
 	err%=HTTPRequest(server$, 80, con%, "GET","/report", "", "" , 5000)
