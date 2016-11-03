@@ -15,13 +15,13 @@
 ' pass$   password
 FUNCTION EdConnect(user$, pass$)
  LOCAL sc%
- sc%=MQTTConnect(SYS.GET("ip","mqtt"), 1883, "EMDO", "C0",user$,pass$,"","",5000)
+ sc%=MQTTConnect(SYS.GET("ip","mqtt"), 1883, SYS.GET("asset","serialID"), "C0",user$,pass$,"","",5000)
  IF sc% < 0 THEN
   PRINT "Connect to Ednme failed"
   EdConnect=sc%
   EXIT FUNCTION
  ENDIF
- sc%=MQTTSubscribe("0","EMDO/devices/"+SYS.GET("asset","serial"),5000)
+ sc%=MQTTSubscribe("0","EMDO/devices/"+SYS.GET("asset","serialID"),5000)
  IF sc% < 0 THEN
   PRINT "Subscribe to Ednme failed"
   EdConnect=sc%
