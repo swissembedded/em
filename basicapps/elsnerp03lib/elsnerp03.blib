@@ -1,0 +1,49 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO Elsner P03/3 Modbus Weatherstation
+' @VERSION 1.0
+' Documentation http://www.elsner-elektronik.de/shop/de/produkte-shop/gebaeudetechnik-konventionell/modbus-sensoren/p03-3-modbus-398.html
+
+' Loading Modbus library, make sure it is installed on EMDO
+LIBRARY LOAD "modbus"
+
+'Some examples on usage:
+'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=n"
+'slv%=1
+'itf$="RS485:1"
+
+'start:
+' err%=ElsnerWeatherstation(itf$,slv%,Tout,SunS%,SunW%, SunE%, Lgt%, Wind, Rain%)
+' print "Elsner " err% Tout SunS% SunW% SunE% Lgt% Wind Rain%
+' pause 30000
+' goto start
+
+' Elsner weather station P03/3
+' itf$ modbus interface (see EMDO modbus library for details)
+' slv% elsner energy meter sdm630 slave address default 1 
+' Tout outside temperature
+' SunS% sun sensor south 1..99 kilolux
+' SunW% sun sensor west 1..99 kilolux
+' SunE% sun sensor east 1..99 kilolux
+' Lgt% light 0...999lux
+' Wind wind m/s
+' Rain% 1=raining 0=no rain
+FUNCTION ElsnerWeatherstation(itf$, slv%, Tout, SunS%, SunW%, SunE%, Lgt%, Wind, Rain%)
+ LOCAL err%,rD$
+ ' Page 12 german documentation
+ err%= mbFunc(itf$,slv%,4,0,14,rD$,500)
+ IF err% THEN
+  ElsnerWeatherstation=err%
+  EXIT FUNCTION
+ ENDIF
+ ' Convert register values to int16
+ Tout=conv("bbe/u32",mid$(rD$,1,4)/10.0
+ SunS%=conv("bbe/u32",mid$(rD$,5,4)
+ SunW%=conv("bbe/u32",mid$(rD$,9,4)
+ SunE%=conv("bbe/u32",mid$(rD$,13,4)
+ Lgt%=conv("bbe/u32",mid$(rD$,17,4)
+ Wind=conv("bbe/u32",mid$(rD$,21,4)/10.0
+ Rain%=conv("bbe/u32,mid$(rD$,25,4)) AND 1
+ ElsnerWeatherstation=0
+END FUNCTION
