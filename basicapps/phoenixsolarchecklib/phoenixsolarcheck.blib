@@ -35,6 +35,8 @@ LIBRARY LOAD "modbus"
 ' T     temperature [°C]
 ' U     voltage [V]
 ' return value error code
+' SCK-M-I-8S-20 all values valid
+' SCK-M-I-4S-20A I1-I8, stat, T valid
 FUNCTION PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7, I8, T, U)
  LOCAL err%, rR$
  ' Each channel has 11 registers
@@ -49,18 +51,49 @@ FUNCTION PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7,
   EXIT FUNCTION
  ENDIF 
  
- ' Convert register values to float32
+ ' Convert register values to signed int 16
  stat=conv("bbe/u16",mid$(rR$,1,2))
- I1=conv("bbe/u16",mid$(rR$,3,2))/100.0
- I2=conv("bbe/u16",mid$(rR$,5,2))/100.0
- I3=conv("bbe/u16",mid$(rR$,7,2))/100.0
- I4=conv("bbe/u16",mid$(rR$,9,2))/100.0
- I5=conv("bbe/u16",mid$(rR$,11,2))/100.0
- I6=conv("bbe/u16",mid$(rR$,13,2))/100.0
- I7=conv("bbe/u16",mid$(rR$,15,2))/100.0
- I8=conv("bbe/u16",mid$(rR$,17,2))/100.0
- T=conv("bbe/u16",mid$(rR$,19,2))
- U=conv("bbe/u16",mid$(rR$,21,2)) 
+ I1=conv("bbe/i16",mid$(rR$,3,2))/100.0
+ I2=conv("bbe/i16",mid$(rR$,5,2))/100.0
+ I3=conv("bbe/i16",mid$(rR$,7,2))/100.0
+ I4=conv("bbe/i16",mid$(rR$,9,2))/100.0
+ I5=conv("bbe/i16",mid$(rR$,11,2))/100.0
+ I6=conv("bbe/i16",mid$(rR$,13,2))/100.0
+ I7=conv("bbe/i16",mid$(rR$,15,2))/100.0
+ I8=conv("bbe/i16",mid$(rR$,17,2))/100.0
+ T=conv("bbe/i16",mid$(rR$,19,2))
+ U=conv("bbe/i16",mid$(rR$,21,2))/1000.0 
  PhoenixSolarcheck=0
 END FUNCTION
+
+' Phoenix contact solarcheck status
+' itf$    modbus interface (see EMDO modbus library for details)
+' slv%    phoenix contact solarcheck modbus slave address
+' short%  shorted circuit
+' discon% disconnected
+' comerr% communication error
+' dio%    digital io
+' op%     operation
+' id%     id
+' return value error code
+FUNCTION PhoenixSolarcheckStatus(itf$, slv%, short%, discon%, comerr%, dio%, op%, id%)
+ LOCAL err%, rR$
+ 
+ err%= mbFunc(itf$,slv%,4,&H58,6,rR$,500)
+ IF err% THEN
+  PhoenixSolarcheckStatus=err%
+  EXIT FUNCTION
+ ENDIF 
+ 
+ ' Convert register values to signed int 16
+ short%=conv("bbe/i16",mid$(rR$,1,2))
+ discon%=conv("bbe/i16",mid$(rR$,3,2))
+ comerr%=conv("bbe/i16",mid$(rR$,5,2))
+ dio%=conv("bbe/i16",mid$(rR$,7,2))
+ op%=conv("bbe/i16",mid$(rR$,9,2))
+ id%=conv("bbe/i16",mid$(rR$,11,2))
+ PhoenixSolarcheckStatus=0
+END FUNCTION
+
+
 
