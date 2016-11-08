@@ -1,0 +1,66 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' EMDO modbus driver for Phoenix Contact Solarcheck string monitoring
+' Documentation see www.phoenixcontact.com
+' PV-Stringüberwachungsmodul - SCK-C-MODBUS - 
+' Photovoltaic multiple strings monitoring
+' Pls see manual for details about available modules
+' Main Modul connected to EMDO SCK-C-MODBUS 2901674
+' 8 string DC current monitoring SCK-M-I-8S-20A 2903241
+' 4 string DC current monitoring SCK-M-I-4S-20A 2903242
+' String DC voltage monitoring SCK-M-U-1500V 2903591
+' @DESCRIPTION EMDO Phoenix Solarcheck String Monitoring for power plants
+' @VERSION 1.0
+
+LIBRARY LOAD "modbus"
+
+'Some examples on usage:
+'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
+'slv%=1
+'itf$="RTU:RS485:1"
+'itf$="TCP:192.168.0.250:502"
+'start:
+' err%=PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7, I8, T, U)
+' print "Solarcheck " err% stat% I1 I2 I3 I4 I5 I6 I7 I8 T U
+' pause 30000
+' goto start
+
+' Phoenix contact solarcheck
+' itf$ modbus interface (see EMDO modbus library for details)
+' slv% phoenix contact solarcheck modbus slave address
+' chan% channel number (1..8)
+' stat% status
+' I1-I8 Current [A]
+' T     temperature [°C]
+' U     voltage [V]
+' return value error code
+FUNCTION PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7, I8, T, U)
+ LOCAL err%, rR$
+ ' Each channel has 11 registers
+ IF chan% < 1 OR chan% > 8 THEN
+  PhoenixSolarcheck=-1
+  EXIT FUNCTION
+ ENDIF
+ 
+ err%= mbFunc(itf$,slv%,4,(chan%-1)*11,11,rR$,500)
+ IF err% THEN
+  PhoenixSolarcheck=err%
+  EXIT FUNCTION
+ ENDIF 
+ 
+ ' Convert register values to float32
+ stat=conv("bbe/u16",mid$(rR$,1,2))
+ I1=conv("bbe/u16",mid$(rR$,3,2))/100.0
+ I2=conv("bbe/u16",mid$(rR$,5,2))/100.0
+ I3=conv("bbe/u16",mid$(rR$,7,2))/100.0
+ I4=conv("bbe/u16",mid$(rR$,9,2))/100.0
+ I5=conv("bbe/u16",mid$(rR$,11,2))/100.0
+ I6=conv("bbe/u16",mid$(rR$,13,2))/100.0
+ I7=conv("bbe/u16",mid$(rR$,15,2))/100.0
+ I8=conv("bbe/u16",mid$(rR$,17,2))/100.0
+ T=conv("bbe/u16",mid$(rR$,19,2))
+ U=conv("bbe/u16",mid$(rR$,21,2)) 
+ PhoenixSolarcheck=0
+END FUNCTION
+
