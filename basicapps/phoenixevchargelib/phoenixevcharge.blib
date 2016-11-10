@@ -1,0 +1,80 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' Phoenix EV control electric car charger with excess energy over modbus TCP and RTU
+' Testet with Wallb-e Pro
+' Make sure that DIP 7 = 1 and DIP 10 = 1 are set, which allows to start charging by
+' Key switch (EN digital input) or modbus enable
+' @DESCRIPTION EMDO Phoenix EV Control electric car charger
+' @VERSION 1.0
+
+LIBRARY LOAD "modbus"
+'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
+'amp=0.0
+'slv%=180
+'itf$="TCP:192.168.0.114:502"
+'start:
+' err%=PhoenixEVControl(itf$,slv%, en%, amp%, st$, prox%, tch%)
+' print "Phoenix " err% st$ prox tch%
+' pause 30000
+' goto start
+ 
+' Phoenix EV electric car charger controller
+' This function must be called at least every 60 seconds,
+' itf$ modbus interface (see EMDO modbus library for details)
+' slv% slave address of charger (default 180)
+' en%  enable charger
+' amp% home energy at energy meter neg. 
+'     amp x 230V x num of phases = excess energy available for charging
+' st$ device status (A..F)
+'     A Charger is not connected to car
+'     B Charger is connected to car or charging ended
+'     C Charging without ventilation
+'     E Charging with ventilation
+'     F Missing proximity plug or car stops charging
+'     else unknown status
+' prox% proximity signal
+' tch%  charging time [s]
+FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%,st$, prox%, tch%)
+ LOCAL err%, reG$, reD$, reC$, reR$, dip%
+ ' Read EV Status
+ err%= mbFunc(itf$,slv%,4,100,8,reG$,500)
+ IF err% THEN
+  PhoenixEVControl=err%
+  EXIT FUNCTION
+ ENDIF
+ 
+ ' Check DIP switches
+ dip%=conv("bbe/u32",mid$(reG$,9,4))
+ IF NOT (dip% and &H240) THEN  
+  PhoenixEVControl=-1  
+  EXIT FUNCTION
+ ENDIF
+ 
+ ' Status 
+ st$=mid$(reG$,2,1)
+ ' Proximity charge current in A
+ prox%=conv("bbe/u16",mid$(reG$,3,2))
+ ' Charging time in s
+ tch%=conv("bbe/u32",mid$(reG$,5,4))
+
+ IF amp < 6 OR amp > 80 THEN
+  PhoenixEVControl=-2
+  EXIT FUNCTION
+ ENDIF
+ 
+ reG$=conv("u32/bbe",amp)
+ err%= mbFunc(itf$,slv%,6,300,1,reG$,500)
+ IF err% THEN
+  PhoenixEVControl=err%
+  EXIT FUNCTION
+ ENDIF
+ 
+ err%= mbFunc(itf$,slv%,5,400,1,str$(en%),500)
+ IF err% THEN
+  PhoenixEVControl=err%
+  EXIT FUNCTION
+ ENDIF
+ 
+ PhoenixEVControl=0
+END FUNCTION
