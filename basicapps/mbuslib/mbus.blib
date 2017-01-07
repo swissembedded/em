@@ -4,3 +4,69 @@
 ' @DESCRIPTION EMDO m-bus master slave library
 ' @VERSION 1.0
 ' Protocols are freely available from http://www.m-bus.com/
+
+' (W)MBus Transmit single char
+' itf$  Interface with string. Example "WMbus" or "Mbus"
+' return   0 = ok, negative value = error
+FUNCTION msTxSingleChar(itf$)
+	IF itf$="WMbus" THEN
+		WMbusWrite("E5")
+	ELSEIF itf$="Mbus"
+		MbusWrite("E5")
+	ENDIF
+	msTxSingleChar=0
+END FUNCTION
+
+
+' (W)MBus Receive single char
+' itf$  Interface with string. Example "WMbus" or "WMbus"
+' return   0 = ok, negative value = error
+FUNCTION msRxSingleChar(itf$)
+	LOCAL rsp$
+	'waiting for 11 bit time and (330 bit time + 50ms) before responding
+	pause((11+330)/baud+50)
+	
+	IF itf$="WMbus" THEN
+		rsp$=WMbusRead()
+	ELSEIF itf$="Mbus"
+		rsp$=MbusRead("")
+	ENDIF
+	msRxSingleChar=0
+END FUNCTION 
+
+
+' (W)MBus receive Long Frame
+' itf$  Interface with string.Example "WMbus" or "WMbus"
+' L%   L Field
+' C%   C Field
+' A%   A Field
+' CI%  CI Field
+' Usr$ User Data
+' return   0 = ok, negative value = error
+FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,Usr$)
+ LOCAL err%
+ msRxLongFrame=err%
+END FUNCTION
+
+
+' frameType$	the type of the frame (single character, short, long or control frame)
+FUNCTION msCalChecksum (frameType$,C%,A%,CI%,userData$)
+	LOCAL checksum%, i
+	
+	'The checksum value depends on the frame type
+	IF frameType$="shortFrame" THEN
+		checksum%=C%
+		checksum%+=A%
+		
+	ELSEIF frameType$="controlFrame" OR frameType$="longFrame" THEN
+		checksum%=C%
+		checksum%+=A%
+		checksum%+=CI%
+	ENDIF
+	
+	For i = 1 to Len(userData$)
+	 checksum%+=asc(mid$(userData$,i,1))
+	End i
+	
+	msCalChecksum=checksum%
+END FUNCTION
