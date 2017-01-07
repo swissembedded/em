@@ -4,16 +4,3 @@
 ' @DESCRIPTION EMDO m-bus master slave library
 ' @VERSION 1.0
 ' Protocols are freely available from http://www.m-bus.com/
-
-' M-Bus receive Long Frame
-' itf$  Interface with string.Example "WMBUS" or "MBUS"
-' L%   L Field
-' C%   C Field
-' A%   A Field
-' CI%  CI Field
-' Usr$ User Data
-' return   0 = ok, negative value = error
-FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,Usr$)
- LOCAL err%
- msRxLongFrame=err%
-END FUNCTION
