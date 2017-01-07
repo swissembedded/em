@@ -33,6 +33,48 @@ FUNCTION msRxSingleChar(itf$)
  msRxSingleChar=0
 END FUNCTION 
 
+' (W)MBus transimt Short Frame
+' itf$  Interface with string. Example "WMbus" or "Mbus"
+' return   0 = ok, negative value = error
+FUCTION msTxShortFrame(itf$,C%,A%)
+ 'Address check first
+ IF NOT (A%>=1 AND A%<=250) THEN
+  ' Address is out if the range of individual slaves
+  msTxShortFrame=-10
+  EXIT FUNCTION 
+ 
+ IF NOT (A%=254 OR A%=255) THEN
+  ' Address is out if the range of broadcasting
+  msTxShortFrame=-11
+  EXIT FUNCTION
+ END IF
+ 
+ LOCAL frameType="shortFrame"
+ 
+ ' Define the frame fields: start(10h),C, A, checksum, stop(16h)
+ LOCAL start%="&H10"
+ LOCAL checksum=mgCalChecksum(frameType,C%,A%,"")
+ LOCAL stop%="&H16"
+ 
+ ' transmit frame
+ IF itf$="WMbus" THEN
+  WMbusWrite(start%)
+  WMbusWrite(C%)
+   
+ WMbusWrite(A%)
+  WMbusWrite(checksum%)
+  WMbusWrite(stop%)
+  
+ ELSE IF itf$="Mbus"
+  MbusWrite(start%)
+  MbusWrite(C%)
+  MbusWrite(A%)
+  MbusWrite(checksum%)
+  MbusWrite(stop%)
+ ENDIF 
+ msTxShortFrame=0
+END FUNCTION
+
 
 ' (W)MBus receive Long Frame
 ' itf$  Interface with string.Example "WMbus" or "WMbus"
@@ -60,11 +102,12 @@ FUNCTION msCalChecksum (frameType$,C%,A%,CI%,userData$)
   checksum%=C%
   checksum%+=A%
   checksum%+=CI%
-		
- ELSEIF  frameType$="longFrame" THEN
+ 
+ ELSEIF frameType$="longFrame" THEN
   checksum%=C%
   checksum%+=A%
   checksum%+=CI%
+  
   For i = 1 to Len(userData$)
    checksum%+=asc(mid$(userData$,i,1))
   End i
