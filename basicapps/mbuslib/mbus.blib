@@ -9,29 +9,28 @@
 ' itf$  Interface with string. Example "WMbus" or "Mbus"
 ' return   0 = ok, negative value = error
 FUNCTION msTxSingleChar(itf$)
-	IF itf$="WMbus" THEN
-		WMbusWrite("E5")
-	ELSEIF itf$="Mbus"
-		MbusWrite("E5")
-	ENDIF
-	msTxSingleChar=0
+ IF itf$="WMbus" THEN
+  WMbusWrite("E5")
+ ELSEIF itf$="Mbus"
+  MbusWrite("E5")
+ ENDIF
+ msTxSingleChar=0
 END FUNCTION
-
 
 ' (W)MBus Receive single char
 ' itf$  Interface with string. Example "WMbus" or "WMbus"
 ' return   0 = ok, negative value = error
 FUNCTION msRxSingleChar(itf$)
-	LOCAL rsp$
-	'waiting for 11 bit time and (330 bit time + 50ms) before responding
-	pause((11+330)/baud+50)
+ LOCAL rsp$
+ 'waiting for 11 bit time and (330 bit time + 50ms) before responding
+ pause((11+330)/baud+50)
 	
-	IF itf$="WMbus" THEN
-		rsp$=WMbusRead()
-	ELSEIF itf$="Mbus"
-		rsp$=MbusRead("")
-	ENDIF
-	msRxSingleChar=0
+ IF itf$="WMbus" THEN
+  rsp$=WMbusRead()
+ ELSEIF itf$="Mbus"
+  rsp$=MbusRead()
+ ENDIF
+ msRxSingleChar=0
 END FUNCTION 
 
 
@@ -51,22 +50,24 @@ END FUNCTION
 
 ' frameType$	the type of the frame (single character, short, long or control frame)
 FUNCTION msCalChecksum (frameType$,C%,A%,CI%,userData$)
-	LOCAL checksum%, i
-	
-	'The checksum value depends on the frame type
-	IF frameType$="shortFrame" THEN
-		checksum%=C%
-		checksum%+=A%
+ LOCAL checksum%, i
+ 'The checksum value depends on the frame type
+ IF frameType$="shortFrame" THEN
+  checksum%=C%
+  checksum%+=A%
+ 
+ ELSEIF frameType$="controlFrame" THEN
+  checksum%=C%
+  checksum%+=A%
+  checksum%+=CI%
 		
-	ELSEIF frameType$="controlFrame" OR frameType$="longFrame" THEN
-		checksum%=C%
-		checksum%+=A%
-		checksum%+=CI%
-	ENDIF
-	
-	For i = 1 to Len(userData$)
-	 checksum%+=asc(mid$(userData$,i,1))
-	End i
-	
-	msCalChecksum=checksum%
+ ELSEIF  frameType$="longFrame" THEN
+  checksum%=C%
+  checksum%+=A%
+  checksum%+=CI%
+  For i = 1 to Len(userData$)
+   checksum%+=asc(mid$(userData$,i,1))
+  End i
+ ENDIF
+ msCalChecksum=checksum%
 END FUNCTION
