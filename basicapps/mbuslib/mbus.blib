@@ -11,7 +11,7 @@
 FUNCTION msTxSingleChar(itf$)
  IF itf$="WMbus" THEN
   WMbusWrite(&HE5)
- ELSE IF itf$="Mbus"
+ ELSEIF itf$="Mbus" THEN
   MbusWrite(&HE5)
  ENDIF
  msTxSingleChar=0
@@ -25,13 +25,14 @@ FUNCTION msRxSingleChar(itf$)
  sc$=chr$(&HE5)	
  IF itf$="WMbus" THEN
   rsp$=WMbusReadLn$(2000,sc$)
- ELSE IF itf$="Mbus"
+ ELSEIF itf$="Mbus" THEN
   rsp$=MbusReadLn$(2000,sc$)
  ENDIF
  IF rsp$=sc$ THEN
   msRxSingleChar=0
  ELSE
   msRxSingleChar=-1
+ END IF
 END FUNCTION 
 
 ' (W)MBus transimt Short Frame
@@ -42,7 +43,7 @@ END FUNCTION
 FUCTION msTxShortFrame(itf$,C%,A%)
  ' Address check first
  IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
-  ' Address is out if the range of individual slaves
+  ' Address is out of the range
   msTxShortFrame=-10
   EXIT FUNCTION 
  ENDIF
@@ -52,10 +53,54 @@ FUCTION msTxShortFrame(itf$,C%,A%)
  ' transmit frame
  IF itf$="WMbus" THEN
   WMbusWrite(&H10, C%, A%, checksum%,&H16)  
- ELSE IF itf$="Mbus"
+ ELSEIF itf$="Mbus" THEN
   MbusWrite(&H10, C%, A%, checksum%,&H16)
  ENDIF 
  msTxShortFrame=0
+END FUNCTION
+
+
+' (W)MBus recieve Short Frame
+' itf$  Interface with string. Example "Mbus" or "WMbus"
+' return   0 = ok, negative value = error
+FUNCTION mgRxShortFrame (itf$)
+ LOCAL scStart$, startByte$, C%, A%, checksumRecieved%, checksumCalculated%, scStop$, stopByte$
+ scStart$=chr$(&H10)
+ scStop$=chr$(&H16)
+ 
+ IF itf$="WMbus" THEN
+  startByte$=WMbusReadLn$(2000,scStart$)
+ ELSEIF itf$="Mbus" THEN
+  startByte$=MbusReadLn$(2000,scStart$)
+ END IF
+ 
+ IF NOT (startByte$=scStart$) THEN
+  ' recieved byte is not the start byte of the short frame
+  msRxShortFrame=-11
+  EXIT FUNCTION
+ END IF
+ 
+ IF itf$="WMbus" THEN
+  C%=WMbusRead()
+  A%=WMbusRead()
+  checksumRecieved%=WMbusRead()
+  stopByte$=WMbusRead()
+ ELSEIF itf$="Mbus" THEN
+  C%=MbusRead()
+  A%=MbusRead()
+  checksumRecieved%=MbusRead()
+  stopByte$=MbusRead()
+ END IF
+ 
+ ' check the validity of the frame
+ checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,"")
+ IF NOT (checksumCalculated%=checksumRecieved% AND stopByte$=scStop$)
+  'the frame is not valid
+  mgRxShortFrame=-12
+  EXIT FUNCTION
+ END IF
+
+ mgRxShortFrame=0
 END FUNCTION
 
 
