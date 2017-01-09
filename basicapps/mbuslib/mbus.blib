@@ -131,6 +131,7 @@ FUNCTION msTxControlFrame(itf$,C%,A%,CI%)
  msTxControlFrame=0
 END FUNCTION
 
+
 ' (W)MBus recieve Control Frame
 ' itf$  Interface with string.Example "WMbus" or "WMbus"
 ' L%   L Field
@@ -138,6 +139,65 @@ END FUNCTION
 ' A%  Address field
 ' CI% Control information field
 ' return   0 = ok, negative value = error
+FUNCTION msRxControlFrame(itf$)
+ LOCAL scStart$, firstStartByte$, scLength$, firstLength%, secondLength%, secondStartByte$, C%, A%, checksumRecieved%, checksumCalculated%, scStop$, stopByte$
+ scStart$=chr$(&H68)
+ scStop$=chr$(&H16)
+ 
+ IF itf$="WMbus" THEN
+  firstStartByte$=WMbusReadLn$(2000,scStart$)
+ ELSEIF itf$="Mbus" THEN
+  firstStartByte$=MbusReadLn$(2000,scStart$)
+ END IF
+ 
+ IF NOT (startByte$=scStart$) THEN
+  ' recieved byte is not the start byte of the control frame
+  msRxControlFrame=-14
+  EXIT FUNCTION
+ END IF
+ 
+ IF itf$="WMbus" THEN
+  firstLength%=WMbusRead()
+  secondLength%=WMbusRead()
+ ELSEIF itf$="Mbus" THEN
+  firstLength%=MbusRead()
+  secondLength%=MbusRead()
+ END IF
+ 
+ IF NOT (firstLength%=3 AND secondLength%=3) THEN
+  ' The first and second length are not equal to 3
+  msRxControlFrame=-15
+  EXIT FUNCTION
+ END IF
+ 
+ IF NOT (startByte$=scStart$) THEN
+  ' recieved byte is not the start byte of the control frame
+  msRxControlFrame=-14
+  EXIT FUNCTION
+ END IF
+ 
+ IF itf$="WMbus" THEN
+  C%=WMbusRead()
+  A%=WMbusRead()
+  checksumRecieved%=WMbusRead()
+  stopByte$=WMbusRead()
+ ELSEIF itf$="Mbus" THEN
+  C%=MbusRead()
+  A%=MbusRead()
+  checksumRecieved%=MbusRead()
+  stopByte$=MbusRead()
+ END IF
+ 
+ ' check the validity of the frame
+ checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,0,"")
+ IF NOT (checksumCalculated%=checksumRecieved% AND stopByte$=scStop$)
+  'the frame is not valid
+  mgRxShortFrame=-12
+  EXIT FUNCTION
+ END IF
+
+ mgRxShortFrame=0
+END FUNCTION
 
 
 ' (W)MBus receive Long Frame
@@ -156,9 +216,9 @@ END FUNCTION
 
 ' (W)MBus calculate frame checksum
 ' frameType$ the type of the frame 
-'    "shortFrame" (requires C% and A%)
-'    "controlFrame" (requires C% and A%, CI%)
-'    "longFrame" (requires C% and A%, CI% and userData$)
+' "shortFrame" (requires C% and A%)
+' "controlFrame" (requires C% and A%, CI%)
+' "longFrame" (requires C% and A%, CI% and userData$)
 ' C%  Control field, function field
 ' A%  Address field
 ' CI% Control information field
