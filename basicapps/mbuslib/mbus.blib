@@ -49,7 +49,7 @@ FUCTION msTxShortFrame(itf$,C%,A%)
  ENDIF
  
  ' frame fields: start(10h),C, A, checksum, stop(16h)
- LOCAL checksum%=mgCalChecksum("shortFrame",C%,A%,"")
+ LOCAL checksum%=mgCalChecksum("shortFrame",C%,A%,0,"")
  ' transmit frame
  IF itf$="WMbus" THEN
   WMbusWrite(&H10, C%, A%, checksum%,&H16)  
@@ -93,7 +93,7 @@ FUNCTION mgRxShortFrame (itf$)
  END IF
  
  ' check the validity of the frame
- checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,"")
+ checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,0,"")
  IF NOT (checksumCalculated%=checksumRecieved% AND stopByte$=scStop$)
   'the frame is not valid
   mgRxShortFrame=-12
@@ -102,6 +102,42 @@ FUNCTION mgRxShortFrame (itf$)
 
  mgRxShortFrame=0
 END FUNCTION
+
+
+' (W)MBus transmit Control Frame
+' itf$  Interface with string.Example "WMbus" or "WMbus"
+' L%   L Field
+' C%  Control field, function field
+' A%  Address field
+' CI% Control information field
+' return   0 = ok, negative value = error
+FUNCTION msTxControlFrame(itf$,C%,A%,CI%)
+ ' Check address first
+ IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
+  ' Address is out of the range
+  msTxShortFrame=-13
+  EXIT FUNCTION 
+ ENDIF
+ 
+ ' frame fields: firstStart(68h), firstLength(3), secondLength(3), secondStart(68h), C, A, CI, checksum, stop(16h)
+ LOCAL checksum%=mgCalChecksum("controlFrame",C%,A%,CI%,"")
+ LOCAL firstLength%=3, secondLength%=3
+ ' transmit frame
+ IF itf$="WMbus" THEN
+  WMbusWrite(&H68,firstLength%,secondLength%,C%,A%,CI%,checksum%,&H16)  
+ ELSEIF itf$="Mbus" THEN
+  MbusWrite(&H68,firstLength%,secondLength%,C%,A%,CI%,checksum%,&H16)
+ ENDIF 
+ msTxControlFrame=0
+END FUNCTION
+
+' (W)MBus recieve Control Frame
+' itf$  Interface with string.Example "WMbus" or "WMbus"
+' L%   L Field
+' C%  Control field, function field
+' A%  Address field
+' CI% Control information field
+' return   0 = ok, negative value = error
 
 
 ' (W)MBus receive Long Frame
