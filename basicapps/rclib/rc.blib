@@ -1,0 +1,32 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' EMDO R/C pwm signal
+' @DESCRIPTION EMDO control rc servo
+' @VERSION 1.0
+
+'Some examples on usage:
+'start:
+' RCSet(0,-45,45)
+' pause 2000
+' RCSet(0,0,45)
+' pause 2000
+' RCSet(0,45,45)
+' pause 2000
+' RCSet(0,0,45)
+' pause 2000
+'goto start
+
+' RC control
+' ch channel (1..2)
+' angle servo angle to set (+- 0 to max)
+' max   maximal angle at 0.5 and 2.5ms
+SUB RCSet(ch% angle, min, max)
+ local dev$, set$
+ dev$="S0_out"+str$(ch%)
+ set$="mode=2 duty=20000, polarity=0, duty="+fix(1500.0+(angle/max)*1000)
+ SYS.SET dev$,duty$
+END SUB
+
+
+
