@@ -4,6 +4,7 @@
 ' @DESCRIPTION EMDO MQTT library for communication with www.ednme.com portal
 ' @VERSION 1.0
 
+
 ' Some examples on usage:
 ' err%=EdDisconnect()
 ' err%=EdConnect("", "")
