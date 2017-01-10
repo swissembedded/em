@@ -25,8 +25,8 @@ LIBRARY LOAD "modbus"
 ' err%=PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7, I8, T, U)
 ' print "Solarcheck " err% stat% I1 I2 I3 I4 I5 I6 I7 I8 T U
 ' pause 1000
-' err%=PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%, id%)
-' print "Solarcheckstatus " err% shrt%, discon%, comerr%, dio%, op%, id%
+' err%=PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%)
+' print "Solarcheckstatus " err% shrt%, discon%, comerr%, dio%, op%
 ' pause 30000
 ' goto start
 
@@ -79,12 +79,11 @@ END FUNCTION
 ' comerr% communication error
 ' dio%    digital io
 ' op%     operation
-' id%     id
 ' return value error code
-FUNCTION PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%, id%)
+FUNCTION PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%)
  LOCAL err%, rR$
  
- err%= mbFunc(itf$,slv%,3,&H480,6,rR$,500)
+ err%= mbFunc(itf$,slv%,3,&H480,5,rR$,500)
  IF err% THEN
   PhoenixSolarcheckStatus=err%
   EXIT FUNCTION
@@ -95,8 +94,7 @@ FUNCTION PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%,
  discon%=conv("bbe/i16",mid$(rR$,3,2))
  comerr%=conv("bbe/i16",mid$(rR$,5,2))
  dio%=conv("bbe/i16",mid$(rR$,7,2))
- op%=conv("bbe/i16",mid$(rR$,9,2))
- id%=conv("bbe/i16",mid$(rR$,11,2))
+ op%=conv("bbe/i16",mid$(rR$,9,2)) 
  PhoenixSolarcheckStatus=0
 END FUNCTION
 
