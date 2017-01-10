@@ -49,7 +49,7 @@ FUCTION msTxShortFrame(itf$,C%,A%)
  ENDIF
  
  ' frame fields: start(10h),C, A, checksum, stop(16h)
- LOCAL checksum%=mgCalChecksum("shortFrame",C%,A%,0,"")
+ LOCAL checksum%=msCalChecksum(C%,A%,0,"")
  ' transmit frame
  IF itf$="WMbus" THEN
   WMbusWrite(&H10, C%, A%, checksum%,&H16)  
@@ -62,45 +62,27 @@ END FUNCTION
 
 ' (W)MBus recieve Short Frame
 ' itf$  Interface with string. Example "Mbus" or "WMbus"
+' C%  Control field, function field
+' A%  Address field
 ' return   0 = ok, negative value = error
-FUNCTION mgRxShortFrame (itf$)
- LOCAL scStart$, startByte$, C%, A%, checksumRecieved%, checksumCalculated%, scStop$, stopByte$
- scStart$=chr$(&H10)
- scStop$=chr$(&H16)
- 
+FUNCTION msRxShortFrame (itf$,C%,A%)
+ LOCAL msg$ 
+ ' start (&H10), c,a,checksum, stop (&H16)
  IF itf$="WMbus" THEN
-  startByte$=WMbusReadLn$(2000,scStart$)
+  msg$=WMbusRead$(5,2000)
  ELSEIF itf$="Mbus" THEN
-  startByte$=MbusReadLn$(2000,scStart$)
+  msg$=MbusRead$(5,2000)
  END IF
  
- IF NOT (startByte$=scStart$) THEN
-  ' recieved byte is not the start byte of the short frame
+ IF len(msg$)<> 5 OR left$(msg$,1)<>chr$(&H10) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,2))<>mid$(msg$,4,1) THEN
+  ' something is wrong, 
   msRxShortFrame=-11
   EXIT FUNCTION
- END IF
- 
- IF itf$="WMbus" THEN
-  C%=WMbusRead()
-  A%=WMbusRead()
-  checksumRecieved%=WMbusRead()
-  stopByte$=WMbusRead()
- ELSEIF itf$="Mbus" THEN
-  C%=MbusRead()
-  A%=MbusRead()
-  checksumRecieved%=MbusRead()
-  stopByte$=MbusRead()
- END IF
- 
- ' check the validity of the frame
- checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,0,"")
- IF NOT (checksumCalculated%=checksumRecieved% AND stopByte$=scStop$)
-  'the frame is not valid
-  mgRxShortFrame=-12
-  EXIT FUNCTION
- END IF
-
- mgRxShortFrame=0
+ ENDIF
+ ' Extract C and A
+ C%=asc(mid$(msg,2,1)) 
+ A%=asc(mid$(msg,3,1))  
+ msRxShortFrame=0
 END FUNCTION
 
 
@@ -115,18 +97,17 @@ FUNCTION msTxControlFrame(itf$,C%,A%,CI%)
  ' Check address first
  IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
   ' Address is out of the range
-  msTxShortFrame=-13
+  msTxControlFrame=-13
   EXIT FUNCTION 
  ENDIF
  
  ' frame fields: firstStart(68h), firstLength(3), secondLength(3), secondStart(68h), C, A, CI, checksum, stop(16h)
- LOCAL checksum%=mgCalChecksum("controlFrame",C%,A%,CI%,"")
- LOCAL firstLength%=3, secondLength%=3
+ LOCAL checksum%=msCalChecksum(C%,A%,CI%,"") 
  ' transmit frame
  IF itf$="WMbus" THEN
-  WMbusWrite(&H68,firstLength%,secondLength%,C%,A%,CI%,checksum%,&H16)  
+  WMbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)  
  ELSEIF itf$="Mbus" THEN
-  MbusWrite(&H68,firstLength%,secondLength%,C%,A%,CI%,checksum%,&H16)
+  MbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)
  ENDIF 
  msTxControlFrame=0
 END FUNCTION
@@ -139,64 +120,25 @@ END FUNCTION
 ' A%  Address field
 ' CI% Control information field
 ' return   0 = ok, negative value = error
-FUNCTION msRxControlFrame(itf$)
- LOCAL scStart$, firstStartByte$, scLength$, firstLength%, secondLength%, secondStartByte$, C%, A%, checksumRecieved%, checksumCalculated%, scStop$, stopByte$
- scStart$=chr$(&H68)
- scStop$=chr$(&H16)
- 
+FUNCTION msRxControlFrame(itf$,C%,A%,CI%)
+ LOCAL msg$, hdr$
+ ' start (&H68), L (&H03), L (&H03), start (&H68), c, a, ci, checksum, stop (&H16)
  IF itf$="WMbus" THEN
-  firstStartByte$=WMbusReadLn$(2000,scStart$)
+  msg$=WMbusRead$(9,2000)
  ELSEIF itf$="Mbus" THEN
-  firstStartByte$=MbusReadLn$(2000,scStart$)
+  msg$=MbusRead$(9,2000)
  END IF
- 
- IF NOT (startByte$=scStart$) THEN
-  ' recieved byte is not the start byte of the control frame
-  msRxControlFrame=-14
+ hdr$=chr$(&H68)+chr$(3)+chr$(3)+chr$(&H68)
+ IF len(msg$)<> 9 OR left$(msg$,4)<>hdr$ OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,5,2))<>mid$(msg$,8,1) OR mid$(msg,2,1)<>mid$(msg,3,1) THEN
+  ' something is wrong 
+  msRxShortFrame=-12
   EXIT FUNCTION
- END IF
- 
- IF itf$="WMbus" THEN
-  firstLength%=WMbusRead()
-  secondLength%=WMbusRead()
- ELSEIF itf$="Mbus" THEN
-  firstLength%=MbusRead()
-  secondLength%=MbusRead()
- END IF
- 
- IF NOT (firstLength%=3 AND secondLength%=3) THEN
-  ' The first and second length are not equal to 3
-  msRxControlFrame=-15
-  EXIT FUNCTION
- END IF
- 
- IF NOT (startByte$=scStart$) THEN
-  ' recieved byte is not the start byte of the control frame
-  msRxControlFrame=-14
-  EXIT FUNCTION
- END IF
- 
- IF itf$="WMbus" THEN
-  C%=WMbusRead()
-  A%=WMbusRead()
-  checksumRecieved%=WMbusRead()
-  stopByte$=WMbusRead()
- ELSEIF itf$="Mbus" THEN
-  C%=MbusRead()
-  A%=MbusRead()
-  checksumRecieved%=MbusRead()
-  stopByte$=MbusRead()
- END IF
- 
- ' check the validity of the frame
- checksumCalculated%=mgCalChecksum("ShortFrame",C%,A%,0,"")
- IF NOT (checksumCalculated%=checksumRecieved% AND stopByte$=scStop$)
-  'the frame is not valid
-  mgRxShortFrame=-12
-  EXIT FUNCTION
- END IF
-
- mgRxShortFrame=0
+ ENDIF
+ ' Extract C,A,CI
+ C%=asc(mid$(msg,5,1)) 
+ A%=asc(mid$(msg,6,1))  
+ CI%=asc(mid$(msg,7,1)) 
+ msRxShortFrame=0
 END FUNCTION
 
 
@@ -209,34 +151,19 @@ END FUNCTION
 ' Usr$ User Data
 ' return   0 = ok, negative value = error
 FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,Usr$)
- LOCAL err%
- msRxLongFrame=err%
+
 END FUNCTION
 
 
 ' (W)MBus calculate frame checksum
-' frameType$ the type of the frame 
-' "shortFrame" (requires C% and A%)
-' "controlFrame" (requires C% and A%, CI%)
-' "longFrame" (requires C% and A%, CI% and userData$)
 ' C%  Control field, function field
 ' A%  Address field
 ' CI% Control information field
 ' Usr$ User Data
 ' return calculated checksum or -1 on error
-FUNCTION msCalChecksum (frameType$,C%,A%,CI%,Usr$)
+FUNCTION msCalChecksum (C%,A%,CI%,Usr$)
  LOCAL checksum%, i
  'The checksum value depends on the frame type
- IF frameType$="shortFrame" THEN
-  checksum%=C%
-  checksum%+=A%
- 
- ELSE IF frameType$="controlFrame" THEN
-  checksum%=C%
-  checksum%+=A%
-  checksum%+=CI%
- 
- ELSE IF frameType$="longFrame" THEN
   checksum%=C%
   checksum%+=A%
   checksum%+=CI%
@@ -244,10 +171,5 @@ FUNCTION msCalChecksum (frameType$,C%,A%,CI%,Usr$)
   For i = 1 to Len(Usr$)
    checksum%+=asc(mid$(Usr$,i,1))
   End i
- ELSE
-  ' the packet type is unknown
-  msCalChecksum=-1
-  EXIT FUNCTION
- ENDIF
  msCalChecksum=checksum%
 END FUNCTION
