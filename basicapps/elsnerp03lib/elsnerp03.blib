@@ -9,9 +9,9 @@
 LIBRARY LOAD "modbus"
 
 'Some examples on usage:
-'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=n"
+'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=e term=1"
 'slv%=1
-'itf$="RS485:1"
+'itf$="RTU:RS485:1"
 
 'start:
 ' err%=ElsnerWeatherstation(itf$,slv%,Tout,SunS%,SunW%, SunE%, Lgt%, Wind, Rain%)
@@ -29,21 +29,32 @@ LIBRARY LOAD "modbus"
 ' Lgt% light 0...999lux
 ' Wind wind m/s
 ' Rain% 1=raining 0=no rain
-FUNCTION ElsnerWeatherstation(itf$, slv%, Tout, SunS%, SunW%, SunE%, Lgt%, Wind, Rain%)
+FUNCTION ElsnerWeatherstation(itf$, slv%, Tout, SunS%, SunW%, SunE%, Lgt%, Wind, Rain%, GPS%, day%, month%, year%, hour%, min% sec%, azi, ele, lon lat)
  LOCAL err%,rD$
  ' Page 12 german documentation
- err%= mbFunc(itf$,slv%,4,0,14,rD$,500)
+ err%= mbFunc(itf$,slv%,4,0,&H11,rD$,500)
  IF err% THEN
   ElsnerWeatherstation=err%
   EXIT FUNCTION
  ENDIF
  ' Convert register values to int16
- Tout=conv("bbe/u32",mid$(rD$,1,4)/10.0
- SunS%=conv("bbe/u32",mid$(rD$,5,4)
- SunW%=conv("bbe/u32",mid$(rD$,9,4)
- SunE%=conv("bbe/u32",mid$(rD$,13,4)
- Lgt%=conv("bbe/u32",mid$(rD$,17,4)
- Wind=conv("bbe/u32",mid$(rD$,21,4)/10.0
- Rain%=conv("bbe/u32,mid$(rD$,25,4)) AND 1
+ Tout=conv("bbe/i16",mid$(rD$,1,2))/10.0
+ SunS%=conv("bbe/u16",mid$(rD$,3,2))
+ SunW%=conv("bbe/u16",mid$(rD$,5,2))
+ SunE%=conv("bbe/u16",mid$(rD$,7,2))
+ Lgt%=conv("bbe/u16",mid$(rD$,9,2))
+ Wind=conv("bbe/u16",mid$(rD$,11,2))/10.0
+ Rain%=conv("bbe/u16",mid$(rD$,13,2)) AND 1
+ GPS%=(conv("bbe/u16",mid$(rD$,13,2)) AND 512) >> 8
+ day%=conv("bbe/u16",mid$(rD$,15,2))
+ month%=conv("bbe/u16",mid$(rD$,17,2))
+ year%=conv("bbe/u16",mid$(rD$,19,2))
+ hour%=conv("bbe/u16",mid$(rD$,21,2))
+ min%=conv("bbe/u16",mid$(rD$,23,2))
+ sec%=conv("bbe/u16",mid$(rD$,25,2))
+ azi=conv("bbe/u16",mid$(rD$,27,2))/10.0
+ ele=conv("bbe/i16",mid$(rD$,29,2))/10.0
+ lon=conv("bbe/i16",mid$(rD$,31,2))/100.0
+ lat=conv("bbe/i16",mid$(rD$,33,2))/100.0
  ElsnerWeatherstation=0
 END FUNCTION
