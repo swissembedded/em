@@ -18,11 +18,15 @@ LIBRARY LOAD "modbus"
 'Some examples on usage:
 'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
 'slv%=1
+'chan%=1
 'itf$="RTU:RS485:1"
 'itf$="TCP:192.168.0.250:502"
 'start:
 ' err%=PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7, I8, T, U)
 ' print "Solarcheck " err% stat% I1 I2 I3 I4 I5 I6 I7 I8 T U
+' pause 1000
+' err%=PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%, id%)
+' print "Solarcheckstatus " err% shrt%, discon%, comerr%, dio%, op%, id%
 ' pause 30000
 ' goto start
 
@@ -30,7 +34,7 @@ LIBRARY LOAD "modbus"
 ' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% phoenix contact solarcheck modbus slave address
 ' chan% channel number (1..8)
-' stat% status
+' stat% status (digital in 0..1)
 ' I1-I8 Current [A]
 ' T     temperature [°C]
 ' U     voltage [V]
@@ -45,14 +49,14 @@ FUNCTION PhoenixSolarcheck(itf$, slv%, chan%, stat%, I1, I2, I3, I4, I5, I6, I7,
   EXIT FUNCTION
  ENDIF
  
- err%= mbFunc(itf$,slv%,4,(chan%-1)*11,11,rR$,500)
+ err%= mbFunc(itf$,slv%,3,(chan%-1)*11,11,rR$,500)
  IF err% THEN
   PhoenixSolarcheck=err%
   EXIT FUNCTION
  ENDIF 
  
  ' Convert register values to signed int 16
- stat=conv("bbe/u16",mid$(rR$,1,2))
+ stat%=conv("bbe/u16",mid$(rR$,1,2))
  I1=conv("bbe/i16",mid$(rR$,3,2))/100.0
  I2=conv("bbe/i16",mid$(rR$,5,2))/100.0
  I3=conv("bbe/i16",mid$(rR$,7,2))/100.0
@@ -69,24 +73,25 @@ END FUNCTION
 ' Phoenix contact solarcheck status
 ' itf$    modbus interface (see EMDO modbus library for details)
 ' slv%    phoenix contact solarcheck modbus slave address
-' short%  shorted circuit
+' in the following variables, each bit corresponds to a module on the SCK-C-MODBUS (bit 0-8)
+' shrt%  shorted circuit
 ' discon% disconnected
 ' comerr% communication error
 ' dio%    digital io
 ' op%     operation
 ' id%     id
 ' return value error code
-FUNCTION PhoenixSolarcheckStatus(itf$, slv%, short%, discon%, comerr%, dio%, op%, id%)
+FUNCTION PhoenixSolarcheckStatus(itf$, slv%, shrt%, discon%, comerr%, dio%, op%, id%)
  LOCAL err%, rR$
  
- err%= mbFunc(itf$,slv%,4,&H58,6,rR$,500)
+ err%= mbFunc(itf$,slv%,3,&H480,6,rR$,500)
  IF err% THEN
   PhoenixSolarcheckStatus=err%
   EXIT FUNCTION
  ENDIF 
  
  ' Convert register values to signed int 16
- short%=conv("bbe/i16",mid$(rR$,1,2))
+ shrt%=conv("bbe/i16",mid$(rR$,1,2))
  discon%=conv("bbe/i16",mid$(rR$,3,2))
  comerr%=conv("bbe/i16",mid$(rR$,5,2))
  dio%=conv("bbe/i16",mid$(rR$,7,2))
