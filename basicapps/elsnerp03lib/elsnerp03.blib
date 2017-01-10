@@ -6,7 +6,7 @@
 ' Documentation http://www.elsner-elektronik.de/shop/de/produkte-shop/gebaeudetechnik-konventionell/modbus-sensoren/p03-3-modbus-398.html
 
 ' Loading Modbus library, make sure it is installed on EMDO
-LIBRARY LOAD "modbus"
+'LIBRARY LOAD "modbus"
 
 'Some examples on usage:
 'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=e term=1"
