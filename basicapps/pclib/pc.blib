@@ -1,0 +1,31 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' EMDO power controller library
+' @DESCRIPTION EMDO power control library
+' @VERSION 1.0
+
+'Some examples on usage:
+'start:
+' PCSet(0,1000,2000,50)
+' pause 2000
+'goto start
+
+' Power control library zero crossing solid state relay
+' ch channel (0..3)
+' power set output power to this value
+' max   max power
+' gridf 50 or 60Hz
+' return power set on pwm
+FUNCTION PCSet(ch% power, max, gridf)
+ local dev$, set$,duty%,period%
+ dev$="S0_out"+str$(ch%)
+ period%=fix(1.0/grid*100.0*1000.0*1000.0)
+ duty%=fix(power/max*period%)
+ set$="mode=2 period=20000, polarity=0, duty="+str$(duty%)
+ SYS.SET dev$,set$
+ PCSet=duty%/period%*max
+END FUNCTION
+
+
+

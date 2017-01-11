@@ -18,14 +18,14 @@
 'goto start
 
 ' RC control
-' ch channel (1..2)
+' ch channel (0..1)
 ' angle servo angle to set (+- 0 to max)
 ' max   maximal angle at 0.5 and 2.5ms
-SUB RCSet(ch% angle, min, max)
+SUB RCSet(ch% angle, max)
  local dev$, set$
  dev$="S0_out"+str$(ch%)
- set$="mode=2 duty=20000, polarity=0, duty="+fix(1500.0+(angle/max)*1000)
- SYS.SET dev$,duty$
+ set$="mode=2 period=20000, polarity=0, duty="+str$(fix(1500.0+(angle/max)*1000))
+ SYS.SET dev$,set$
 END SUB
 
 
