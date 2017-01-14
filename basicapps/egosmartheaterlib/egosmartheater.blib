@@ -1,12 +1,17 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2015-2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO EGO Smart Heater library
+' @VERSION 1.0
 ' Ego smart heater control with excess energy over modbus TCP and RTU
-' Set this value from energy meter measurement (e.g. S0 / D0 interface)
-'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=e"
+' Loading Modbus library, make sure it is installed on EMDO
+'LIBRARY LOAD "modbus"
+
+'Some examples on usage:
+'SYS.Set "rs485", "baud=19200 data=8 stop=1 parity=e term=1"
 'kW=0.0
 'slv%=247
-'itf$="RS485:1"
+'itf$="RTU:RS485:1"
 'start:
 ' err%=EgoSmartHeater(itf$,slv%,kW,st%,T%,Tmax%)
 ' print "Ego " err% st% T% Tmax%
