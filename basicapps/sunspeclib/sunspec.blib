@@ -16,7 +16,7 @@
 ' Technical Note SunSpec Logging in Solaredge Inverters
 
 ' Loading Modbus library, make sure it is installed on EMDO
-LIBRARY LOAD "modbus"
+'LIBRARY LOAD "modbus"
 
 'Some examples on usage:
 'SYS.Set "rs485", "baud=115200 data=8 stop=1 parity=n term=1"
