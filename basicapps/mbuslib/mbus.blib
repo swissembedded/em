@@ -143,8 +143,32 @@ END FUNCTION
 ' CI% Control information field
 ' Usr$ User Data
 ' return   0 = ok, negative value = error
-FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,Usr$)
+FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,UsrData$)
+ LOCAL hdr$, msg$
+ ' frame fields: firstStart(68h), length, length, secondStart(68h), C, A, CI, User Data, checksum, stop(16h)
 
+ ' Wait to recieve the header first
+ hdr$=MbusRead$(3,2000)
+ IF len(hdr$)<> 3 OR left$(hdr$,1)<>chr$(&H68) OR mid$(hdr,2,1)<>right$(hdr$,1) THEN
+  ' something is wrong in the header
+  msRxShortFrame=-16
+  EXIT FUNCTION
+ ENDIF
+ 
+ ' receive the rest of the frame
+ msg$=MbusRead$(7,2000)
+ IF len(msg$)<> 7 OR left$(msg$,1)<>chr$(&H68) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,4))<>mid$(msg$,6,1) THEN
+  ' something is wrong in the body of the message
+  msRxShortFrame=-17
+  EXIT FUNCTION
+ ENDIF
+ 
+ ' Extract C,A,CI,UsrData
+ C%=asc(mid$(msg,2,1)) 
+ A%=asc(mid$(msg,3,1))  
+ CI%=asc(mid$(msg,4,1)) 
+ UsrData$=mid$(msg,5,1)
+ msRxShortFrame=0
 END FUNCTION
 
 
