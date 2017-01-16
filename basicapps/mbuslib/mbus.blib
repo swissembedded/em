@@ -6,28 +6,18 @@
 ' Protocols are freely available from http://www.m-bus.com/
 
 ' (W)MBus Transmit single char
-' itf$  Interface with string. Example "WMbus" or "Mbus"
 ' return   0 = ok, negative value = error
 FUNCTION msTxSingleChar(itf$)
- IF itf$="WMbus" THEN
-  WMbusWrite(&HE5)
- ELSEIF itf$="Mbus" THEN
-  MbusWrite(&HE5)
- ENDIF
+ MbusWrite(&HE5)
  msTxSingleChar=0
 END FUNCTION
 
 ' (W)MBus Receive single char
-' itf$  Interface with string. Example "WMbus" or "WMbus"
 ' return   0 = ok, negative value = error
-FUNCTION msRxSingleChar(itf$)
+FUNCTION msRxSingleChar()
  LOCAL rsp$, sc$
  sc$=chr$(&HE5)	
- IF itf$="WMbus" THEN
-  rsp$=WMbusReadLn$(2000,sc$)
- ELSEIF itf$="Mbus" THEN
-  rsp$=MbusReadLn$(2000,sc$)
- ENDIF
+ rsp$=MbusReadLn$(2000,sc$)
  IF rsp$=sc$ THEN
   msRxSingleChar=0
  ELSE
@@ -36,11 +26,10 @@ FUNCTION msRxSingleChar(itf$)
 END FUNCTION 
 
 ' (W)MBus transimt Short Frame
-' itf$  Interface with string. Example "WMbus" or "Mbus"
 ' C%  Control field, function field
 ' A%  Address field
 ' return   0 = ok, negative value = error
-FUCTION msTxShortFrame(itf$,C%,A%)
+FUCTION msTxShortFrame(C%,A%)
  ' Address check first
  IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
   ' Address is out of the range
@@ -50,29 +39,19 @@ FUCTION msTxShortFrame(itf$,C%,A%)
  
  ' frame fields: start(10h),C, A, checksum, stop(16h)
  LOCAL checksum%=msCalChecksum(C%,A%,0,"")
- ' transmit frame
- IF itf$="WMbus" THEN
-  WMbusWrite(&H10, C%, A%, checksum%,&H16)  
- ELSEIF itf$="Mbus" THEN
-  MbusWrite(&H10, C%, A%, checksum%,&H16)
- ENDIF 
+ MbusWrite(&H10, C%, A%, checksum%,&H16)
  msTxShortFrame=0
 END FUNCTION
 
 
 ' (W)MBus recieve Short Frame
-' itf$  Interface with string. Example "Mbus" or "WMbus"
 ' C%  Control field, function field
 ' A%  Address field
 ' return   0 = ok, negative value = error
-FUNCTION msRxShortFrame (itf$,C%,A%)
+FUNCTION msRxShortFrame (C%,A%)
  LOCAL msg$ 
  ' start (&H10), c,a,checksum, stop (&H16)
- IF itf$="WMbus" THEN
-  msg$=WMbusRead$(5,2000)
- ELSEIF itf$="Mbus" THEN
   msg$=MbusRead$(5,2000)
- END IF
  
  IF len(msg$)<> 5 OR left$(msg$,1)<>chr$(&H10) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,2))<>mid$(msg$,4,1) THEN
   ' something is wrong, 
@@ -87,13 +66,12 @@ END FUNCTION
 
 
 ' (W)MBus transmit Control Frame
-' itf$  Interface with string.Example "WMbus" or "WMbus"
 ' L%   L Field
 ' C%  Control field, function field
 ' A%  Address field
 ' CI% Control information field
 ' return   0 = ok, negative value = error
-FUNCTION msTxControlFrame(itf$,C%,A%,CI%)
+FUNCTION msTxControlFrame(C%,A%,CI%)
  ' Check address first
  IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
   ' Address is out of the range
@@ -104,30 +82,21 @@ FUNCTION msTxControlFrame(itf$,C%,A%,CI%)
  ' frame fields: firstStart(68h), length(3), length(3), secondStart(68h), C, A, CI, checksum, stop(16h)
  LOCAL checksum%=msCalChecksum(C%,A%,CI%,"") 
  ' transmit frame
- IF itf$="WMbus" THEN
-  WMbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)  
- ELSEIF itf$="Mbus" THEN
-  MbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)
- ENDIF 
+ MbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)
  msTxControlFrame=0
 END FUNCTION
 
 
 ' (W)MBus recieve Control Frame
-' itf$  Interface with string.Example "WMbus" or "WMbus"
 ' L%   L Field
 ' C%  Control field, function field
 ' A%  Address field
 ' CI% Control information field
 ' return   0 = ok, negative value = error
-FUNCTION msRxControlFrame(itf$,C%,A%,CI%)
+FUNCTION msRxControlFrame(C%,A%,CI%)
  LOCAL msg$, hdr$
  ' start (&H68), L (&H03), L (&H03), start (&H68), c, a, ci, checksum, stop (&H16)
- IF itf$="WMbus" THEN
-  msg$=WMbusRead$(9,2000)
- ELSEIF itf$="Mbus" THEN
-  msg$=MbusRead$(9,2000)
- END IF
+ msg$=MbusRead$(9,2000)
  hdr$=chr$(&H68)+chr$(3)+chr$(3)+chr$(&H68)
  IF len(msg$)<> 9 OR left$(msg$,4)<>hdr$ OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,5,2))<>mid$(msg$,8,1) OR mid$(msg,2,1)<>mid$(msg,3,1) THEN
   ' something is wrong 
@@ -143,14 +112,13 @@ END FUNCTION
 
 
 ' (W)MBus transmit Long Frame
-' itf$  Interface with string.Example "WMbus" or "WMbus"
 ' L%    L Field
 ' C%    Control field, function field
 ' A%    Address field
 ' CI%   Control information field
 ' UsrData$ User data field
 ' return   0 = ok, negative value = error
-FUNCTION msTxLongFrame(itf$,C%,A%,CI%,UsrData$)
+FUNCTION msTxLongFrame(C%,A%,CI%,UsrData$)
  ' Check address first
  IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
   ' Address is out of the range
@@ -163,17 +131,12 @@ FUNCTION msTxLongFrame(itf$,C%,A%,CI%,UsrData$)
  LOCAL checksum%=msCalChecksum(C%,A%,CI%,UsrData$) 
  
  ' transmit frame
- IF itf$="WMbus" THEN
-  WMbusWrite(&H68,length%,length%,C%,A%,CI%,UsrData$,checksum%,&H16)  
- ELSEIF itf$="Mbus" THEN
-  MbusWrite(&H68,length%,length%,C%,A%,CI%,UsrData$,checksum%,&H16) 
- ENDIF 
+ MbusWrite(&H68,length%,length%,C%,A%,CI%,UsrData$,checksum%,&H16) 
  msTxControlFrame=0
 END FUNCTION
 
 
 ' (W)MBus receive Long Frame
-' itf$  Interface with string.Example "WMbus" or "WMbus"
 ' L%   L Field
 ' C%  Control field, function field
 ' A%  Address field
