@@ -156,11 +156,17 @@ FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,UsrData$)
  ENDIF
  
  length%=asc(mid$(hdr,2,1))+3
- ' receive the rest of the frame
- msg$=MbusRead$((length%),2000)
- IF len(msg$)<> (length%) OR left$(msg$,1)<>chr$(&H68) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,(length%-3)))<>right$(msg$,2) THEN
-  ' something is wrong in the body of the message
+ ' length must be at least 3+3=6
+ IF length% < 6 THEN
   msRxShortFrame=-17
+  EXIT FUNCTION
+ ENDIF 
+ 
+ ' receive the rest of the frame
+ msg$=MbusRead$(length%,2000)
+ IF len(msg$)<> length% OR left$(msg$,1)<>chr$(&H68) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,right$(msg$,length%-1) THEN
+  ' something is wrong in the body of the message
+  msRxShortFrame=-18
   EXIT FUNCTION
  ENDIF
  
