@@ -1,0 +1,73 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO open weather api 
+' @VERSION 1.0
+' Please make sure you are registered at open weather with a valid api key
+' The API description can be found here https://openweathermap.org/api
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+'key$="21254ca4c403151ea2540fa0f1545e6d"
+'pos$="192.168.0.14"
+'start:
+' PAUSE 5000
+'GOTO start
+
+
+' Read weather
+' key$ open weather key
+' pos$ position lat=35&lon=139 or id=2172797 or zip=94040,us or q=London,uk
+' return error code if negative value
+FUNCTION OWCurrentWeather( key$, pos$, coords$, weathers$, mains$, winds$, clouds$, rains$, dts$, syss$, ids$, names$)
+    LOCAL err%, coord$(3), coords$, weather$(3), weathers$, main$(3), mains$, wind$(3), winds$, clouds$(3), cloudss$, rain$(3), rains$
+	LOCAL dt$(3),dts$, sys$(3), syss$, id$(3),ids$,name$(3),names$
+	err%=HTTPRequest("openweathermap.org", 80, con%, "GET","/data/2.5/weather?"+pos$+"?appid="+key$, "", "" , 5000)
+	IF err% <0 THEN
+     print "open failed"
+	 IF con% >=0 THEN n%=HTTPClose(con%)
+	 OWCurrentWeather=err%
+	 EXIT FUNCTION
+	ENDIF	
+	coord$(0)=CHR$(34)+"coord"+chr$(34)+":{"
+	coord$(1)="}"
+	coord$(2)="coords$"
+	weather$(0)=CHR$(34)+"weather"+chr$(34)+":{"
+	weather$(1)="}"
+	weather$(2)="weathers$"	
+	main$(0)=CHR$(34)+"main"+chr$(34)+":{"
+	main$(1)="}"
+	main$(2)="mains$"
+	wind$(0)=CHR$(34)+"wind"+chr$(34)+":{"
+	wind$(1)="}"
+	wind$(2)="winds$"
+	clouds$(0)=CHR$(34)+"clouds"+chr$(34)+":{"
+	clouds$(1)="}"
+	clouds$(2)="cloudss$"		
+	rain$(0)=CHR$(34)+"rain"+chr$(34)+":{"
+	rain$(1)="}"
+	rain$(2)="rains$"		
+	dt$(0)=CHR$(34)+"dt"+chr$(34)+":"
+	dt$(1)=","
+	dt$(2)="dts$"		
+	sys$(0)=CHR$(34)+"sys"+chr$(34)+":{"
+	sys$(1)="}"
+	sys$(2)="syss$"
+	id$(0)=CHR$(34)+"id"+chr$(34)+":"
+	id$(1)=","
+	id$(2)="ids$"		
+	name$(0)=CHR$(34)+"name"+chr$(34)+":"+chr$(34)
+	name$(1)=","
+	name$(2)="names$"
+		
+	n%=StreamSearch(HTTPResponse(con%),"coord$","weather$","main$","wind$","clouds$","rain$","dt$","sys$","id$","name$",5000)
+    err%=HTTPClose(con%)	
+	if n%<>2047 THEN
+	 OWCurrentWeather=-2
+	 EXIT FUNCTION
+	ENDIF
+	OWCurrentWeather=0
+END FUNCTION
