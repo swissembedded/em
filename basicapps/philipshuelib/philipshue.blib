@@ -87,7 +87,7 @@ FUNCTION PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 	'Generate message {"hue":value,"sat":value}
 	'Double quotes are generated with CHR$(34), pls see ASCII table for reference
     al$=""
-    IF alert% THEN al$=","+chr$(34)+"alert"+chr$(34)+":"+chr$(34)+"select"+chr$(34) 
+    IF alert% THEN al$=","+chr$(34)+"alert"+chr$(34)+":"+chr$(34)+"lselect"+chr$(34) 
 	mes$="{"+CHR$(34)+"hue"+CHR$(34)+":"+STR$(hue%)+","+CHR$(34)+"sat"+CHR$(34)+":"+STR$(sat%)+al$+"}"
 	
 	err%=HTTPRequest(server$, 80, con%, "PUT","/api/"+user$+"/lights/"+str$(id%)+"/state", "", "text/plain"+chr$(13)+chr$(10)+"Content-Type: text/plain"+chr$(13)+chr$(10)+"Content-Length: "+STR$(len(mes$)) , 5000)
