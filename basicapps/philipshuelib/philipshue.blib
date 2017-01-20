@@ -104,13 +104,11 @@ FUNCTION PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 	 err%=HTTPClose(con%)	
 	 EXIT FUNCTION
 	ENDIF
-    print "ok"
 	rp$(0)=CHR$(34)+"success"+CHR$(34)
 	rp$(1)=":"
 	rp$(2)="ok$"
 	' We expect "success" reading
 	n%=StreamSearch(HTTPResponse(con%),"rp$",5000)
-    print n%
     err%=HTTPClose(con%)	
 	if n%<>1 THEN
 	 PhilipsHUE=-2
