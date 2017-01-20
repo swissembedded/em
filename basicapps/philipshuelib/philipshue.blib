@@ -23,22 +23,22 @@
 'Phmax = 1.0
 'start:
 ' paramters house, scale, battery, pv
-' PhilipsCalHue(1.0, 1.0, 0.0, 0.0, hue%, sat%) 'red consumption  
+' PhilipsCalHue(1.0, Phmax, 0.0, 0.0, hue%, sat%) 'red consumption  
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
-' PhilipsCalHue(1.0, 1.0, -1.0, 0.0, hue%, sat%) 'yellow consumption with discharge
+' PhilipsCalHue(1.0, Phmax, -1.0, 0.0, hue%, sat%) 'yellow consumption with discharge
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
-' PhilipsCalHue(1.0, 1.0, 1.0, 0.0, hue%, sat%) 'magenta consumption with charge
+' PhilipsCalHue(1.0, Phmax, 1.0, 0.0, hue%, sat%) 'magenta consumption with charge
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
-' PhilipsCalHue(-1.0, 1.0, 0.0, 0.0, hue%, sat%) 'green excess
+' PhilipsCalHue(-1.0, Phmax, 0.0, 0.0, hue%, sat%) 'green excess
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
-' PhilipsCalHue(-1.0, 1.0, -1.0, 0.0, hue%, sat%) 'blue excess discharging 
+' PhilipsCalHue(-1.0, Phmax, -1.0, 0.0, hue%, sat%) 'blue excess discharging 
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
-' PhilipsCalHue(-1.0, 1.0, 1.0, 0.0, hue%, sat%) 'cyan excess charging 
+' PhilipsCalHue(-1.0, Phmax, 1.0, 0.0, hue%, sat%) 'cyan excess charging 
 ' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
 ' PAUSE 5000
 ' alert%=alert% XOR 1
