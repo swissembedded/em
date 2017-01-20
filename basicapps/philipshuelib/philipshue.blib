@@ -1,0 +1,120 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO philips hue color led light control, convert information 
+' e.g. excess energy available into a lamp signal
+' @VERSION 1.0
+' Please make sure the philips hue gateway is configured correctly
+' You have to create a user on the philips bridge first http://www.developers.meethue.com/documentation/getting-started
+' Hue of the light. This is a wrapping value between 0 and 65535. Both 0 and 65535 are red, 25500 is green and 46920 is blue.
+' Saturation of the light. 254 is the most saturated (colored) and 0 is the least saturated (white). 
+' Please visit site http://www.developers.meethue.com/documentation/lights-api for detailed infos about color space
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+'user$="1da0b75c128a616f334d31343c6564e7"
+'server$="192.168.0.14"
+'id%=4
+'sat%=254
+'alert%=0
+'Phmax = 1.0
+'start:
+' paramters house, scale, battery, pv
+' PhilipsCalHue(1.0, 1.0, 0.0, 0.0, hue%, sat%) 'red consumption  
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' PhilipsCalHue(1.0, 1.0, -1.0, 0.0, hue%, sat%) 'yellow consumption with discharge
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' PhilipsCalHue(1.0, 1.0, 1.0, 0.0, hue%, sat%) 'magenta consumption with charge
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' PhilipsCalHue(-1.0, 1.0, 0.0, 0.0, hue%, sat%) 'green excess
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' PhilipsCalHue(-1.0, 1.0, -1.0, 0.0, hue%, sat%) 'blue excess discharging 
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' PhilipsCalHue(-1.0, 1.0, 1.0, 0.0, hue%, sat%) 'cyan excess charging 
+' err%=PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+' PAUSE 5000
+' alert%=alert% XOR 1
+'GOTO start
+
+' Calculate Philips Hue color
+' Ph house smart meter power measurement [kW] (<0 = excess energy, > 0 = consumption from grid)
+' Phmax max range for saturation [kW] (e.g. 1.0 for 1kW)
+' Ps storage smart meter power measurement [kW] (<0 = discharging, > 0 = charging)
+' Pv photovoltaic smart meter power measurement [kW] (<0 consumption, > 0 = production)
+' hue value
+' sat value
+' red = consumption from grid, no battery discharge
+' yellow = consumption from grid, discharging battery
+' magenta = consumption from grid, charging battery
+' green = excess energy, no charging
+' cyan = excess energy, charging
+' blue = excess energy, discharging
+SUB PhilipsCalHue(Ph, Phmax, Ps, Pv, hue%, sat%)
+ sat%=abs(Ph)/Phmax*254.0
+ IF sat% > 254 THEN sat%=254
+ 
+ IF Ph > 0.0 THEN
+  ' We consume power from the grid
+  hue%=65535 'red
+  IF Ps < 0.0 THEN hue%=12750 'yellow discharging
+  IF Ps > 0.0 THEN hue%=56100 ' magenta charging
+  ' We have excess energy to the grid
+ ELSEIF Ph < 0.0 THEN
+  hue%=25500 'green feeding into grid, no charge
+  IF Ps < 0.0 THEN hue%=46920 'blue excess discharging
+  IF Ps > 0.0 THEN hue%=38250 'cyan excess, charging
+ ENDIF
+ PhilipsCalHue=hue%
+END SUB
+
+' Philips hue light state changer
+' server$ philips hue device ip
+' user$   philips hue bridge generated user string
+' hue%    Hue of the light. This is a wrapping value between 0 and 65535
+' sat%    Saturation of the light. 254 is the most saturated (colored) and 0 is the least saturated (white).
+' alert%  Alert state
+' return error code if negative value
+FUNCTION PhilipsHUE( server$, user$, id%, hue%, sat%, alert% )
+    LOCAL err%, mes$,n%,rp$(3),ok$,al$
+	'Generate message {"hue":value,"sat":value}
+	'Double quotes are generated with CHR$(34), pls see ASCII table for reference
+    al$=""
+    IF alert% THEN al$=","+chr$(34)+"alert"+chr$(34)+":"+chr$(34)+"select"+chr$(34) 
+	mes$="{"+CHR$(34)+"hue"+CHR$(34)+":"+STR$(hue%)+","+CHR$(34)+"sat"+CHR$(34)+":"+STR$(sat%)+al$+"}"
+	
+	err%=HTTPRequest(server$, 80, con%, "PUT","/api/"+user$+"/lights/"+str$(id%)+"/state", "", "text/plain"+chr$(13)+chr$(10)+"Content-Type: text/plain"+chr$(13)+chr$(10)+"Content-Length: "+STR$(len(mes$)) , 5000)
+	IF err% <0 THEN
+	 PhilipsHUE=err%
+	 IF con%>=0 THEN err%=HTTPClose(con%)	
+	 EXIT FUNCTION
+	ENDIF
+	
+    ' Write content
+	n%=SocketWrite( con%,  mes$)
+	IF n% <> len(mes$) THEN
+	 PhilipsHUE=-1
+	 err%=HTTPClose(con%)	
+	 EXIT FUNCTION
+	ENDIF
+    print "ok"
+	rp$(0)=CHR$(34)+"success"+CHR$(34)
+	rp$(1)=":"
+	rp$(2)="ok$"
+	' We expect "success" reading
+	n%=StreamSearch(HTTPResponse(con%),"rp$",5000)
+    print n%
+    err%=HTTPClose(con%)	
+	if n%<>1 THEN
+	 PhilipsHUE=-2
+	 EXIT FUNCTION
+	ENDIF
+	PhilipsHUE=0
+END FUNCTION

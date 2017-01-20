@@ -31,7 +31,7 @@ FUNCTION MyStromState(server$, power, relay%)
 	err%=HTTPRequest(server$, 80, con%, "GET","/report", "", "" , 5000)
 	IF err% <0 THEN
      print "open failed"
-     n%=HTTPClose(con%)          
+	 IF con% >=0 THEN n%=HTTPClose(con%)
 	 MyStromState=err%
 	 EXIT FUNCTION
 	ENDIF	
