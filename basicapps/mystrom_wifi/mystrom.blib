@@ -50,7 +50,7 @@ FUNCTION MyStromState(server$, power, relay%)
     rs$(2)="st$"
     st$=""
     n%=StreamSearch(HTTPResponse(con%),"rp$","rs$",5000)
-	power=val(ps$)/1000.0
+	power=val(pw$)/1000.0
 	IF st$="true" THEN
 	 relay%=1
     ELSEIF st$="false" THEN
