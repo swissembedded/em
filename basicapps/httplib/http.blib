@@ -1,6 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2015 - 2017 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO http lib to access devices over REST and JSON
 ' @VERSION 1.0
 ' Documentation RFC2616 and others
@@ -18,7 +18,7 @@
 ' tmo%    Timeout in ms
 ' return error code if negative value
 FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%)
- LOCAL con%, err%, n%
+ LOCAL n%
  ' default server port is 80
  IF port% = 0 THEN
   port = 80
@@ -46,7 +46,11 @@ FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%)
  ENDIF
  ' Write request
  n%=SocketWrite( con%,  cmd$," ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: ",acc$,13,10,13,10 )
- HTTPRequest=n%
+ IF n% < 0 THEN
+  PRINT "Write problem" con%
+  HTTPRequest=n%
+ ENDIF
+ HTTPRequest=0
 END FUNCTION
 
 ' Read response string from http server
@@ -56,6 +60,7 @@ FUNCTION HTTPResponse(con%)
  LOCAL rsp%
  ' Read until timeout or closed
  rsp%=SocketRead(con%)
+ 'if rsp% >=0 THEN print chr$(rsp%) rsp%
  HTTPResponse=rsp%
 END FUNCTION
 
@@ -66,5 +71,5 @@ FUNCTION HTTPClose(con%)
  LOCAL err%
  ' Close connection again
  err%=SocketClose( con% )  
- HTTPClose=err%
+ HTTPClose=0
 END FUNCTION
