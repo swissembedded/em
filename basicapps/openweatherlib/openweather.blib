@@ -12,62 +12,165 @@
 
 'Adjust server IP and username to your bridge setting (see developers url below for details)
 'key$="21254ca4c403151ea2540fa0f1545e6d"
-'pos$="192.168.0.14"
+'pos$="q=Baden+CH" ' Nearby town + country code
+'lng$="de" ' german language output for the weather
+'unit$="metric"
 'start:
 ' PAUSE 5000
 'GOTO start
 
 
-' Read weather
+' Read weather forecast of the next 5 days
+' API documentation available at https://openweathermap.org/forecast5
 ' key$ open weather key
-' pos$ position lat=35&lon=139 or id=2172797 or zip=94040,us or q=London,uk
+' pos$ position lat=35&lon=139 or id=2172797 or zip=94040,us or q=London,uk (iso3166 country code)
+' lng$ de, en, etc, pls see api description
+' unit$ imperial or metric
+' cnt%  number of forecast entries
 ' return error code if negative value
-FUNCTION OWCurrentWeather( key$, pos$, coords$, weathers$, mains$, winds$, clouds$, rains$, dts$, syss$, ids$, names$)
-    LOCAL err%, coord$(3), coords$, weather$(3), weathers$, main$(3), mains$, wind$(3), winds$, clouds$(3), cloudss$, rain$(3), rains$
-	LOCAL dt$(3),dts$, sys$(3), syss$, id$(3),ids$,name$(3),names$
-	err%=HTTPRequest("openweathermap.org", 80, con%, "GET","/data/2.5/weather?"+pos$+"?appid="+key$, "", "" , 5000)
+' Attn:
+' This functions changes these global variables:
+' OW_dt%(cnt%) unix time utc of forecast
+' OW_main(8,cnt%) temp, temp_min, temp_max, pressure, sea_level, grnd_level, humidity, temp_kf
+' OW_weather$(4,cnt%) id, main, description, icon
+' OW_cloud(cnt%) all
+' OW_wind(2,cnt%) speed, deg
+' OW_rain(cnt%) 3h
+' OW_snow(cnt%) 3h
+
+FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
+    LOCAL err%, n%, con%, cnta$(3), cnts$, lang$, units$
+	lang$=""
+	IF lng$ <> "" THEN
+	 lang$="&lang="+lng$
+	ENDIF
+	units$=""
+	IF unit$ <> "" THEN
+	 units$="&units="+unit$
+	ENDIF
+	
+	err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml", "", "" , 5000)
 	IF err% <0 THEN
      print "open failed"
 	 IF con% >=0 THEN n%=HTTPClose(con%)
 	 OWCurrentWeather=err%
 	 EXIT FUNCTION
 	ENDIF	
-	coord$(0)=CHR$(34)+"coord"+chr$(34)+":{"
-	coord$(1)="}"
-	coord$(2)="coords$"
-	weather$(0)=CHR$(34)+"weather"+chr$(34)+":{"
-	weather$(1)="}"
-	weather$(2)="weathers$"	
-	main$(0)=CHR$(34)+"main"+chr$(34)+":{"
-	main$(1)="}"
-	main$(2)="mains$"
-	wind$(0)=CHR$(34)+"wind"+chr$(34)+":{"
-	wind$(1)="}"
-	wind$(2)="winds$"
-	clouds$(0)=CHR$(34)+"clouds"+chr$(34)+":{"
-	clouds$(1)="}"
-	clouds$(2)="cloudss$"		
-	rain$(0)=CHR$(34)+"rain"+chr$(34)+":{"
-	rain$(1)="}"
-	rain$(2)="rains$"		
-	dt$(0)=CHR$(34)+"dt"+chr$(34)+":"
-	dt$(1)=","
-	dt$(2)="dts$"		
-	sys$(0)=CHR$(34)+"sys"+chr$(34)+":{"
-	sys$(1)="}"
-	sys$(2)="syss$"
-	id$(0)=CHR$(34)+"id"+chr$(34)+":"
-	id$(1)=","
-	id$(2)="ids$"		
-	name$(0)=CHR$(34)+"name"+chr$(34)+":"+chr$(34)
-	name$(1)=","
-	name$(2)="names$"
-		
-	n%=StreamSearch(HTTPResponse(con%),"coord$","weather$","main$","wind$","clouds$","rain$","dt$","sys$","id$","name$",5000)
-    err%=HTTPClose(con%)	
-	if n%<>2047 THEN
+	
+	' Read the <sun />
+	LOCAL suna$(3),suns$
+	suna$(0)="<sun "
+	suna$(1)="/>
+	suna$(2)="suns$"	
+	n%=StreamSearch(HTTPResponse(con%),"suns$", 5000)
+
+	IF n% <> 1 THEN
+	 n%=HTTPClose(con%)
 	 OWCurrentWeather=-2
-	 EXIT FUNCTION
+	 EXIT FUNCTION		
 	ENDIF
+    
+	' <time 
+	LOCAL timea$(3),times$
+	timea$(0)="<time "
+	timea$(1)=">"
+	timea$(2)="times$"	
+	
+	' <symbol 
+	LOCAL symbola$(3), symbols$
+	symbola$(0)="<symbol "
+	symbola$(1)="/>"
+	symbola$(2)="symbols$"
+
+	' <precipitation 
+	LOCAL precipitationa$(3), precipitations$
+	precipitationa$(0)="<precipitation "
+	precipitationa$(1)="/>"
+	precipitationa$(2)="precipitations$"
+
+	' <windDirection 
+	LOCAL windDirectiona$(3), windDirections$
+	windDirectiona$(0)="<windDirection "
+	windDirectiona$(1)="/>"
+	windDirectiona$(2)="windDirections$"
+	
+	' <windSpeed 
+	LOCAL windSpeeda$(3), windSpeeds$
+	windSpeeda$(0)="<windSpeed "
+	windSpeeda$(1)="/>"
+	windSpeeda$(2)="windSpeeds$"
+
+	' <temperature 
+	LOCAL temperaturea$(3), temperatures$
+	temperaturea$(0)="<temperature "
+	temperaturea$(1)="/>"
+	temperaturea$(2)="temperatures$"
+
+	' <pressure 
+	LOCAL pressurea$(3), pressures$
+	pressurea$(0)="<pressure "
+	pressurea$(1)="/>"
+	pressurea$(2)="pressures$"
+
+	' <humidity
+	LOCAL humiditya$(3), humiditys$
+	humiditya$(0)="<humidity "
+	humiditya$(1)="/>"
+	humiditya$(2)="humiditys$"
+	
+	' <clouds
+	LOCAL cloudsa$(3), cloudss$
+	cloudsa$(0)="<clouds "
+	cloudsa$(1)="/>"
+	cloudsa$(2)="cloudss$"
+	
+	LOCAL state%
+	state%=0
+	
+	' read each time entry
+	DO	 
+	 times$=""
+	 symbols$=""
+	 precipitations$=""
+	 windDirections$=""
+	 windSpeeds$=""
+	 temperatures$=""
+	 pressures$=""
+	 humiditys$=""
+	 cloudss$=""
+     n%=StreamSearch(OWReadTime(con%,state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$",	 "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
+	 print times$  	
+	LOOP until n%=0
+	
+    n%=HTTPClose(con%)	
 	OWCurrentWeather=0
+END FUNCTION
+
+' Read response string from http server until </time> found
+' con% Server connection
+' state% state of the reader
+' return error code if negative value
+FUNCTION OWReadTime(con%, state%)
+ LOCAL rsp%
+ ' Read until timeout or closed
+ rsp%=SocketRead(con%)
+ 
+ IF rsp% <0 THEN
+ ELSE IF state%=0 AND chr$(rsp%)="<" THEN 
+   state%=1   
+ ELSE IF state%=1 AND chr$(rsp%)="/" THEN 
+   state%=2
+ ELSE IF state%=2 AND chr$(rsp%)="t" THEN 
+   state%=3
+ ELSE IF state%=3 AND chr$(rsp%)="i" THEN 
+   state%=4
+ ELSE IF state%=4 AND chr$(rsp%)="m" THEN 
+   state%=5
+ ELSE IF state%=5 AND chr$(rsp%)="e" THEN 
+   state%=6
+ ELSE IF state%=6 AND chr$(rsp%)=">" THEN 
+   state%=0
+   rsp%=-1
+ ENDIF
+ OWReadTime=rsp%
 END FUNCTION
