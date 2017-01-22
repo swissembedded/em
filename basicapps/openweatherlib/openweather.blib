@@ -5,6 +5,7 @@
 ' @VERSION 1.0
 ' Please make sure you are registered at open weather with a valid api key
 ' The API description can be found here https://openweathermap.org/api
+' If you use this service on a regular basis, we recommend to make donations
 
 ' Some examples on usage 
 'Loading Http library, make sure it is installed on EMDO
@@ -16,9 +17,23 @@
 'lng$="de" ' german language output for the weather
 'unit$="metric"
 'start:
+' err%= OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 ' PAUSE 5000
 'GOTO start
 
+' Init all global variables for open weather
+SUB OWInit(cnt%)
+    DIM OW_sun$(2)
+    DIM OW_cnt%, OW_time$(2,cnt%) 
+	DIM OW_symbol%(cnt%), OW_symbolN$(cnt%), OW_symbolV$(cnt%)
+	DIM OW_precipation$(cnt%), OW_precipationU$(cnt%), OW_precipationT$(cnt%) 
+    DIM OW_windDirection(cnt%), OW_windDirectionC$(cnt%), OW_windDirectionN$(cnt%)
+	DIM OW_windSpeed(cnt%), OW_windSpeedN$(cnt%)
+    DIM OW_temperature(3,cnt%), OW_temperatureU$
+    DIM OW_pressure(cnt%), OW_humidity(cnt%)
+    DIM OW_cloudsN$(cnt%)
+	DIM OW_clouds(cnt%)
+END SUB
 
 ' Read weather forecast of the next 5 days
 ' API documentation available at https://openweathermap.org/forecast5
@@ -30,16 +45,29 @@
 ' return error code if negative value
 ' Attn:
 ' This functions changes these global variables:
-' OW_dt%(cnt%) unix time utc of forecast
-' OW_main(8,cnt%) temp, temp_min, temp_max, pressure, sea_level, grnd_level, humidity, temp_kf
-' OW_weather$(4,cnt%) id, main, description, icon
-' OW_cloud(cnt%) all
-' OW_wind(2,cnt%) speed, deg
-' OW_rain(cnt%) 3h
-' OW_snow(cnt%) 3h
+' OW_cnt% number of valid weater entries
+' OW_sun$(2) rise, set
+' OW_time$(2,cnt%) rise, set unix time utc of forecast
+' OW_symbol%(cnt%) symbols number
+' OW_symbolN$(cnt%) name
+' OW_symbolV$(cnt%) var
+' OW_precipation$(cnt%) value in %
+' OW_precipationU$(cnt%) unit 1h or 3h
+' OW_precipationT$(cnt%) type snow or rain
+' OW_windDirection(cnt%) in mps
+' OW_windDirectionC$(cnt%) code
+' OW_windDirectionN$(cnt%) name
+' OW_windSpeed(cnt%) in mps
+' OW_windSpeedN$(cnt%) name
+' OW_temperature(3,cnt%) value, min, max
+' OW_temperatureU$ unit Celsius, Kelvin, Fahrenheit
+' OW_pressure(cnt%) value in hPa 
+' OW_humidity(cnt%) value in %
+' OW_cloudsN$(cnt%)
+' OW_clouds$(cnt%)
 
 FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
-    LOCAL err%, n%, con%, cnta$(3), cnts$, lang$, units$
+    LOCAL err%, n%, con%, lang$, units$, cnts$
 	lang$=""
 	IF lng$ <> "" THEN
 	 lang$="&lang="+lng$
@@ -48,8 +76,9 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	IF unit$ <> "" THEN
 	 units$="&units="+unit$
 	ENDIF
+	cnts$="&cnt="+str$(cnt%)
 	
-	err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml", "", "" , 5000)
+	err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$, "", "" , 5000)
 	IF err% <0 THEN
      print "open failed"
 	 IF con% >=0 THEN n%=HTTPClose(con%)
@@ -124,11 +153,14 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	cloudsa$(1)="/>"
 	cloudsa$(2)="cloudss$"
 	
-	LOCAL state%
+	LOCAL state%, idx%
 	state%=0
 	
+	OW_sun(0)=HTTPGetValue$(suns$,"rise","", 0,0)
+	OW_sun(1)=HTTPGetValue$(suns$,"set","", 0,0)
+	
 	' read each time entry
-	DO	 
+	FOR idx% = 0 TO (cnt%-1)
 	 times$=""
 	 symbols$=""
 	 precipitations$=""
@@ -138,39 +170,35 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	 pressures$=""
 	 humiditys$=""
 	 cloudss$=""
-     n%=StreamSearch(OWReadTime(con%,state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$",	 "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
-	 print times$  	
-	LOOP until n%=0
+     n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$",	 "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
+	 IF n%=0 OR state%=-1 THEN EXIT FOR
+	 OW_time$(0,idx%)=HTTPGetValue$(times$,"from","",0,0)
+	 OW_time$(1,idx%)=HTTPGetValue$(times$,"to","",0,0)
+	 OW_symbol%(idx%)=val(HTTPGetValue$(symbols$, "number","0",0,0))
+	 OW_symbolN$(idx%)=HTTPGetValue$(symbols$,"name","",0,0 )
+	 OW_symbolV$(idx%)=HTTPGetValue$(symbols$,"var","",0,0 )
+	 OW_precipation$(cnt%)=val(HTTPGetValue$(precipitations$,"value","0",0,1 ))
+	 OW_precipationU$(cnt%)=HTTPGetValue$(precipitations$,"unit","",0,0 )
+	 OW_precipationT$(cnt%)=HTTPGetValue$(precipitations$,"type","",0,0 ) 
+     OW_windDirection(cnt%)=HTTPGetValue$(windDirections$,"deg","0",0,0 ) 
+	 OW_windDirectionC$(cnt%)=HTTPGetValue$(windDirections$,"code","",0,0 )
+	 OW_windDirectionN$(cnt%)=HTTPGetValue$(windDirections$,"name", "",0,0 )
+	 OW_windSpeed(cnt%)=val(HTTPGetValue$(windSpeeds$,"mps","",0,0 ))
+	 OW_windSpeedN$(cnt%)=HTTPGetValue$(windSpeeds$,"name","",0,0 )
+     OW_temperature(0,cnt%)=HTTPGetValue$(temperatures$,"value","",0,0 )
+	 OW_temperature(1,cnt%)=HTTPGetValue$(temperatures$,"min","",0,0 )
+	 OW_temperature(2,cnt%)=HTTPGetValue$(temperatures$,"max","",0,0 )
+	 OW_temperatureU$=HTTPGetValue$(temperatures$,"unit","",0,0 )
+     OW_pressure(cnt%)=val(HTTPGetValue$(pressures$,"value","",0,0 ))
+	 OW_humidity(cnt%)=val(HTTPGetValue$(humiditys$,"value","",0,0 ))
+     OW_clouds(cnt%)=val(HTTPGetValue$(cloudss$,"all", "",0,0))
+	 OW_cloudsN$(cnt%)=HTTPGetValue$(cloudss$,"value", "",0,0)
+	NEXT idx%
+	
+	OW_cnt%=idx%
 	
     n%=HTTPClose(con%)	
 	OWCurrentWeather=0
 END FUNCTION
 
-' Read response string from http server until </time> found
-' con% Server connection
-' state% state of the reader
-' return error code if negative value
-FUNCTION OWReadTime(con%, state%)
- LOCAL rsp%
- ' Read until timeout or closed
- rsp%=SocketRead(con%)
- 
- IF rsp% <0 THEN
- ELSE IF state%=0 AND chr$(rsp%)="<" THEN 
-   state%=1   
- ELSE IF state%=1 AND chr$(rsp%)="/" THEN 
-   state%=2
- ELSE IF state%=2 AND chr$(rsp%)="t" THEN 
-   state%=3
- ELSE IF state%=3 AND chr$(rsp%)="i" THEN 
-   state%=4
- ELSE IF state%=4 AND chr$(rsp%)="m" THEN 
-   state%=5
- ELSE IF state%=5 AND chr$(rsp%)="e" THEN 
-   state%=6
- ELSE IF state%=6 AND chr$(rsp%)=">" THEN 
-   state%=0
-   rsp%=-1
- ENDIF
- OWReadTime=rsp%
-END FUNCTION
+

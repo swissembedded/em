@@ -73,3 +73,44 @@ FUNCTION HTTPClose(con%)
  err%=SocketClose( con% )  
  HTTPClose=0
 END FUNCTION
+
+' Convert a value from 
+' sec$ xml section string
+' attr$ xml attribute string
+' def$ default value if attribute is not found
+' nl% characters to remove from the left
+' nr% characters to remove from the right
+' returns value
+FUNCTION HTTPGetValue$(sec$, attr$, def$, nl%, nr% )
+ LOCAL s$(3), ss$, n%
+ s$(0)=attr$+"="+attr$(34)
+ s$(1)=chr$(34)
+ s$(2)="ss$"
+ ss$=def$
+ n%=StreamSearch(sec$,"s$",0)
+ HTTPGetValue$=mid$(ss$,nl%+1,len(ss$)-nl%-nr%)
+END FUNCTION
+
+' Read response string from http server until token found
+' con% Server connection
+' token$ token to searcg
+' state% state of the reader
+' return error code if negative value
+FUNCTION HTTPReadToken(con%, token$, state%)
+ LOCAL rsp%
+ ' Read until timeout or closed
+ rsp%=SocketRead(con%)
+ IF rsp% <0 THEN
+ ' end of stream
+ state%=-1
+ ELSE IF state%=0 AND chr$(rsp%)=mid$(token$, state%+1,1) THEN 
+   state%=state%+1   
+   IF state%=len(token$) THEN
+    state%=0
+	rsp%=-1
+   ENDIF	
+ ELSE
+  state%=0
+ ENDIF
+ HTTPReadToken=rsp%
+END FUNCTION
