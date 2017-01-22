@@ -17,23 +17,10 @@
 'lng$="de" ' german language output for the weather
 'unit$="metric"
 'start:
+' cnt%=37
 ' err%= OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 ' PAUSE 5000
 'GOTO start
-
-' Init all global variables for open weather
-SUB OWInit(cnt%)
-    DIM OW_sun$(2)
-    DIM OW_cnt%, OW_time$(2,cnt%) 
-	DIM OW_symbol%(cnt%), OW_symbolN$(cnt%), OW_symbolV$(cnt%)
-	DIM OW_precipation$(cnt%), OW_precipationU$(cnt%), OW_precipationT$(cnt%) 
-    DIM OW_windDirection(cnt%), OW_windDirectionC$(cnt%), OW_windDirectionN$(cnt%)
-	DIM OW_windSpeed(cnt%), OW_windSpeedN$(cnt%)
-    DIM OW_temperature(3,cnt%), OW_temperatureU$
-    DIM OW_pressure(cnt%), OW_humidity(cnt%)
-    DIM OW_cloudsN$(cnt%)
-	DIM OW_clouds(cnt%)
-END SUB
 
 ' Read weather forecast of the next 5 days
 ' API documentation available at https://openweathermap.org/forecast5
@@ -44,27 +31,29 @@ END SUB
 ' cnt%  number of forecast entries
 ' return error code if negative value
 ' Attn:
-' This functions changes these global variables:
-' OW_cnt% number of valid weater entries
-' OW_sun$(2) rise, set
-' OW_time$(2,cnt%) rise, set unix time utc of forecast
-' OW_symbol%(cnt%) symbols number
-' OW_symbolN$(cnt%) name
-' OW_symbolV$(cnt%) var
-' OW_precipation$(cnt%) value in %
-' OW_precipationU$(cnt%) unit 1h or 3h
-' OW_precipationT$(cnt%) type snow or rain
-' OW_windDirection(cnt%) in mps
-' OW_windDirectionC$(cnt%) code
-' OW_windDirectionN$(cnt%) name
-' OW_windSpeed(cnt%) in mps
-' OW_windSpeedN$(cnt%) name
-' OW_temperature(3,cnt%) value, min, max
-' OW_temperatureU$ unit Celsius, Kelvin, Fahrenheit
-' OW_pressure(cnt%) value in hPa 
-' OW_humidity(cnt%) value in %
-' OW_cloudsN$(cnt%)
-' OW_clouds$(cnt%)
+' This callback sub must be defined by user:
+ 'OWCallback(sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)	
+	
+' sunRise$ sun rise
+' sunSet$ sun set
+' tiFr$, tiTo$ unix time utc of forecast (from,to)
+' sym%(cnt%) symbols number
+' symN$ symbols name
+' symV$ symbols var
+' pre$ value in %
+' preU$ unit 1h or 3h
+' preT$ type snow or rain
+' wiDi in meter per seconds
+' wiDiC$ code
+' wiDiN$ name
+' wiSp in mps
+' wiSpN$ name
+' teAv,teMin,teMax value, min, max
+' teU$ unit Celsius, Kelvin, Fahrenheit
+' pr value in hPa 
+' hum value in %
+' cl$(cnt%)
+' clN$(cnt%) clouds texttual description
 
 FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
     LOCAL err%, n%, con%, lang$, units$, cnts$
@@ -156,9 +145,10 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	LOCAL state%, idx%
 	state%=0
 	
-	OW_sun(0)=HTTPGetValue$(suns$,"rise","", 0,0)
-	OW_sun(1)=HTTPGetValue$(suns$,"set","", 0,0)
-	
+    LOCAL sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
+	sunRise$=HTTPGetValue$(suns$,"rise","", 0,0)
+	sunSet$=HTTPGetValue$(suns$,"set","", 0,0)
+
 	' read each time entry
 	FOR idx% = 0 TO (cnt%-1)
 	 times$=""
@@ -172,30 +162,33 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	 cloudss$=""
      n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$",	 "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
 	 IF n%=0 OR state%=-1 THEN EXIT FOR
-	 OW_time$(0,idx%)=HTTPGetValue$(times$,"from","",0,0)
-	 OW_time$(1,idx%)=HTTPGetValue$(times$,"to","",0,0)
-	 OW_symbol%(idx%)=val(HTTPGetValue$(symbols$, "number","0",0,0))
-	 OW_symbolN$(idx%)=HTTPGetValue$(symbols$,"name","",0,0 )
-	 OW_symbolV$(idx%)=HTTPGetValue$(symbols$,"var","",0,0 )
-	 OW_precipation$(cnt%)=val(HTTPGetValue$(precipitations$,"value","0",0,1 ))
-	 OW_precipationU$(cnt%)=HTTPGetValue$(precipitations$,"unit","",0,0 )
-	 OW_precipationT$(cnt%)=HTTPGetValue$(precipitations$,"type","",0,0 ) 
-     OW_windDirection(cnt%)=HTTPGetValue$(windDirections$,"deg","0",0,0 ) 
-	 OW_windDirectionC$(cnt%)=HTTPGetValue$(windDirections$,"code","",0,0 )
-	 OW_windDirectionN$(cnt%)=HTTPGetValue$(windDirections$,"name", "",0,0 )
-	 OW_windSpeed(cnt%)=val(HTTPGetValue$(windSpeeds$,"mps","",0,0 ))
-	 OW_windSpeedN$(cnt%)=HTTPGetValue$(windSpeeds$,"name","",0,0 )
-     OW_temperature(0,cnt%)=HTTPGetValue$(temperatures$,"value","",0,0 )
-	 OW_temperature(1,cnt%)=HTTPGetValue$(temperatures$,"min","",0,0 )
-	 OW_temperature(2,cnt%)=HTTPGetValue$(temperatures$,"max","",0,0 )
-	 OW_temperatureU$=HTTPGetValue$(temperatures$,"unit","",0,0 )
-     OW_pressure(cnt%)=val(HTTPGetValue$(pressures$,"value","",0,0 ))
-	 OW_humidity(cnt%)=val(HTTPGetValue$(humiditys$,"value","",0,0 ))
-     OW_clouds(cnt%)=val(HTTPGetValue$(cloudss$,"all", "",0,0))
-	 OW_cloudsN$(cnt%)=HTTPGetValue$(cloudss$,"value", "",0,0)
+
+	 
+	 tiFr$=HTTPGetValue$(times$,"from","",0,0)
+	 tiTo$=HTTPGetValue$(times$,"to","",0,0)
+	 sym%=val(HTTPGetValue$(symbols$, "number","0",0,0))
+	 symN$=HTTPGetValue$(symbols$,"name","",0,0 )
+	 symV$=HTTPGetValue$(symbols$,"var","",0,0 )
+	 pre$=val(HTTPGetValue$(precipitations$,"value","0",0,1 ))
+	 preU$=HTTPGetValue$(precipitations$,"unit","",0,0 )
+	 preT$=HTTPGetValue$(precipitations$,"type","",0,0 ) 
+     wiDi=HTTPGetValue$(windDirections$,"deg","0",0,0 ) 
+	 wiDiC$=HTTPGetValue$(windDirections$,"code","",0,0 )
+	 wiDiN$=HTTPGetValue$(windDirections$,"name", "",0,0 )
+	 wiSp=val(HTTPGetValue$(windSpeeds$,"mps","",0,0 ))
+	 wiSpN$=HTTPGetValue$(windSpeeds$,"name","",0,0 )
+     teAv=HTTPGetValue$(temperatures$,"value","",0,0 )
+	 teMin=HTTPGetValue$(temperatures$,"min","",0,0 )
+	 teMax(2,idx%)=HTTPGetValue$(temperatures$,"max","",0,0 )
+	 teU$=HTTPGetValue$(temperatures$,"unit","",0,0 )
+     pr=val(HTTPGetValue$(pressures$,"value","",0,0 ))
+	 hum=val(HTTPGetValue$(humiditys$,"value","",0,0 ))
+     cl=val(HTTPGetValue$(cloudss$,"all", "",0,0))
+	 clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
+	 OWCallback(sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
 	NEXT idx%
 	
-	OW_cnt%=idx%
+	cnt%=idx%
 	
     n%=HTTPClose(con%)	
 	OWCurrentWeather=0
