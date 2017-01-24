@@ -19,20 +19,14 @@
 ' lat latitude
 ' reg$ europe or africa includes asia
 ' db$ radiation database PVGIS-classic (Europe), PVGIS-helioclim (Africa), PVGIS-CMSAF (Europe, Africa, Asia) 
-' mon$ name of the month in english
+' mon$ name of the month in english, e.g. "March"
 ' ang  angle
 ' asp  aspect
-' glb% global
-' glb2% global 2 axis tracking system
-' dni% direct normal irradiance
-' csk% clearsky
-' csk2% clearsky 2 axis tracking system
-' tmp% show temperature (not available for Africa and Asia)
 ' return error code if negative value
 FUNCTION PVGISDailyRad(lon, lat, reg$, db$, mon$, ang, asp, glb%, glb2%, dni%, csk%, csk2%, tmp%)
     LOCAL err%, n%, con%,url$
 	url$="/pvgis/apps4/DRcalc.php?lat="
-	url$=url$+str$(lat)+"?lon="+str$(lon)+"?region="+reg$+"?raddatabase="+db$+"?month="+mon$"+"?angle="+ang+"?aspect="+asp+"?global="+glb%+"?global_2axis="+glb2%+"?dr_dni="+dni%+"?clearsky="+csk%+"?clearsky_2axis="+csk2%+"?showtemperature="+tmp%
+	url$=url$+str$(lat)+"?lon="+str$(lon)+"?region="+reg$+"?raddatabase="+db$+"?month="+mon$"+"?angle="+ang+"?aspect="+asp+"?global=1?global_2axis=1?dr_dni=1?clearsky=1?clearsky_2axis=1?showtemperature=1?browser=1"
 	err%=HTTPRequest("http://re.jrc.ec.europa.eu/pvgis/apps4/pvest.php", 80, con%, "GET",url$, "", "" , 5000)
 	IF err% <0 THEN
      print "open failed"
@@ -40,6 +34,34 @@ FUNCTION PVGISDailyRad(lon, lat, reg$, db$, mon$, ang, asp, glb%, glb2%, dni%, c
 	 PVGISDailyRad=err%
 	 EXIT FUNCTION
 	ENDIF	
+
+	'Time		G		Gd		Gc		DNI		DNIc		Ac		Td
+	'19:22		0		0		0		0		0		0		7.0
+	'empty line
+    LOCAL taba$(3), tabs$, start%
+	taba$(0)=chr$(10)
+	taba$(1)=chr$(13)
+	taba$(2)="tabs$"
+	tabs$=""
+	start=0
+	LOCAL tm$,g,gd,gc,dni,dnic,ac,td
+	DO
+	     n%=StreamSearch(HTTPResponse(con%),"taba$"5000)
+		 ' 
+		 IF tabs$="" THEN EXIT LOOP
+		 IF left$(tabs$,4)="Time" THEN start=1
+		 IF start%<>1 THEN CONTINUE FOR
+		 tm$=split$(0,tabs$,chr$(9)+chr$(9))
+		 g=val(split$(1,tabs$,chr$(9)+chr$(9)))
+		 gd=val(split$(2,tabs$,chr$(9)+chr$(9)))
+		 gc=val(split$(3,tabs$,chr$(9)+chr$(9)))
+		 dni=val(split$(4,tabs$,chr$(9)+chr$(9)))
+		 dnic=val(split$(5,tabs$,chr$(9)+chr$(9)))
+		 ac=val(split$(6,tabs$,chr$(9)+chr$(9)))
+		 td=val(split$(7,tabs$,chr$(9)+chr$(9)))
+		 PVGISCallback(tm$,g,gd,gc,dni,dnic,ac,td)
+	LOOP
+	
 	n%=HTTPClose(con%)    
     PVGISDailyRad=err%
 END FUNCTION
