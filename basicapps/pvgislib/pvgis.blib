@@ -1,0 +1,45 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015 - 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO pvgis lib to retrieve radiation information about europe
+' @VERSION 1.0
+' Documentation of the API see http://re.jrc.ec.europa.eu/pvgis/automatic_interface.htm
+' "PVGIS non-interactive interface"
+
+
+'example on usage
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+'start:
+'goto start
+
+
+' Retrieve PVGIS information
+' lon longitude
+' lat latitude
+' reg$ europe or africa includes asia
+' db$ radiation database PVGIS-classic (Europe), PVGIS-helioclim (Africa), PVGIS-CMSAF (Europe, Africa, Asia) 
+' mon$ name of the month in english
+' ang  angle
+' asp  aspect
+' glb% global
+' glb2% global 2 axis tracking system
+' dni% direct normal irradiance
+' csk% clearsky
+' csk2% clearsky 2 axis tracking system
+' tmp% show temperature (not available for Africa and Asia)
+' return error code if negative value
+FUNCTION PVGISDailyRad(lon, lat, reg$, db$, mon$, ang, asp, glb%, glb2%, dni%, csk%, csk2%, tmp%)
+    LOCAL err%, n%, con%,url$
+	url$="/pvgis/apps4/DRcalc.php?lat="
+	url$=url$+str$(lat)+"?lon="+str$(lon)+"?region="+reg$+"?raddatabase="+db$+"?month="+mon$"+"?angle="+ang+"?aspect="+asp+"?global="+glb%+"?global_2axis="+glb2%+"?dr_dni="+dni%+"?clearsky="+csk%+"?clearsky_2axis="+csk2%+"?showtemperature="+tmp%
+	err%=HTTPRequest("http://re.jrc.ec.europa.eu/pvgis/apps4/pvest.php", 80, con%, "GET",url$, "", "" , 5000)
+	IF err% <0 THEN
+     print "open failed"
+	 IF con% >=0 THEN n%=HTTPClose(con%)
+	 PVGISDailyRad=err%
+	 EXIT FUNCTION
+	ENDIF	
+	n%=HTTPClose(con%)    
+    PVGISDailyRad=err%
+END FUNCTION
