@@ -40,7 +40,7 @@
 ' sym%(cnt%) symbols number
 ' symN$ symbols name
 ' symV$ symbols var
-' pre$ value in %
+' pre value in %
 ' preU$ unit 1h or 3h
 ' preT$ type snow or rain
 ' wiDi in meter per seconds
@@ -145,9 +145,9 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	LOCAL state%, idx%
 	state%=0
 	
-    LOCAL sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
-	sunRise$=HTTPGetValue$(suns$,"rise","", 0,0)
-	sunSet$=HTTPGetValue$(suns$,"set","", 0,0)
+    LOCAL sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
+	sunRise%=TimeFromISO(HTTPGetValue$(suns$,"rise","", 0,0))
+	sunSet%=TimeFromISO(HTTPGetValue$(suns$,"set","", 0,0))
 
 	' read each time entry
 	FOR idx% = 0 TO (cnt%-1)
@@ -160,16 +160,15 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	 pressures$=""
 	 humiditys$=""
 	 cloudss$=""
-     n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$",	 "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
+     n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$","temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
 	 IF n%=0 OR state%=-1 THEN EXIT FOR
 
-	 
-	 tiFr$=HTTPGetValue$(times$,"from","",0,0)
-	 tiTo$=HTTPGetValue$(times$,"to","",0,0)
+	 tiFr%=TimeFromISO(HTTPGetValue$(times$,"from","",0,0))
+	 tiTo%=TimeFromISO(HTTPGetValue$(times$,"to","",0,0))
 	 sym%=val(HTTPGetValue$(symbols$, "number","0",0,0))
 	 symN$=HTTPGetValue$(symbols$,"name","",0,0 )
 	 symV$=HTTPGetValue$(symbols$,"var","",0,0 )
-	 pre$=val(HTTPGetValue$(precipitations$,"value","0",0,1 ))
+	 pre=val(HTTPGetValue$(precipitations$,"value","0",0,1 ))
 	 preU$=HTTPGetValue$(precipitations$,"unit","",0,0 )
 	 preT$=HTTPGetValue$(precipitations$,"type","",0,0 ) 
      wiDi=HTTPGetValue$(windDirections$,"deg","0",0,0 ) 
@@ -185,7 +184,8 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
 	 hum=val(HTTPGetValue$(humiditys$,"value","",0,0 ))
      cl=val(HTTPGetValue$(cloudss$,"all", "",0,0))
 	 clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
-	 OWCallback(sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
+	 ' Call this function for further analysis of the raw data
+	 OWCallback(sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
 	NEXT idx%
 	
 	cnt%=idx%
