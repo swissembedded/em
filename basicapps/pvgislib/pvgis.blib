@@ -11,6 +11,8 @@
 'Loading Http library, make sure it is installed on EMDO
 'LIBRARY LOAD "http"
 
+'lon=8
+'lat=45
 'start:
  'mon%=DateMonth(Unixtime())
  'err%=PVGISDailyRad(lon, lat, "", "", mon%, 45, 0)
