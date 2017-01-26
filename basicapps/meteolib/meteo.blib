@@ -1,0 +1,58 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO meteo library
+' @VERSION 1.0
+' Reference dissertation
+' ISBN: 978-90-6164-371-5
+' Jedrzej S. Bojanowsky
+' Quantifying solar radiation at the earth surface with meteorological and satellite data
+
+
+' Solar radiation estimator  from cloud coverage and air temperature
+' based on Prescott equation 4.2 page 69
+' Coefficients chapter 4.4.2 page 77
+' Aa=0.014 +- 0.016
+' Ab=0.025 +- 0.03
+' Ix extra terrestrial solar radiation
+' Aa, Ab site specific empirical coefficient
+' nd sunshine duration
+' Ndn day lenght
+' return   estimated value Is
+FUNCTION mtEstimatorS(Ix, Aa, Ab, nd, Ndn)
+ mtEstimatorS=Ix * Aa * Ab * nd / Ndn
+END FUNCTION
+
+
+' Solar radiation estimator  from cloud coverage and air temperature
+' based on Supit and Van Kappel equation 4.3 page 70
+' Coefficients chapter 4.4.2 page 77
+' Sa=0.011 +- 0.01
+' Sb=0.039 +- 0.272
+' Sc=0.218 +- 0.272
+' Ix extra terrestrial solar radiation
+' Tx maximal daily air temperature in Celsius
+' Tn minimal daily air temperature in Celsius
+' Cw Mean total cloud cover during daytime in oktas
+' Sa, Sb, Sc site specific empirical coefficient
+' return   estimated value Is
+FUNCTION mtEstimatorTC(Ix, Tx, Tn, Cw, Sa, Sb, Sc)
+ mtEstimatorTC=Ix * (Sa * sqr(Tx-Tn) + Sb * sqr(1-(Cw/8)))+Sc
+END FUNCTION
+
+
+' Solar radiation estimator from air temperature
+' based on Hargreaves et al.  equation 4.4 page 70
+' Coefficients chapter 4.4.2 page 77
+' Ha=0.013 +- 0.012
+' Hb=0.0313 +- 0.396
+' Ix extra terrestrial solar radiation
+' Tx maximal daily air temperature in Celsius
+' Tn minimal daily air temperature in Celsius
+' Ha, Hb, Sc site specific empirical coefficient
+' return   estimated value Is
+FUNCTION mtEstimatorT(Ix, Tx, Tn, Ha, Hb)
+ mtEstimatorT=Ix * Ha * sqr(Tx-Tn) + Hb
+END FUNCTION
+
+
