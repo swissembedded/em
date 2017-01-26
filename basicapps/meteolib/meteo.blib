@@ -11,7 +11,7 @@
 
 ' Solar radiation estimator  from cloud coverage and air temperature
 ' based on Prescott equation 4.2 page 69
-' Coefficients chapter 4.4.2 page 77
+' Coefficients chapter 4.4.2 page 77 and figure 4.3 page 79
 ' Aa=0.014 +- 0.016
 ' Ab=0.025 +- 0.03
 ' Ix extra terrestrial solar radiation
@@ -26,7 +26,7 @@ END FUNCTION
 
 ' Solar radiation estimator  from cloud coverage and air temperature
 ' based on Supit and Van Kappel equation 4.3 page 70
-' Coefficients chapter 4.4.2 page 77
+' Coefficients chapter 4.4.2 page 77 and figure 4.4 page 
 ' Sa=0.011 +- 0.01
 ' Sb=0.039 +- 0.272
 ' Sc=0.218 +- 0.272
@@ -43,7 +43,7 @@ END FUNCTION
 
 ' Solar radiation estimator from air temperature
 ' based on Hargreaves et al.  equation 4.4 page 70
-' Coefficients chapter 4.4.2 page 77
+' Coefficients chapter 4.4.2 page 77 and figure 4.5 page 81
 ' Ha=0.013 +- 0.012
 ' Hb=0.0313 +- 0.396
 ' Ix extra terrestrial solar radiation
