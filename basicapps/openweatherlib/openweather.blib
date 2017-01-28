@@ -82,7 +82,7 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
 	suna$(1)="</sun>
 	suna$(2)="suns$"	
 	n%=StreamSearch(HTTPResponse(con%),"suna$", 5000)
-    print n%
+    'print n%
 	IF n% <> 1 THEN
 	 n%=HTTPClose(con%)
 	 OWCurrentWeather=-2
@@ -193,7 +193,7 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
      cl=val(HTTPGetValue$(cloudss$,"all", "0",0,0))
 	 clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
 	 ' Call this function for further analysis of the raw data
-     print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
+     'print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
 	 IF Exists(cb$) >= 0 THEN
          CALL(cb$, sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
      ENDIF
