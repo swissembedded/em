@@ -7,7 +7,11 @@
 ' ISBN: 978-90-6164-371-5
 ' Jedrzej S. Bojanowsky
 ' Quantifying solar radiation at the earth surface with meteorological and satellite data
+' Extraterrestrial solar radiation on inclined surface
+' C. David Whiteman and K. Jerry Allwine
+' http://home.chpc.utah.edu/~u0453210/homepage/articles/Whiteman1986Environmental%20Software.pdf
 
+'(sqrt(6.7)*0.08+0.4*sqrt(1-0.56))+0.2
 
 ' Solar radiation estimator  from cloud coverage and air temperature
 ' based on Prescott equation 4.2 page 69
@@ -37,7 +41,7 @@ END FUNCTION
 ' Sa, Sb, Sc site specific empirical coefficient
 ' return   estimated value Is
 FUNCTION mtEstimatorTC(Ix, Tx, Tn, Cw, Sa, Sb, Sc)
- mtEstimatorTC=Ix * (Sa * sqr(Tx-Tn) + Sb * sqr(1-(Cw/8)))+Sc
+ mtEstimatorTC=Ix * (Sa * sqr(Tx-Tn) + Sb * sqr(1-(Cw/100)))+Sc
 END FUNCTION
 
 

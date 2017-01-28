@@ -81,13 +81,17 @@ END FUNCTION
 ' nl% characters to remove from the left
 ' nr% characters to remove from the right
 ' returns value
-FUNCTION HTTPGetValue$(sec$, attr$, def$, nl%, nr% )
+FUNCTION HTTPGetValue$(sec$, attr$, def$, nl%, nr%)
  LOCAL s$(3), ss$, n%
- s$(0)=attr$+"="+attr$(34)
+ s$(0)=attr$+"="+chr$(34)
  s$(1)=chr$(34)
  s$(2)="ss$"
- ss$=def$
+ ss$=def$ 
  n%=StreamSearch(sec$,"s$",0)
+ IF n% <> 1 THEN
+  ss$=def$ 
+ ENDIF
+ 'print n% s$(0) ss$ len(ss$)
  HTTPGetValue$=mid$(ss$,nl%+1,len(ss$)-nl%-nr%)
 END FUNCTION
 
