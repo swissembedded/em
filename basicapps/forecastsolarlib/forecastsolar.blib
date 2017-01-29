@@ -15,7 +15,6 @@
 'key$=""
 'cb$=""
 'start:
-' mon%=DateMonth(Unixtime())
 ' err%=SFEstimate(key$, lat, lon, 0, 0, 1.0, "watthours/day",cb$)
 ' pause 30000
 'goto start
@@ -40,7 +39,7 @@ FUNCTION SFEstimate( key$, lat, lon, dec, az, kwp, mode$, cb$)
  LOCAL err%, n%, con%, url$
  url$=""
  IF key$<>"" THEN url$=url$+"/"+key$
- url$="/estimate/"+mode$+"/"+str$(lat)+"/"+str$(lon)+"/"+str$(dec)+"/"+str$(az)+"/"+str$(kwp)
+ url$="/estimate/"+mode$+"/"+str$(lat)+"/"+str$(lon)+"/"+str$(dec)+"/"+str$(az)+"/"+str$(kwp)+"?time=utc"
  err%=HTTPRequest("api.forecast.solar", 80, con%, "GET",url$, "", "text/csv" , 5000)
  IF err% <0 THEN
   print "open failed"
@@ -49,28 +48,28 @@ FUNCTION SFEstimate( key$, lat, lon, dec, az, kwp, mode$, cb$)
   EXIT FUNCTION
  ENDIF	
 
- LOCAL started%,ln$,start$, tm%, p
- start$=chr$(13)+chr$(10)+chr$(13)+chr$(10)
+ LOCAL started%,ln$,tm%,p
  started%=0
  ' Right after the http header the terminated with double cr lf, 
  ' the payload comes as csv
  ' 2016-02-08;3680
- DO   
+ DO 
+   print len(ln$) "/" started% "->" ln$
    ln$=SocketReadLn$(con%)
-   IF ln$=start$ THEN started%=1
-   IF started% THEN
+   IF ln$="" AND started%=1 THEN EXIT DO
+   IF ln$="" AND started%=0 THEN started%=1   
+   IF started%=1 and len(ln$)>10 THEN     
+    'print split$(0,ln$,";")
+    'print split$(1,ln$,";")
     tm%=TimeFromISO(split$(0,ln$,";"))
-    p=val(split$(1,ln$,";"))
-    print ln$
-    IF Exists(cb$) >= 0 THEN
+    p=val(split$(1,ln$,";"))    
+    print cb$ tm%, p
+    IF Exists(cb$) >= 0 THEN     
      CALL(cb$, tm%, p)
     ENDIF
-   ENDIF
-   IF ln$="" THEN EXIT DO
+   ENDIF   
  LOOP
 
  n%=HTTPClose(con%)    
  SFEstimate=err%
 END FUNCTION
-
-
