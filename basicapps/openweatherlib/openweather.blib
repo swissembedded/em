@@ -16,8 +16,9 @@
 'pos$="q=Baden+CH" ' Nearby town + country code
 'lng$="de" ' german language output for the weather
 'unit$="metric"
+'cb$=""
 'start:
-' err%= OWForecastWeather( key$, pos$, lng$, unit$, cnt%)
+' err%= OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
 ' print err% cnt%
 ' PAUSE 10000
 'GOTO start
@@ -29,7 +30,7 @@
 ' lng$ de, en, etc, pls see api description
 ' unit$ imperial or metric
 ' cnt%  number of forecast entries
-' cb$ callbackfunction
+' cb$ callback function
 ' return error code if negative value
 ' Attn:
 ' This callback sub must be defined by user:

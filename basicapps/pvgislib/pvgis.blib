@@ -13,21 +13,23 @@
 
 'lon=8
 'lat=45
+'cb$=""
 'start:
- 'mon%=DateMonth(Unixtime())
- 'err%=PVGISDailyRad(lon, lat, "", "", mon%, 45, 0)
- 'pause 20000
+' mon%=DateMonth(Unixtime())
+' err%=PVGISDailyRad(lat, lon, "", "", mon%, 45, 0,cb$)
+' pause 20000
 'goto start
 
 
 ' Retrieve PVGIS information
-' lon longitude
 ' lat latitude
+' lon longitude
 ' reg$ europe or africa includes asia
 ' db$ radiation database PVGIS-classic (Europe), PVGIS-helioclim (Africa), PVGIS-CMSAF (Europe, Africa, Asia) 
 ' mon$ name of the month in english, e.g. "March"
 ' ang  angle inclination from horizontal plane
 ' asp  aspect  0=south, 90=west, -90=east
+' cb$  callback function
 ' return error code if negative value
 ' The callback function is called SUB PVGISCallback(tm$,g,gd,gc,dni,dnic,ac,td)
 ' tm$ timestring e.g. 08:00 or 19:00
@@ -39,73 +41,84 @@
 ' ac Global clear-sky irradiance on 2-axis tracking plane (W/m2)
 ' td Average daytime temperature profile  (deg. C)
 
-FUNCTION PVGISDailyRad(lon, lat, reg$, db$, mon%, ang, asp)
-    LOCAL err%, n%, con%,url$, mons$
-	IF reg$="" THEN reg$="europe"
-	IF db$="" THEN db$="PVGIS-CMSAF"
-	SELECT mon%
-		CASE 1
-			mons$="January"
-		CASE 2
-			mons$="February"
-		CASE 3
-			mons$="March"
-		CASE 4
-			mons$="April"
-		CASE 5 
-			mons$="May"
-		CASE 6
-			mons$="June"
-		CASE 7 
-			mons$="July"
-		CASE 8 
-			mons$="August"
-		CASE 9 
-			mons$="September"
-		CASE 10 
-			mons$="October"
-		CASE 11 
-			mons$="November"
-		CASE 12 
-			mons$="December"
-	END SELECT
-	url$="/pvgis/apps4/DRcalc.php?lat="
-	url$=url$+str$(lat)+"?lon="+str$(lon)+"?region="+reg$+"?raddatabase="+db$+"?month="+mons$"+"?angle="+ang+"?aspect="+asp+"?global=1?global_2axis=1?dr_dni=1?clearsky=1?clearsky_2axis=1?showtemperature=1?browser=1"
-	err%=HTTPRequest("http://re.jrc.ec.europa.eu/pvgis/apps4/pvest.php", 80, con%, "GET",url$, "", "" , 5000)
-	IF err% <0 THEN
-     print "open failed"
-	 IF con% >=0 THEN n%=HTTPClose(con%)
-	 PVGISDailyRad=err%
-	 EXIT FUNCTION
-	ENDIF	
-	' This sends data for every 15 minutes, units 
-	'Time		G		Gd		Gc		DNI		DNIc		Ac		Td
-	'19:22		0		0		0		0		0		0		7.0
-	'empty line
-    LOCAL taba$(3), tabs$, start%
-	taba$(0)=chr$(10)
-	taba$(1)=chr$(13)
-	taba$(2)="tabs$"
-	tabs$=""
-	start=0
-	LOCAL tm$,g,gd,gc,dni,dnic,ac,td
-	DO
-	     n%=StreamSearch(HTTPResponse(con%),"taba$"5000)
-		 ' 
-		 IF tabs$="" THEN EXIT LOOP
-		 IF left$(tabs$,4)="Time" THEN start=1
-		 IF start%<>1 THEN CONTINUE FOR
-		 tm$=split$(0,tabs$,chr$(9)+chr$(9))
-		 g=val(split$(1,tabs$,chr$(9)+chr$(9)))
-		 gd=val(split$(2,tabs$,chr$(9)+chr$(9)))
-		 gc=val(split$(3,tabs$,chr$(9)+chr$(9)))
-		 dni=val(split$(4,tabs$,chr$(9)+chr$(9)))
-		 dnic=val(split$(5,tabs$,chr$(9)+chr$(9)))
-		 ac=val(split$(6,tabs$,chr$(9)+chr$(9)))
-		 td=val(split$(7,tabs$,chr$(9)+chr$(9)))
-		 PVGISCallback(tm$,g,gd,gc,dni,dnic,ac,td)
-	LOOP
-	
-	n%=HTTPClose(con%)    
-    PVGISDailyRad=err%
+FUNCTION PVGISDailyRad(lat, lon, reg$, db$, mon%, ang, asp, cb$)
+ LOCAL err%, n%, con%,url$, mons$
+ IF reg$="" THEN reg$="europe"
+ IF db$="" THEN db$="PVGIS-CMSAF"
+ SELECT case mon%
+  CASE 1
+   mons$="January"
+  CASE 2
+   mons$="February"
+  CASE 3
+   mons$="March"
+  CASE 4
+   mons$="April"
+ CASE 5 
+   mons$="May"
+ CASE 6
+   mons$="June"
+ CASE 7 
+   mons$="July"
+ CASE 8 
+   mons$="August"
+ CASE 9 
+   mons$="September"
+ CASE 10 
+   mons$="October"
+ CASE 11 
+   mons$="November"
+ CASE 12 
+   mons$="December"
+ END SELECT
+ 
+ url$="/pvgis/apps4/DRcalc.php?lat="+str$(lat)
+ url$=url$+"&lon="+str$(lon)+"&region="+reg$+"&raddatabase="+db$
+ url$=url$+"&month="+mons$+"&angle="+str$(ang)+"&aspect="+str$(asp)
+ url$=url$+"&global=1&global_2axis=1&dr_dni=1&clearsky=1&clearsky_2axis=1&showtemperatures=1&browser=1"
+ err%=HTTPRequest("re.jrc.ec.europa.eu", 80, con%, "GET",url$, "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  PVGISDailyRad=err%
+  EXIT FUNCTION
+ ENDIF	
+ ' This sends data for every 15 minutes, units 
+ 'Time		G		Gd		Gc		DNI		DNIc		Ac		Td
+ '19:22		0		0		0		0		0		0		7.0
+ 'empty line
+ LOCAL taba$(3), tabs$, started%
+ taba$(0)=chr$(10)
+ taba$(1)=chr$(13)
+ taba$(2)="tabs$"
+ tabs$=""
+ started%=0
+ LOCAL tm$,g,gd,gc,dni,dnic,ac,td
+ DO
+  n%=StreamSearch(HTTPResponse(con%),"taba$"5000)         
+  print n% len(tabs$) tabs$
+  IF n%<>1 THEN EXIT DO         
+  IF left$(tabs$,4)="Time" THEN 
+   print "started"
+   started%=1
+  ELSE IF started% = 1 THEN		 
+  ' After the lines of data comes a empty line
+  IF len(tabs$) = 0 THEN EXIT DO
+   tm$=split$(0,tabs$,chr$(9)+chr$(9))
+   g=val(split$(1,tabs$,chr$(9)+chr$(9)))
+   gd=val(split$(2,tabs$,chr$(9)+chr$(9)))
+   gc=val(split$(3,tabs$,chr$(9)+chr$(9)))
+   dni=val(split$(4,tabs$,chr$(9)+chr$(9)))
+   dnic=val(split$(5,tabs$,chr$(9)+chr$(9)))
+   ac=val(split$(6,tabs$,chr$(9)+chr$(9)))
+   td=val(split$(7,tabs$,chr$(9)+chr$(9)))
+   print tm$ g gd gc dni dnic ac td
+   IF Exists(cb$) >= 0 THEN
+    CALL(cb$,tm$,g,gd,gc,dni,dnic,ac,td)
+   ENDIF
+  ENDIF
+ LOOP
+
+ n%=HTTPClose(con%)    
+ PVGISDailyRad=err%
 END FUNCTION
