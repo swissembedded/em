@@ -96,10 +96,10 @@ FUNCTION PVGISDailyRad(lat, lon, reg$, db$, mon%, ang, asp, cb$)
  LOCAL tm$,g,gd,gc,dni,dnic,ac,td
  DO
   n%=StreamSearch(HTTPResponse(con%),"taba$"5000)         
-  print n% len(tabs$) tabs$
+  'print n% len(tabs$) tabs$
   IF n%<>1 THEN EXIT DO         
   IF left$(tabs$,4)="Time" THEN 
-   print "started"
+   'print "started"
    started%=1
   ELSE IF started% = 1 THEN		 
   ' After the lines of data comes a empty line
@@ -112,7 +112,7 @@ FUNCTION PVGISDailyRad(lat, lon, reg$, db$, mon%, ang, asp, cb$)
    dnic=val(split$(5,tabs$,chr$(9)+chr$(9)))
    ac=val(split$(6,tabs$,chr$(9)+chr$(9)))
    td=val(split$(7,tabs$,chr$(9)+chr$(9)))
-   print tm$ g gd gc dni dnic ac td
+   'print tm$ g gd gc dni dnic ac td
    IF Exists(cb$) >= 0 THEN
     CALL(cb$,tm$,g,gd,gc,dni,dnic,ac,td)
    ENDIF
