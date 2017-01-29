@@ -14,13 +14,13 @@
 'ed%=-1
 'EOInit(ed%)
 'start:
-' DISPATCH 60
+' DISPATCH 1000
 'goto start
 'EODeinit(ed%) 
  
 SUB EOInit(ed%)
  
- ed%=SetTimer(200)
+ ed%=SetTimer(1000)
  IF ed% >= 0 THEN
   ON TIMER td% EOReceive
  ENDIF
