@@ -53,11 +53,11 @@ FUNCTION SFEstimate( key$, lat, lon, dec, az, kwp, mode$, cb$)
  ' Right after the http header the terminated with double cr lf, 
  ' the payload comes as csv
  ' 2016-02-08;3680
- DO 
-   print len(ln$) "/" started% "->" ln$
+ DO    
    ln$=SocketReadLn$(con%)
-   IF ln$="" AND started%=1 THEN EXIT DO
-   IF ln$="" AND started%=0 THEN started%=1   
+   print len(ln$) "/" started% "->" ln$
+   IF len(ln$)=1 AND started%=1 THEN EXIT DO
+   IF len(ln$)=1 AND started%=0 THEN started%=1   
    IF started%=1 and len(ln$)>10 THEN     
     'print split$(0,ln$,";")
     'print split$(1,ln$,";")

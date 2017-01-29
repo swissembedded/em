@@ -13,3 +13,91 @@
 
 'Adjust server IP and username to your bridge setting (see developers url below for details)
 
+
+' Read solar forecast of the next 2 days (Public) or 6 days (professional with key)
+' API documentation available at https://doc.forecast.solar/doku.php?id=api:estimate
+' key$  solar forecast key or empty string
+' lat latitude -90..90 pos value = north
+' lon longitude -180..180 pos value = east
+' dec plane declination 0..90 0=horizontal (ground), 90 = vertical (wall)
+' az plane azimut -180..180 -90 = east, 0 = south, 90 = west, -180 or 180 = north
+' kwp installed power in kilowatt peak
+' mode$ "watt" or "watthours" or "watthours/day"
+' cb$ callback function
+' return error code if negative value
+' Attn:
+' This callback sub must be defined by user:
+' time% unix timestamp
+' kw or kwh kW or kWh value
+ 'SFCallback(time%, kw)	or SFCallback(time%, kwh)
+FUNCTION SFEstimate( key$, lat, lon, dec, az, kwp, mode$, cb$)
+ LOCAL err%, n%, con%, url$
+ url$=""
+ IF key$<>"" THEN url$=url$+"/"+key$
+ url$="/estimate/"+mode$+"/"+str$(lat)+"/"+str$(lon)+"/"+str$(dec)+"/"+str$(az)+"/"+str$(kwp)
+ err%=HTTPRequest("api.forecast.solar", 80, con%, "GET",url$, "", "text/csv" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+   SFEstimate=err%
+  EXIT FUNCTION
+ ENDIF	
+
+ LOCAL started%,ln$,start$, tm%, p
+ start$=chr$(13)+chr$(10)+chr$(13)+chr$(10)
+ started%=0
+ ' Right after the http header the terminated with double cr lf, 
+ ' the payload comes as csv
+ ' 2016-02-08;3680
+ DO   
+   ln$=SocketReadLn$(con%)
+   IF ln$=start$ THEN started%=1
+   IF started% THEN
+    tm%=TimeFromISO(split$(0,ln$,";"))
+    p=val(split$(1,ln$,";"))
+    print ln$
+    IF Exists(cb$) >= 0 THEN
+     CALL(cb$, tm%, p)
+    ENDIF
+   ENDIF
+   IF ln$="" THEN EXIT DO
+ LOOP
+
+ n%=HTTPClose(con%)    
+ SFEstimate=err%
+END FUNCTION
+
+
+
+' Read wind estimate
+' API documentation available at http://www.intelligence.tuc.gr/renes/fixed/fixed/api.html
+' lat latitude -90..90 pos value = north
+' lon longitude -180..180 pos value = east
+' a alpha coefficient
+' b beta coefficient
+' nc nominal capacity
+' cb$ callback function
+' return error code if negative value
+' Attn:
+' This callback sub must be defined by user:
+' time% unix timestamp
+' wtgpower WTG power output
+' ws wind speed [m/s]
+ 'RECallbackWind(time%, wtgpower, ws)
+FUNCTION REEstimateWind( key$, lat, lon, a, b, nc, cb$)
+ LOCAL err%, n%, con%, url$
+ url$=""
+ url$="/windspeedAPI/"+str$(lat)+"/"+str$(lon)+"/"+str$(a)+"/"+str$(b)+"/"+str$(nc)
+ err%=HTTPRequest("147.27.14.3", 11884, con%, "GET",url$, "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+   REEstimateWind=err%
+  EXIT FUNCTION
+ ENDIF
+ 
+ n%=HTTPClose(con%)    
+ REEstimateWind=err%
+END FUNCTION
+
+
