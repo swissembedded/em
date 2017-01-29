@@ -1,0 +1,15 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2011 - 2015 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO renes renewable energy estimator api 
+' @VERSION 1.0
+' Renes is a project from ECS-TUC Intelligent Systems Laboratory.
+' The REST API description can be found here http://www.intelligence.tuc.gr/renes/fixed/fixed/api.html
+' This api includes wind and pv estimation
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+

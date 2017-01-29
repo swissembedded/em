@@ -58,155 +58,154 @@
 ' clN$(cnt%) clouds texttual description
 
 FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
-    LOCAL err%, n%, con%, lang$, units$, cnts$
-	lang$=""
-	IF lng$ <> "" THEN
-	 lang$="&lang="+lng$
-	ENDIF
-	units$=""
-	IF unit$ <> "" THEN
-	 units$="&units="+unit$
-	ENDIF
-	cnts$="&cnt="+str$(cnt%)
-	'print "/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$
-	err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$, "", "" , 5000)
-	IF err% <0 THEN
-     print "open failed"
-	 IF con% >=0 THEN n%=HTTPClose(con%)
-	 OWCurrentWeather=err%
-	 EXIT FUNCTION
-	ENDIF	
-	
-	' Parse <sun rise="2017-01-28T06:56:59" set="2017-01-28T16:23:19"></sun>
-	LOCAL suna$(3),suns$	
-    suna$(0)="<sun "
-	suna$(1)="</sun>
-	suna$(2)="suns$"	
-	n%=StreamSearch(HTTPResponse(con%),"suna$", 5000)
-    'print n%
-	IF n% <> 1 THEN
-	 n%=HTTPClose(con%)
-	 OWCurrentWeather=-2
-	 EXIT FUNCTION		
-	ENDIF
-    
-    LOCAL sunRise%,sunSet%
-    'print suns$
-	sunRise%=TimeFromISO(HTTPGetValue$(suns$,"rise","", 0,0))
-	sunSet%=TimeFromISO(HTTPGetValue$(suns$,"set","", 0,0))
-    'print sunRise% sunSet%
+ LOCAL err%, n%, con%, lang$, units$, cnts$
+ lang$=""
+ IF lng$ <> "" THEN
+  lang$="&lang="+lng$
+ ENDIF
+ units$=""
+ IF unit$ <> "" THEN
+  units$="&units="+unit$
+ ENDIF
+ cnts$="&cnt="+str$(cnt%)
+ 'print "/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$
+ err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$, "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  OWCurrentWeather=err%
+  EXIT FUNCTION
+ ENDIF	
 
-	' <time..
-	LOCAL timea$(3),times$
-	timea$(0)="<time "
-	timea$(1)=">"
-	timea$(2)="times$"	
-	
-	' <symbol..
-	LOCAL symbola$(3), symbols$
-	symbola$(0)="<symbol "
-	symbola$(1)="</symbol>"
-	symbola$(2)="symbols$"
+ ' Parse <sun rise="2017-01-28T06:56:59" set="2017-01-28T16:23:19"></sun>
+ LOCAL suna$(3),suns$	
+ suna$(0)="<sun "
+ suna$(1)="</sun>
+ suna$(2)="suns$"	
+ n%=StreamSearch(HTTPResponse(con%),"suna$", 5000)
+ 'print n%
+ IF n% <> 1 THEN
+ n%=HTTPClose(con%)
+ OWCurrentWeather=-2
+ EXIT FUNCTION		
+ ENDIF
 
-	' <precipitation..
-	LOCAL precipitationa$(3), precipitations$
-	precipitationa$(0)="<precipitation "
-	precipitationa$(1)="</precipitation>"
-	precipitationa$(2)="precipitations$"
+ LOCAL sunRise%,sunSet%
+ 'print suns$
+ sunRise%=TimeFromISO(HTTPGetValue$(suns$,"rise","", 0,0))
+ sunSet%=TimeFromISO(HTTPGetValue$(suns$,"set","", 0,0))
+ 'print sunRise% sunSet%
 
-	' <windDirection..
-	LOCAL windDirectiona$(3), windDirections$
-	windDirectiona$(0)="<windDirection "
-	windDirectiona$(1)="</windDirection>"
-	windDirectiona$(2)="windDirections$"
-	
-	' <windSpeed..
-	LOCAL windSpeeda$(3), windSpeeds$
-	windSpeeda$(0)="<windSpeed "
-	windSpeeda$(1)="</windSpeed>"
-	windSpeeda$(2)="windSpeeds$"
+ ' <time..
+ LOCAL timea$(3),times$
+ timea$(0)="<time "
+ timea$(1)=">"
+ timea$(2)="times$"	
+ 
+ ' <symbol..
+ LOCAL symbola$(3), symbols$
+ symbola$(0)="<symbol "
+ symbola$(1)="</symbol>"
+ symbola$(2)="symbols$"
 
-	' <temperature..
-	LOCAL temperaturea$(3), temperatures$
-	temperaturea$(0)="<temperature "
-	temperaturea$(1)="</temperature>"
-	temperaturea$(2)="temperatures$"
+ ' <precipitation..
+ LOCAL precipitationa$(3), precipitations$
+ precipitationa$(0)="<precipitation "
+ precipitationa$(1)="</precipitation>"
+ precipitationa$(2)="precipitations$"
 
-	' <pressure..
-	LOCAL pressurea$(3), pressures$
-	pressurea$(0)="<pressure "
-	pressurea$(1)="</pressure>"
-	pressurea$(2)="pressures$"
+ ' <windDirection..
+ LOCAL windDirectiona$(3), windDirections$
+ windDirectiona$(0)="<windDirection "
+ windDirectiona$(1)="</windDirection>"
+ windDirectiona$(2)="windDirections$"
+ 
+ ' <windSpeed..
+ LOCAL windSpeeda$(3), windSpeeds$
+ windSpeeda$(0)="<windSpeed "
+ windSpeeda$(1)="</windSpeed>"
+ windSpeeda$(2)="windSpeeds$"
 
-	' <humidity..
-	LOCAL humiditya$(3), humiditys$
-	humiditya$(0)="<humidity "
-	humiditya$(1)="</humidity>"
-	humiditya$(2)="humiditys$"
-	
-	' <clouds..
-	LOCAL cloudsa$(3), cloudss$
-	cloudsa$(0)="<clouds "
-	cloudsa$(1)="</clouds>"
-	cloudsa$(2)="cloudss$"
-	
-	LOCAL state%, idx%
-	state%=0
-	num=cnt%
-    LOCAL tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
+ ' <temperature..
+ LOCAL temperaturea$(3), temperatures$
+ temperaturea$(0)="<temperature "
+ temperaturea$(1)="</temperature>"
+ temperaturea$(2)="temperatures$"
 
-	' read each time entry
-	FOR idx% = 1 TO cnt%
-	 times$=""
-	 symbols$=""
-	 precipitations$=""
-	 windDirections$=""
-	 windSpeeds$=""
-	 temperatures$=""
-	 pressures$=""
-	 humiditys$=""
-	 cloudss$=""
-     n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$", "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
-	 IF n%<0 THEN       
-      err%=-n%
-      EXIT FOR      
-     ENDIF
+ ' <pressure..
+ LOCAL pressurea$(3), pressures$
+ pressurea$(0)="<pressure "
+ pressurea$(1)="</pressure>"
+ pressurea$(2)="pressures$"
 
-	 tiFr%=TimeFromISO(HTTPGetValue$(times$,"from","",0,0))
-	 tiTo%=TimeFromISO(HTTPGetValue$(times$,"to","",0,0))    
-	 sym%=val(HTTPGetValue$(symbols$, "number","0",0,0))
-	 symN$=HTTPGetValue$(symbols$,"name","",0,0)
-	 symV$=HTTPGetValue$(symbols$,"var","",0,0)
-	 pre=val(HTTPGetValue$(precipitations$,"value","0%",0,1))
-	 preU$=HTTPGetValue$(precipitations$,"unit","",0,0)
-	 preT$=HTTPGetValue$(precipitations$,"type","",0,0) 
-     wiDi=val(HTTPGetValue$(windDirections$,"deg","0",0,0))
-	 wiDiC$=HTTPGetValue$(windDirections$,"code","",0,0)
-	 wiDiN$=HTTPGetValue$(windDirections$,"name", "",0,0)
-	 wiSp=val(HTTPGetValue$(windSpeeds$,"mps","0",0,0))
-	 wiSpN$=HTTPGetValue$(windSpeeds$,"name","",0,0)
-     teAv=val(HTTPGetValue$(temperatures$,"value","0",0,0))
-	 teMin=val(HTTPGetValue$(temperatures$,"min","0",0,0))
-	 teMax=val(HTTPGetValue$(temperatures$,"max","0",0,0))
-	 teU$=HTTPGetValue$(temperatures$,"unit","",0,0)
-     pr=val(HTTPGetValue$(pressures$,"value","0",0,0))
-	 hum=val(HTTPGetValue$(humiditys$,"value","0",0,0))
-     cl=val(HTTPGetValue$(cloudss$,"all", "0",0,0))
-	 clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
-	 ' Call this function for further analysis of the raw data
-     'print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
-	 IF Exists(cb$) >= 0 THEN
-         CALL(cb$, sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
-     ENDIF
-	NEXT idx%
-	
-    IF err%>=0 THEN
-	 cnt%=idx%
-     err%=0
-    ELSE
-     cnt%=0
-    ENDIF
-	
-    n%=HTTPClose(con%)	
-	OWCurrentWeather=err%
+ ' <humidity..
+ LOCAL humiditya$(3), humiditys$
+ humiditya$(0)="<humidity "
+ humiditya$(1)="</humidity>"
+ humiditya$(2)="humiditys$"
+
+ ' <clouds..
+ LOCAL cloudsa$(3), cloudss$
+ cloudsa$(0)="<clouds "
+ cloudsa$(1)="</clouds>"
+ cloudsa$(2)="cloudss$"
+
+ LOCAL state%, idx%
+ state%=0
+ num=cnt%
+ LOCAL tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
+
+ ' read each time entry
+ FOR idx% = 1 TO cnt%
+  times$=""
+  symbols$=""
+  precipitations$=""
+  windDirections$=""
+  windSpeeds$=""
+  temperatures$=""
+  pressures$=""
+  humiditys$=""
+  cloudss$=""
+  n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$", "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
+  IF n%<0 THEN       
+   err%=-n%
+   EXIT FOR      
+  ENDIF
+  tiFr%=TimeFromISO(HTTPGetValue$(times$,"from","",0,0))
+  tiTo%=TimeFromISO(HTTPGetValue$(times$,"to","",0,0))    
+  sym%=val(HTTPGetValue$(symbols$, "number","0",0,0))
+  symN$=HTTPGetValue$(symbols$,"name","",0,0)
+  symV$=HTTPGetValue$(symbols$,"var","",0,0)
+  pre=val(HTTPGetValue$(precipitations$,"value","0%",0,1))
+  preU$=HTTPGetValue$(precipitations$,"unit","",0,0)
+  preT$=HTTPGetValue$(precipitations$,"type","",0,0) 
+  wiDi=val(HTTPGetValue$(windDirections$,"deg","0",0,0))
+  wiDiC$=HTTPGetValue$(windDirections$,"code","",0,0)
+  wiDiN$=HTTPGetValue$(windDirections$,"name", "",0,0)
+  wiSp=val(HTTPGetValue$(windSpeeds$,"mps","0",0,0))
+  wiSpN$=HTTPGetValue$(windSpeeds$,"name","",0,0)
+  teAv=val(HTTPGetValue$(temperatures$,"value","0",0,0))
+  teMin=val(HTTPGetValue$(temperatures$,"min","0",0,0))
+  teMax=val(HTTPGetValue$(temperatures$,"max","0",0,0))
+  teU$=HTTPGetValue$(temperatures$,"unit","",0,0)
+  pr=val(HTTPGetValue$(pressures$,"value","0",0,0))
+  hum=val(HTTPGetValue$(humiditys$,"value","0",0,0))
+  cl=val(HTTPGetValue$(cloudss$,"all", "0",0,0))
+  clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
+  ' Call this function for further analysis of the raw data
+  'print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
+  IF Exists(cb$) >= 0 THEN
+   CALL(cb$, sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
+  ENDIF
+ NEXT idx%
+
+ IF err%>=0 THEN
+  cnt%=idx%
+  err%=0
+ ELSE
+  cnt%=0
+ ENDIF
+
+ n%=HTTPClose(con%)	
+ OWCurrentWeather=err%
 END FUNCTION
