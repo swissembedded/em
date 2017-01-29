@@ -8,15 +8,32 @@
 ' http://www.eltako.com/fileadmin/downloads/en/_main_catalogue/Gesamt-Katalog_ChT_gb_highRes.pdf
 ' Omnio enocean devices (protocol details see individual modules)
 ' http://www.awag.ch/ekat/page_de/awagpg_n_5.html
-start:
- 'Poll the stack 
- eoReceive()
- goto start
+
+' Some examples on usage 
+
+'ed%=-1
+'EOInit(ed%)
+'start:
+' DISPATCH 60
+'goto start
+'EODeinit(ed%) 
  
- ' Send a RPS/1BS message over enocean
- ' 
- ' eoTransmitRPS(&H50, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light on
- ' eoTransmitRPS(&H70, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light off
+SUB EOInit(ed%)
+ 
+ ed%=SetTimer(200)
+ IF ed% >= 0 THEN
+  ON TIMER td% EOReceive
+ ENDIF
+END SUB
+ 
+SUB EODeinit(ed%)
+  KILLTIMER(ed%)
+END SUB
+
+' Send a RPS/1BS message over enocean
+' 
+' eoTransmitRPS(&H50, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light on
+' eoTransmitRPS(&H70, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light off
 SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
  ' Pls see enocean EEP 2.6.2 specification and ESP3 specification
  ' Type = 1 is radio
@@ -175,6 +192,13 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
    ' 255=0 degree celsius, 0=40 degree celsius 
    print db1% (255-db1%)/255.0*40.0
  end select 
+ 
+ ' Vitocomfort 200 7554507 A5-04-01 
+ ' Temperatur 0-40°C
+ ' Humidity 0-100%
+ ' temp=db1/250*40
+ ' humidity = db2/250*100
+ 
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
