@@ -152,7 +152,6 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
 
  LOCAL state%, idx%
  state%=0
- num=cnt%
  LOCAL tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$	
 
  ' read each time entry

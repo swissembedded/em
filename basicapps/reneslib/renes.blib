@@ -16,55 +16,137 @@
 
 ' Read solar forecast of the next 2 days (Public) or 6 days (professional with key)
 ' API documentation available at https://doc.forecast.solar/doku.php?id=api:estimate
-' key$  solar forecast key or empty string
 ' lat latitude -90..90 pos value = north
 ' lon longitude -180..180 pos value = east
-' dec plane declination 0..90 0=horizontal (ground), 90 = vertical (wall)
-' az plane azimut -180..180 -90 = east, 0 = south, 90 = west, -180 or 180 = north
+' alt altitude above mean sea level (AMSL) in m
+' sl plane slope 0..90 0=horizontal (ground), 90 = vertical (wall)
+' az plane azimut 0..360 0 = south, 90 = west, 180 = north, 270 = east, 
+' ref reflectance of the ground (albedo) in percent [%] see api, green grass 27, light building surface 60%, water 7, dry bare ground 20 
+' pres average annual air pressure in milibar, if unknown use 1012
+' tmp annual average ambient temperature in celsius, if unknown use 19.5
 ' kwp installed power in kilowatt peak
-' mode$ "watt" or "watthours" or "watthours/day"
+' tmpC Temperature coefficient of the modules in %/°C, see manufacturer datasheet
+' dirt$ Clear, Low, Medium, High
+' ex$ extra field for efficiency at low light condition no, pmlow, redlow
+' red efficiency reduction under low light condition see api, ignored if extra is no
+' mt$ mounting type, FreeStanding, FlatRoof, SlopedRoof, FacAdeintegrated
+' eff inverter efficiency (cable and inverter losses, use inverter loss, cable loss is usually below 1%)
 ' cb$ callback function
 ' return error code if negative value
 ' Attn:
 ' This callback sub must be defined by user:
 ' time% unix timestamp
-' kw or kwh kW or kWh value
- 'SFCallback(time%, kw)	or SFCallback(time%, kwh)
-FUNCTION SFEstimate( key$, lat, lon, dec, az, kwp, mode$, cb$)
+' kW PV power output
+' SR$ Solar radiation prediction method used
+' SRNN prediction with NN method
+' SRCu prediction with curves method
+' cl cloud coverage
+ 'RECallbackSun(time%, kW, SR$, SRNN, SRCu, tmp,hum, cl)
+FUNCTION REEstimateSun( lat, lon, alt, sl, az, ref, pres, tmp, kwp, tmpC, dirt$, ex$, red, mt$, eff, cb$)
  LOCAL err%, n%, con%, url$
- url$=""
- IF key$<>"" THEN url$=url$+"/"+key$
- url$="/estimate/"+mode$+"/"+str$(lat)+"/"+str$(lon)+"/"+str$(dec)+"/"+str$(az)+"/"+str$(kwp)
- err%=HTTPRequest("api.forecast.solar", 80, con%, "GET",url$, "", "text/csv" , 5000)
+ url$="/solarAPI/"+str$(lat)+"/"+str$(lon)+"/"+str$(alt)+"/"+str$(sl)+"/"+str$(az)+"/"+str$(ref)
+ url$=url$+"/"+str$(pres)+"/"+str$(tmp)+"/"+str$(kwp*1000.0)+"/"+str$(tmpC)+"/"+dirt$+"/"+ex$
+ url$=url$+"/"+str$(red)+"/"+mt$+"/"+str$(eff)
+ err%=HTTPRequest("147.27.14.3", 11884, con%, "GET",url$, "", "" , 5000)
  IF err% <0 THEN
   print "open failed"
   IF con% >=0 THEN n%=HTTPClose(con%)
-   SFEstimate=err%
+   REEstimateSun=err%
   EXIT FUNCTION
  ENDIF	
+ ' http://147.27.14.3:11884/solarAPI/35.533333/24.069167/137/0/0/20/1012.3661/19.497649/70/-0.5/Clear/no/60/10/FreeStanding/90
+ ' <tuple..
+ LOCAL tuplea$(3),tuples$
+ tuplea$(0)="<tuple>"
+ tuplea$(1)=">"
+ tuplea$(2)="tuples$"
+ 
+ ' <UTC_epoch..
+ LOCAL utca$(3), utcs$
+ utca$(0)="<UTC_epoch>"
+ utca$(1)="</UTC_epoch>"
+ utca$(2)="utcs$"
 
- LOCAL started%,ln$,start$, tm%, p
- start$=chr$(13)+chr$(10)+chr$(13)+chr$(10)
- started%=0
- ' Right after the http header the terminated with double cr lf, 
- ' the payload comes as csv
- ' 2016-02-08;3680
- DO   
-   ln$=SocketReadLn$(con%)
-   IF ln$=start$ THEN started%=1
-   IF started% THEN
-    tm%=TimeFromISO(split$(0,ln$,";"))
-    p=val(split$(1,ln$,";"))
-    print ln$
-    IF Exists(cb$) >= 0 THEN
-     CALL(cb$, tm%, p)
-    ENDIF
+ ' <PV_power_output..
+ LOCAL pa$(3), ps$
+ pa$(0)="<PV_power_output>"
+ pa$(1)="</PV_power_output>"
+ pa$(2)="ps$"
+ 
+ ' <solar_radiation_prediction_method_used..
+ LOCAL sra$(3), srs$
+ sra$(0)="<solar_radiation_prediction_method_used>"
+ sra$(1)="</solar_radiation_prediction_method_used>"
+ sra$(2)="srs$"
+ 
+ ' <total_solar_radiation_based_on_NN_method..
+ LOCAL srnna$(3), srnns$
+ srnna$(0)="<total_solar_radiation_based_on_NN_method>"
+ srnna$(1)="</total_solar_radiation_based_on_NN_method>"
+ srnna$(2)="srnns$"
+
+ ' <total_solar_radiation_based_on_curves_method..
+ LOCAL srca$(3), srcs$
+ srca$(0)="<total_solar_radiation_based_on_curves_method>"
+ srca$(1)="</total_solar_radiation_based_on_curves_method>"
+ srca$(2)="srcs$"
+ 
+ ' <temperature..
+ LOCAL tmpa$(3), tmps$
+ tmpa$(0)="<temperature>"
+ tmpa$(1)="</temperature>"
+ tmpa$(2)="tmps$"
+ 
+ ' <humidity..
+ LOCAL huma$(3), hums$
+ huma$(0)="<humidity>"
+ huma$(1)="</humidity>"
+ huma$(2)="hums$"
+
+ ' <cloud_coverage..
+ LOCAL cla$(3), cls$
+ cla$(0)="<cloud_coverage>"
+ cla$(1)="</cloud_coverage>"
+ cla$(2)="clas$"
+
+ LOCAL state%, idx%
+ LOCAL time%, kW, SR$, SRNN, SRCu, tmp,hum, cl
+ state%=0
+ idx%=0
+ DO
+  utcs$=""
+  ps$=""
+  srs$=""
+  srnns$=""
+  srcs$=""
+  tmps$=""
+  hums$=""
+  cls$=""
+  n%=StreamSearch(HTTPReadToken(con%,"</tuple>",state%),"utca$", "pa$", "sra$", "srnna$", "srca$", "tmpa$", "huma$", "cla$", 5000)
+  IF n%=255 THEN
+   time%=val(utcs$)
+   kW=val(ps$)
+   SR$=srs$
+   SRNN=val(srnns$)
+   SRCu=val(srcs$)
+   tmp=val(tmps$)
+   hum=val(hums$)
+   cl=val(cls$)
+   idx%=idx%+1
+   print time% kW SR$ SRNN SRCu tmp hum cl
+   IF Exists(cb$) >= 0 THEN
+    CALL(cb$, time%, kW, SR$, SRNN, SRCu, tmp,hum, cl)
    ENDIF
-   IF ln$="" THEN EXIT DO
+  ELSE
+   EXIT DO
+  ENDIF
  LOOP
+ 
+ ' Check if server is overloaded
+ IF idx%=0 THEN err%=-1
 
  n%=HTTPClose(con%)    
- SFEstimate=err%
+ REEstimateSun=err%
 END FUNCTION
 
 
@@ -86,7 +168,6 @@ END FUNCTION
  'RECallbackWind(time%, wtgpower, ws)
 FUNCTION REEstimateWind( key$, lat, lon, a, b, nc, cb$)
  LOCAL err%, n%, con%, url$
- url$=""
  url$="/windspeedAPI/"+str$(lat)+"/"+str$(lon)+"/"+str$(a)+"/"+str$(b)+"/"+str$(nc)
  err%=HTTPRequest("147.27.14.3", 11884, con%, "GET",url$, "", "" , 5000)
  IF err% <0 THEN
@@ -95,6 +176,59 @@ FUNCTION REEstimateWind( key$, lat, lon, a, b, nc, cb$)
    REEstimateWind=err%
   EXIT FUNCTION
  ENDIF
+ 
+ ' Test example http://147.27.14.3:11884/windAPI/35.533333/24.069167/0.625/9.7/1000
+ ' <tuple..
+ LOCAL tuplea$(3),tuples$
+ tuplea$(0)="<tuple>"
+ tuplea$(1)=">"
+ tuplea$(2)="tuples$"
+ 
+ ' <UTC_epoch..
+ LOCAL utca$(3), utcs$
+ utca$(0)="<UTC_epoch>"
+ utca$(1)="</UTC_epoch>"
+ utca$(2)="utcs$"
+
+ ' <WTG_power_output..
+ LOCAL pa$(3), ps$
+ pa$(0)="<WTG_power_output>"
+ pa$(1)="</WTG_power_output>"
+ pa$(2)="ps$"
+ 
+ ' <wind_speed..
+ LOCAL wsa$(3), wss$
+ sra$(0)="<wind_speed>"
+ sra$(1)="</wind_speed>"
+ sra$(2)="wss$"
+ 
+
+ LOCAL state%, idx%
+ LOCAL time%, wtgpower, ws
+ state%=0
+ idx%=0
+ DO
+  utcs$=""
+  ps$=""
+  wss$=""
+  n%=StreamSearch(HTTPReadToken(con%,"</tuple>",state%),"utca$", "pa$", "wsa$", 5000)
+  IF n%=7 THEN
+   time%=val(utcs$)
+   wtgpower=val(ps$)   
+   wss=val(wss$)
+   idx%=idx%+1
+   print time% wtgpower ws
+   IF Exists(cb$) >= 0 THEN
+    CALL(cb$, time%, wtgpower, ws)
+   ENDIF
+  ELSE
+   EXIT DO
+  ENDIF
+ LOOP
+ 
+ ' Check if server is overloaded
+ IF idx%=0 THEN err%=-1
+
  
  n%=HTTPClose(con%)    
  REEstimateWind=err%
