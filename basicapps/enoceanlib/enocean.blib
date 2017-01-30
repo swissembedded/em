@@ -10,25 +10,22 @@
 ' http://www.awag.ch/ekat/page_de/awagpg_n_5.html
 
 ' Some examples on usage 
-
-'ed%=-1
-'EOInit(ed%)
+' LIBRARY LOAD "enocean"
 'start:
 ' DISPATCH 1000
 'goto start
-'EODeinit(ed%) 
  
-SUB EOInit(ed%)
+'@lib_init
+FUNCTION __enocean_init()
+ ' Register enocean receive packet callback automatically on library load 
+ ON ENOCEAN EOReceive
+END FUNCTION
  
- ed%=SetTimer(1000)
- IF ed% >= 0 THEN
-  ON TIMER td% EOReceive
- ENDIF
+@lib_destroy
+FUNCTION __enocean_destroy()
+  
 END SUB
- 
-SUB EODeinit(ed%)
-  KILLTIMER(ed%)
-END SUB
+
 
 ' Send a RPS/1BS message over enocean
 ' 
@@ -634,3 +631,4 @@ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' endif
  
 END SUB
+
