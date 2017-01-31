@@ -193,7 +193,7 @@ FUNCTION msCalChecksum (C%,A%,CI%,Usr$)
   checksum%+=CI%
   
   For i = 1 to Len(Usr$)
-   checksum%+=asc(mid$(Usr$,i,1))
+   checksum%=checksum%+asc(mid$(Usr$,i,1))
   End i
  msCalChecksum=checksum%
 END FUNCTION
