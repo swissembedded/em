@@ -1,0 +1,102 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015 - 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION Victron VE.Direct protocol for BlueSolar and SmartSolar MPPT chargers, BMV70x battery monitor
+' @VERSION 1.0
+' VE.Direct to RS232 interface cable to
+' a USR IOT USR-TCP232-302 RS232 to ethernet gateway.
+' Make sure to configure gateway to 19200, 8,n,1 TCP Server port 20108
+' Cheap RS232 to RS485 converters are also available, but might need 5V power from EMDO
+' Info about VE.Direct and VE.Direct HEX can be found here http://www.victronenergy.com
+' at the whitepaper section. Please note that some of the devices do not support
+' the HEX protocol or need a firmware upgrade to do so.
+' Please be aware that the Victron devices do not have any galvanic isolation, therefore
+' require the galvanic isolation in the victron original part cables.
+' Using direct connection without galvanic isolation might ruin not only your day, but also
+' your equipment!
+' Some examples on usage 
+server$="192.168.0.25"
+start:
+	VictronBMVReader V, VM, DM, I, P, CE, SOC, TTG, server$	
+	PAUSE 60000
+GOTO start
+
+
+' Victron VE.Direct reader in Text mode
+' itf$ interface name, e.g. "RS485:1" or "192.168.0.1:90"
+FUNCTION VEDirectTxt(itf$, lbl$, vl$)
+ LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$
+ ' parse if$ string
+ interf$=split$(0,itf$,":")
+ num$=split$(1,itf$,":")
+ 
+ toka$(1)=chr$(10)+chr$(13)+lbl$+chr$(9)
+ toka$(2)=chr$(10)+chr$(13)
+ toka$(3)="toks$"
+ toks$=""
+ m%=-1
+ IF interf$="RS485" THEN
+  m%=StreamSearch(RS485Read(num%,tmo%),toka$, 5000))
+ ELSE
+  ' Send it over ethernet
+  con%=SocketClient( 1, interf$, val(num$) )   
+  IF con% >0 THEN
+   n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
+   rsp$=SocketRead$(con%,rpl%+7)
+   m%=StreamSearch(SockRead(con%),toka$, 5000))
+   n%=SocketClose( con% )
+  ENDIF
+ ENDIF
+ vl$=toks$
+ IF m%=1 THEN
+  VEDirectTxt=0
+ ELSE
+  VEDirectTxt=-1
+ ENDIF
+END FUNCTION
+
+' Victron VE.Direct reader in HEX mode
+' itf$ interface name, e.g. "RS485:1" or "192.168.0.1:90"
+' cmd$ "0" to "F", "1"=ping, "7"=get, "8"=set
+' tp$ conversion string "un8" "un16", "sn16", "un32", "sn32", "string"
+' vl% value for data exchange
+' vls$ value if string
+FUNCTION VEDirectHex(itf$, cmd$, tp$, vl%, vals$)
+ LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, p$
+ ' parse if$ string
+ interf$=split$(0,itf$,":")
+ num$=split$(1,itf$,":")
+ ': [command] [data][data][…] [check]\n
+ ': [command] [dataHighNibble, dataLowNibble][……] [checkHigh, checkLow] \n 
+ IF tp$="un8" THEN
+  p$=hex$(vl%)
+  p$=string$(2-len(p$),"0")+p$
+ ENDIF
+ p$=right$(cmd$,1)+":"+p$
+ 
+ toka$(1)=":"
+ toka$(2)=chr$(10)
+ toka$(3)="toks$"
+ toks$=""
+ m%=-1
+ IF interf$="RS485" THEN
+ RS485Write(num%, )
+  m%=StreamSearch(RS485Read(num%,tmo%),toka$, 5000))
+ ELSE
+  ' Send it over ethernet
+  con%=SocketClient( 1, interf$, val(num$) )   
+  IF con% >0 THEN
+   n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
+   rsp$=SocketRead$(con%,rpl%+7)
+   m%=StreamSearch(SockRead(con%),toka$, 5000))
+   n%=SocketClose( con% )
+  ENDIF
+ ENDIF
+ vl$=toks$
+ IF m%=1 THEN
+  VEDirectHex=0
+ ELSE
+  VEDirectHex=-1
+ ENDIF
+END FUNCTION
+
