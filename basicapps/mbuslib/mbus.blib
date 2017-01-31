@@ -189,8 +189,8 @@ FUNCTION msCalChecksum (C%,A%,CI%,Usr$)
  LOCAL checksum%, i
  'The checksum value depends on the frame type
   checksum%=C%
-  checksum%+=A%
-  checksum%+=CI%
+  checksum%=checksum%+A%
+  checksum%=checksum%+CI%
   
   For i = 1 to Len(Usr$)
    checksum%=checksum%+asc(mid$(Usr$,i,1))
