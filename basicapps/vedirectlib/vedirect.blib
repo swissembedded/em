@@ -62,15 +62,46 @@ END FUNCTION
 ' vl% value for data exchange
 ' vls$ value if string
 FUNCTION VEDirectHex(itf$, cmd$, tp$, vl%, vals$)
- LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, p$
+ LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, p$, s$, i
  ' parse if$ string
  interf$=split$(0,itf$,":")
  num$=split$(1,itf$,":")
  ': [command] [data][data][…] [check]\n
- ': [command] [dataHighNibble, dataLowNibble][……] [checkHigh, checkLow] \n 
+ ': [command] [dataHighNibble, dataLowNibble][……] [checkHigh, checkLow]\n
+ ' High byte is send last
+ p$=""
  IF tp$="un8" THEN
   p$=hex$(vl%)
   p$=string$(2-len(p$),"0")+p$
+ ELSE IF tp$="un16" THEN
+  p$=hex$(vl%)
+  p$=string$(4-len(p$),"0")+p$
+  VEReverse p$
+ ELSE IF tp$="sn16" THEN
+  IF vl% > 0 THEN 
+   p$=hex$(vl%)   
+  ELSE 
+   p$=hex$(65536-vl%)
+  ENDIF
+  p$=string$(4-len(p$),"0")+p$
+  VEReverse p$
+ ELSE IF tp$="un32" THEN
+  p$=hex$(vl%)
+  p$=string$(8-len(p$),"0")+p$
+  VEReverse p$
+ ELSE IF tp$="sn32" THEN
+  IF vl% > 0 THEN 
+   p$=hex$(vl%)
+  ELSE
+   p$=hex$(4294967296-vl%)
+  ENDIF
+  p$=string$(8-len(p$),"0")+p$
+  VEReverse p$
+ ELSE IF tp$="string" THEN
+  for i= 1 TO LEN(vals$)
+   s$=hex$(asc(mid$(vals$,i,1)))
+   s$=string$(2-len(s$))+s$
+   p$=p$+s$
  ENDIF
  p$=right$(cmd$,1)+":"+p$
  
@@ -100,3 +131,12 @@ FUNCTION VEDirectHex(itf$, cmd$, tp$, vl%, vals$)
  ENDIF
 END FUNCTION
 
+' Reverse the data for network communication 
+SUB VEReverse(st$)
+ LOCAL i, cp$
+ cp$=st$
+ FOR i = 1 TO Len(st$) STEP 2
+ cp$=mid$(st$,i,2)+cp$
+ NEXT i
+ st$=cp$
+END SUB
