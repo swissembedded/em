@@ -57,12 +57,13 @@ END FUNCTION
 
 ' Victron VE.Direct reader in HEX mode
 ' itf$ interface name, e.g. "RS485:1" or "192.168.0.1:90"
-' cmd$ "0" to "F", "1"=ping, "7"=get, "8"=set
-' tp$ conversion string "un8" "un16", "sn16", "un32", "sn32", "string"
+' cmd$ "0" to "F", 1=ping, 3=App version, 4=device id, 6=restart, 7=get, 8=set, A=async
+' adr% register address to access on get or set command
+' tp$ conversion string "un8" "un16", "sn16", "un32", "sn32", "string" on get or set command
 ' vl% value for data exchange
 ' vls$ value if string
-FUNCTION VEDirectHex(itf$, cmd$, tp$, vl%, vals$)
- LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, p$, s$, i
+FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
+ LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, a$, p$, s$, i
  ' parse if$ string
  interf$=split$(0,itf$,":")
  num$=split$(1,itf$,":")
@@ -70,68 +71,132 @@ FUNCTION VEDirectHex(itf$, cmd$, tp$, vl%, vals$)
  ': [command] [dataHighNibble, dataLowNibble][……] [checkHigh, checkLow]\n
  ' High byte is send last
  p$=""
- IF tp$="un8" THEN
+ a$=""
+ IF cmd$<>"1" AND cmd$<>"3" AND cmd$<>"4" AND cmd$<>"6" AND cmd$<>"7" AND cmd$<>"8" AND cmd$<>"A" THEN
+  VEDirectHex=-1
+  EXIT FUNCTION
+ END
+ IF cmd$="7" OR cmd$="8" THEN
+  a$="00"+right$("0000"+HEX$(adr%),4)
+  VEReverse a$
+ ENDIF 
+ IF cmd$="8" AND tp$="un8" THEN
   p$=hex$(vl%)
   p$=string$(2-len(p$),"0")+p$
- ELSE IF tp$="un16" THEN
+ ELSE IF cmd$="8" AND tp$="un16" THEN
   p$=hex$(vl%)
   p$=string$(4-len(p$),"0")+p$
   VEReverse p$
- ELSE IF tp$="sn16" THEN
-  IF vl% > 0 THEN 
+ ELSE IF cmd$="8" AND tp$="sn16" THEN
+  IF vl% >= 0 THEN 
    p$=hex$(vl%)   
   ELSE 
    p$=hex$(65536-vl%)
   ENDIF
   p$=string$(4-len(p$),"0")+p$
   VEReverse p$
- ELSE IF tp$="un32" THEN
+ ELSE IF cmd$="8" AND tp$="un32" THEN
   p$=hex$(vl%)
   p$=string$(8-len(p$),"0")+p$
   VEReverse p$
- ELSE IF tp$="sn32" THEN
-  IF vl% > 0 THEN 
+ ELSE IF cmd$="8" AND tp$="sn32" THEN
+  IF vl% >= 0 THEN 
    p$=hex$(vl%)
   ELSE
    p$=hex$(4294967296-vl%)
   ENDIF
   p$=string$(8-len(p$),"0")+p$
   VEReverse p$
- ELSE IF tp$="string" THEN
-  for i= 1 TO LEN(vals$)
-   s$=hex$(asc(mid$(vals$,i,1)))
+ ELSE IF cmd$="8" AND tp$="string" THEN
+  for i= 1 TO LEN(vls$)
+   s$=hex$(asc(mid$(vls$,i,1)))
    s$=string$(2-len(s$))+s$
    p$=p$+s$
  ENDIF
- p$=right$(cmd$,1)+":"+p$
- 
+ p$=right$(cmd$,1)+":"+a$+p$
+ VESum(p$,m%, s$, 0)
+ p$=p$+s$+chr$(10)
  toka$(1)=":"
  toka$(2)=chr$(10)
  toka$(3)="toks$"
  toks$=""
  m%=-1
  IF interf$="RS485" THEN
- RS485Write(num%, )
-  m%=StreamSearch(RS485Read(num%,tmo%),toka$, 5000))
+  RS485Write(num%, p$)
+  ' No reply on restart command
+  IF cmd$<>"6" THEN m%=StreamSearch(RS485Read(num%,tmo%),toka$, 5000))
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
-   rsp$=SocketRead$(con%,rpl%+7)
-   m%=StreamSearch(SockRead(con%),toka$, 5000))
+   n%=SocketWrite( con%, p$ )
+   ' No reply on restart command
+   IF cmd$<>"6" THEN m%=StreamSearch(SockRead(con%),toka$, 5000))
    n%=SocketClose( con% )
   ENDIF
  ENDIF
- vl$=toks$
- IF m%=1 THEN
+ 
+ IF cmd$="6"
+  ' Restart command, ignore response
   VEDirectHex=0
- ELSE
-  VEDirectHex=-1
+  EXIT FUNCTION  
  ENDIF
+ 
+ ' Parse the response
+ vls$=":"+toks$+chr$(10)
+ VESum(vls$,n%,s$,2)
+ IF right$(vls$,2) <> s$ OR m%<>1 THEN
+  VEDirectHex=-1
+  EXIT FUNCTION
+ ENDIF
+ 
+ ' We have received data, ping, application version device id return 16 bit
+ IF (cmd$="1" AND left$(vls$,2)=":5") OR (cm$="3" AND left$(vls$,2)=":1") OR (cm$="4" AND left$(vls$,2)=":1") THEN
+  ' ping returns  app version
+  vls$=mid$(vls$,3,4)
+  VEReverse vls$
+  vls$="&H"+vls$
+  vl%=val(vls$)
+  VEDirectHex=0
+  EXIT FUNCTION
+ ELSE IF cmd$="8" AND vls$=p$ THEN
+  ' set just repeats what we have send
+  VEDirectHex=0
+  EXIT FUNCTION
+ ELSE IF cmd$="7" AND LEFT$(vls,2)=":7" THEN
+  ' This is get
+  p$=mid$(vls$,8,len(vls$)-11)
+  VEReverse p$
+  IF tp$="un8" THEN
+   vls$=p$
+   vl%=val("&H"+vls$)
+  ELSE tp$="un16" THEN
+   vls$="&H"+p$
+   vl%=val(vls$)
+  ELSE IF tp$="sn16" THEN
+   vls$="&H"+p$
+   vl%=val(vls$)   
+   IF vl% < 0 THEN vl%=vl%-65536
+  ELSE tp$="un32" THEN
+   vls$="&H"+p$
+   vl%=val(vls$)   
+  ELSE tp$="sn32" THEN
+   vls$="&H"+p$
+   vl%=val(vls$)   
+   IF vl% < 0 THEN vl%=vl%-4294967296
+  ELSE IF cmd$="8" AND tp$="string" THEN
+   vls$=""
+   vl%=0
+   for i=1 TO LEN(p$) STEP 2
+   vls$=vls$+chr$(val("&H"+mid$(p$,i,2)))
+  ENDIF
+ ENDIF
+ VEDirectHex=-1
 END FUNCTION
 
-' Reverse the data for network communication 
+' Reverse the data for network communication
+' st$ the string to reverse the bytes (two nibbles on each byte are not swapped)
 SUB VEReverse(st$)
  LOCAL i, cp$
  cp$=st$
@@ -139,4 +204,26 @@ SUB VEReverse(st$)
  cp$=mid$(st$,i,2)+cp$
  NEXT i
  st$=cp$
+END SUB
+
+' Calculate the checksum of the string
+' st$ the string to calculate the checksum from
+' sum% return value of the sum
+' sums$ return string of the sum
+' ex% number of digits from the right to exclude from calculation, use 2 if string includes checksum
+SUB VESum(st$,sum%, sums$, ex%)
+ LOCAL i, cp$
+ sum%=0
+ FOR i = 1 TO (Len(st$)-ex%) STEP 2
+  IF i=1 THEN
+   cp$=mid(st$,2,1)
+  
+  ELSE
+   cp$=mid(st$,i,2)
+  ENDIF
+  sum%=sum%+val("&H"+cp$)
+ NEXT i
+ sum%=&H55-(sum% MOD &HFF)
+ st$=cp$
+ sums$=rigth$("00"+hex$(sum),2)
 END SUB
