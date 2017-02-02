@@ -1,0 +1,53 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO Lametric library
+' @VERSION 1.0
+' Please make sure the Lametric display is configured correctly.
+' This lib only send device notifications over ethernet
+' http://lametric-documentation.readthedocs.io/en/latest/reference-docs/device-notifications.html#display-notification
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+'server$="192.168.0.14"
+'start:
+'GOTO start
+
+' Send notification to Lametric display
+' server$ Lametric device ip
+' return error code if negative value
+FUNCTION LaMetricSendNotification( server$ )
+    LOCAL err%, mes$,n%,rp$(3),ok$,al$
+    al$=""
+    IF alert% THEN al$=","+chr$(34)+"alert"+chr$(34)+":"+chr$(34)+"lselect"+chr$(34) 
+	mes$="{"+CHR$(34)+"hue"+CHR$(34)+":"+STR$(hue%)+","+CHR$(34)+"sat"+CHR$(34)+":"+STR$(sat%)+al$+"}"
+	
+	err%=HTTPRequest(server$, 80, con%, "PUT","/api/"+user$+"/lights/"+str$(id%)+"/state", "", "text/plain"+chr$(13)+chr$(10)+"Content-Type: text/plain"+chr$(13)+chr$(10)+"Content-Length: "+STR$(len(mes$)) , 5000)
+	IF err% <0 THEN
+	 LaMetricSendNotification=err%
+	 IF con%>=0 THEN err%=HTTPClose(con%)	
+	 EXIT FUNCTION
+	ENDIF
+	
+    ' Write content
+	n%=SocketWrite( con%,  mes$)
+	IF n% <> len(mes$) THEN
+	 LaMetricSendNotification=-1
+	 err%=HTTPClose(con%)	
+	 EXIT FUNCTION
+	ENDIF
+	rp$(0)=CHR$(34)+"success"+CHR$(34)
+	rp$(1)=":"
+	rp$(2)="ok$"
+	' We expect "success" reading
+	n%=StreamSearch(HTTPResponse(con%),"rp$",5000)
+    err%=HTTPClose(con%)	
+	if n%<>1 THEN
+	 LaMetricSendNotification=-2
+	 EXIT FUNCTION
+	ENDIF
+	LaMetricSendNotification=0
+END FUNCTION
