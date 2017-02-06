@@ -39,3 +39,25 @@ FUNCTION KEBAInfo( server$, info$)
  info$=rsp$
  KEBAInfo=0
 END FUNCTION
+
+' Read KEBA UDP command "failsafe"
+' server$ ip address of the charger
+' return value < 0 on error
+FUNCTION KEBAFailsafe( server$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAFailsafe=-1
+  EXIT FUNCTION
+ ENDIF
+ 
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "failsafe")
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAFailsafe=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAFailsafe=0
+END FUNCTION
