@@ -65,7 +65,7 @@ FUNCTION VEDirectTxt(itf$, lbl$, vl$)
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",5000)
    m%=StreamSearch(SocketRead(con%),"toka$", 10000)
-   print m%
+   'print m%
    n%=SocketClose( con% )
   ENDIF
  ENDIF
@@ -139,7 +139,7 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
  p$=":"+right$(cmd$,1)+a$+p$
  VESum(p$,m%, s$, 0)
  p$=p$+s$+chr$(10)
- print "->" p$
+ 'print "->" p$
  toka$(0)=":"
  toka$(1)=chr$(10)
  toka$(2)="toks$"
