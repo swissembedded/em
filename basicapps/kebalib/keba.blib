@@ -27,7 +27,6 @@ FUNCTION KEBAInfo( server$, info$)
   KEBAInfo=-1
   EXIT FUNCTION
  ENDIF
- 
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "i")
  rsp$=SocketReadLn$(con%,5000)
@@ -50,7 +49,6 @@ FUNCTION KEBAFailsafe( server$)
   KEBAFailsafe=-1
   EXIT FUNCTION
  ENDIF
- 
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "failsafe")
  rsp$=SocketReadLn$(con%,5000)
@@ -60,4 +58,47 @@ FUNCTION KEBAFailsafe( server$)
   EXIT FUNCTION  
  ENDIF
  KEBAFailsafe=0
+END FUNCTION
+
+' Read KEBA UDP command "report"
+' server$ ip address of the charger
+' id$ ID of the retrieved report
+' prod$ model name
+' ser$ serial number
+' firm$ firmware version
+' return value < 0 on error
+FUNCTION KEBAReport( server$, id$, prod$, ser$, firm$)
+ LOCAL err%, n%, m%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAReport=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "report")
+ LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
+ ida$(1)=chr$(34)
+ ida$(2)="id$"
+ id$=""
+ proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
+ proda$(1)=chr$(34)
+ proda$(2)="prod$"
+ prod$=""
+ sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
+ sera$(1)=chr$(34)
+ sera$(2)="ser$"
+ ser$=""
+ firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
+ firma$(1)=chr$(34)
+ firma$(2)="firm$"
+ firm$=""
+ n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ m%=SocketClose( con% )
+
+ IF n% <> 15 THEN
+  KEBAReport=-2
+  EXIT FUNCTION
+ ENDIF
+ KEBAReport=0
 END FUNCTION
