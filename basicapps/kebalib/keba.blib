@@ -102,3 +102,177 @@ FUNCTION KEBAReport( server$, id$, prod$, ser$, firm$)
  ENDIF
  KEBAReport=0
 END FUNCTION
+
+' Read KEBA UDP command "report 2"
+' server$ ip address of the charger
+' id$ ID of the retrieved report
+' state% current state of the wallbox
+' err1% detail code state 4
+' err2% detail code state 4
+' plug% current condition of loading connection
+' ensys% enable state for charging
+' enuser% enable condition via UDP
+' maxcur% pilot max current in milliampere
+' maxcurp% pilot max in 0.1%
+' curhw% highest possible charging current
+' currusr% current user current
+' curfs% current failsafe function
+' tmofs% timeout failsafe
+' out% relay output x2
+' inp% input x1
+' ser$ serial number
+' sec% system clock since wallbox start
+' return value < 0 on error
+FUNCTION KEBAReport2( server$, id$, prod$, ser$, firm$)
+ LOCAL err%, n%, m%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAReport2=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "report")
+ LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
+ ida$(1)=chr$(34)
+ ida$(2)="id$"
+ id$=""
+ proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
+ proda$(1)=chr$(34)
+ proda$(2)="prod$"
+ prod$=""
+ sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
+ sera$(1)=chr$(34)
+ sera$(2)="ser$"
+ ser$=""
+ firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
+ firma$(1)=chr$(34)
+ firma$(2)="firm$"
+ firm$=""
+ n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ m%=SocketClose( con% )
+
+ IF n% <> 15 THEN
+  KEBAReport2=-2
+  EXIT FUNCTION
+ ENDIF
+ KEBAReport2=0
+END FUNCTION
+
+' Read KEBA UDP command "report 3"
+' server$ ip address of the charger
+' id$ ID of the retrieved report
+' U1% voltage phase 1
+' U2% voltage phase 2
+' U3% voltage phase 3
+' I1% current phase 1
+' I2% current phase 2
+' I3% current phase 3
+' P% real power in mW
+' PF% power factor in 0.1%
+' E% power consumption in 0.1Wh for loading session
+' Etot% Total power consumption in 0.1Wh without current loading session
+' ser$ serial number
+' sec% system clock since wallbox start
+' return value < 0 on error
+FUNCTION KEBAReport3( server$, id$, prod$, ser$, firm$)
+ LOCAL err%, n%, m%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAReport3=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "report")
+ LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
+ ida$(1)=chr$(34)
+ ida$(2)="id$"
+ id$=""
+ proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
+ proda$(1)=chr$(34)
+ proda$(2)="prod$"
+ prod$=""
+ sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
+ sera$(1)=chr$(34)
+ sera$(2)="ser$"
+ ser$=""
+ firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
+ firma$(1)=chr$(34)
+ firma$(2)="firm$"
+ firm$=""
+ n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ m%=SocketClose( con% )
+
+ IF n% <> 15 THEN
+  KEBAReport3=-2
+  EXIT FUNCTION
+ ENDIF
+ KEBAReport3=0
+END FUNCTION
+
+' Read KEBA UDP command "ena"
+' server$ ip address of the charger
+' en% enable or disable
+' return value < 0 on error
+FUNCTION KEBAEna( server$, en%)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAEna=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "ena "+str$(ena%))
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAEna=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAEna=0
+END FUNCTION
+
+' Read KEBA UDP command "curr"
+' server$ ip address of the charger
+' cur% current in mA
+' return value < 0 on error
+FUNCTION KEBACurr( server$, cur%)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBACurr=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "curr "+str$(cur%))
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBACurr=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBACurr=0
+END FUNCTION
+
+' Read KEBA UDP command "output"
+' server$ ip address of the charger
+' out% output 0=open, 1=closed
+' return value < 0 on error
+FUNCTION KEBAOutput( server$, out%)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAOutput=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "output "+str$(out%))
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAOutput=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAOutput=0
+END FUNCTION
