@@ -1,0 +1,142 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015 - 2017 swissEmbedded GmbH, All rights reserved.
+' This example parse 
+' @DESCRIPTION EMDO read ABB CDD microinverter data over xml (library)
+' @VERSION 1.0
+' Please make sure the CDD is configured correctly.
+' test with http://cdd_ip/plant.xml
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+'server$="192.168.0.22"
+'start:
+' err%=ABBCDDReader(server$, kWh, kW, stat$, cb$)
+' print err% kWh kW stat$
+' pause 60000
+'GOTO start
+
+' Read ABB CDD plant.xml data and parse the kWh, kW, status fields, callback on module level
+' server$ server ip
+' kWh kWh production total
+' kW  kW production total (all inverters)
+' stat$ status of the CDD 
+' cb$ callback for each inverter
+' return negative value on error
+' Callback for each inverter
+' ABBCallback:
+' ts$ timestamp in localtime
+' sn$ serialnumber
+' model$ model name
+' stat% alert state
+' pout, output power in kW
+' eout output energy in kWh
+' vin, input voltage DC
+' vout, output voltage AC
+' iout, output current AC
+' freq, output frequency AC
+' tdsp, dsp temperature in celsius
+' tmos, mosfet temperatur in celsius
+FUNCTION ABBCDDReader( server$, kWh, kW, stat$, cb$ )
+ LOCAL err%, n%, con%
+ err%=HTTPRequest(server$, 80, con%, "GET","/plant.xml", "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  ABBCDDReader=err%
+  EXIT FUNCTION
+ ENDIF	
+ ' Read the cdd status and production
+ LOCAL pouta$(3), pouts$, eouta$(3), eouts$, stata$(3), stats$
+ pouta$(0)="pout_kW="+CHR$(34)
+ pouta$(1)=CHR$(34)
+ pouta$(2)="pouts$"
+ pouts$="0.0"
+ eouta$(0)="etot_kWh="+CHR$(34)
+ eouta$(1)=CHR$(34)
+ eouta$(2)="eouts$"
+ eouts$="0.0"
+ stata$(0)=" status="+CHR$(34)
+ stata$(1)=CHR$(34)
+ stata$(2)="stats$"
+ stats$="ERROR"
+
+ n%=StreamSearch(HTTPResponse(con%),"pouta$","eouta$","stata$",5000)
+ 
+ IF n% <> 7 THEN
+  n%=HTTPClose(con%)
+  ABBCDDReader=-1
+  EXIT FUNCTION  
+ ENDIF
+ ' parse values
+ kW=val(pouts$)
+ kWh=val(eouts$)
+ stat$=stats$
+ ' Read each inverter entry
+ LOCAL sna$(3), sns$, vouta$(3),vouts$, iouta$(3), iouts$, freqa$(3), freqs$, vina$(3), vins$, tdspa$(3), tdsps$, tmosa$(3), tmoss$, modela$(3), models$, tsa$(3), tss$
+ pouta$(0)="Pout_kW="+CHR$(34)
+ pouta$(1)=CHR$(34)
+ pouta$(2)="pouts$"
+ eouta$(0)="Etot_kWh="+CHR$(34)
+ eouta$(1)=CHR$(34)
+ eouta$(2)="eouts$"
+ stata$(0)="alarmstat="+CHR$(34)
+ stata$(1)=CHR$(34)
+ stata$(2)="stats$"
+ sna$(0)="sn="+CHR$(34)
+ sna$(1)=CHR$(34)
+ sna$(2)="sns$"
+ vouta$(0)="Vout_V="+CHR$(34)
+ vouta$(1)=CHR$(34)
+ vouta$(2)="vouts$"
+ iouta$(0)="Iout_A="+CHR$(34)
+ iouta$(1)=CHR$(34)
+ iouta$(2)="iouts$"
+ freqa$(0)="Freq_Hz="+CHR$(34)
+ freqa$(1)=CHR$(34)
+ freqa$(2)="freqs$"
+ vina$(0)="Vin_V="+CHR$(34)
+ vina$(1)=CHR$(34)
+ vina$(2)="vins$"
+ tdspa$(0)="Tdsp_degC="+CHR$(34)
+ tdspa$(1)=CHR$(34)
+ tdspa$(2)="tdsps$"
+ tmosa$(0)="Tmos_degC="+CHR$(34)
+ tmosa$(1)=CHR$(34)
+ tmosa$(2)="tmoss$"
+ modela$(0)="modeldesc="+CHR$(34)
+ modela$(1)=CHR$(34)
+ modela$(2)="models$"
+ tsa$(0)="ts="+CHR$(34)
+ tsa$(1)=CHR$(34)
+ tsa$(2)="tss$" 
+ DO
+  pouts$="0.0"
+  eouts$="0.0"
+  stats$="1"
+  sns$=""
+  vouts$="0.0"
+  iouts$="0.0"
+  freqs$="1"
+  vins$="0.0"
+  tdsps$="0.0"
+  tmoss$="0.0"
+  models$=""
+  tss$=""
+  n%=StreamSearch(HTTPResponse(con%),"pouta$","eouta$","stata$","sna$","vouta$","iouta$","freqa$","vina$","tdspa$","tmosa$","modela$","tsa$",5000)
+  IF n% <> 4095 THEN
+   n%=HTTPClose(con%)
+   ABBCDDReader=0
+   EXIT FUNCTION  
+  ENDIF
+  'print tss$ sns$ models$ val(stats$) val(pouts$) val(eouts$) val(vins$) val(vouts$) val(iouts$) val(freqs$) val(tdsps$) val(tmoss$)
+
+  IF Exists(cb$) >= 0 THEN
+   CALL(cb$,tss$,sns$,models$,val(stats$),val(pouts$),val(eouts$),val(vins$),val(vouts$),val(iouts$),val(freqs$),val(tdsps$),val(tmoss$))
+  ENDIF
+ 
+ LOOP
+END FUNCTION
