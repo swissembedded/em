@@ -31,7 +31,12 @@
 ' err%=VEDirectHex("192.168.0.25:20108","4",0,"",vl%, vls$)
 ' print err% vl% vls$
 ' err%=VEDirectHex("192.168.0.25:20108","7",&H010B,"string",vl%, vls$)
-' print err% vls$
+' print err% "model name " vls$
+' err%=VEDirectHex("192.168.0.25:20108","7",&Hed8d,"un16",vl%, vls$)
+' print err% "main voltage " vl%/100.0
+' vl%=1
+' err%=VEDirectHex("192.168.0.25:20108","8",&H34d,"un8",vl%, vls$)
+' print err% "relay"
 ' PAUSE 1000
 'GOTO start
 
@@ -172,7 +177,7 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
   VEDirectHex=-2
   EXIT FUNCTION
  ENDIF
- print "<-" vls$
+ ' print "<-" vls$ " " p$
  ' We have received data, ping, application version device id return 16 bit
  IF (cmd$="1" AND left$(vls$,2)=":5") OR (cmd$="3" AND left$(vls$,2)=":1") OR (cmd$="4" AND left$(vls$,2)=":1") THEN
   ' ping returns  app version
@@ -182,7 +187,7 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
   vl%=val(vls$)
   VEDirectHex=0
   EXIT FUNCTION
- ELSE IF cmd$="8" AND vls$=p$ THEN
+ ELSE IF cmd$="8" AND (vls$=left$(p$,len(p$)-1)) THEN
   ' set just repeats what we have send
   VEDirectHex=0
   EXIT FUNCTION
@@ -245,7 +250,7 @@ END SUB
 SUB VESum(st$, sum%, sums$, ex%)
  LOCAL i, cp$
  sum%=0
- print len(st$) ex%
+ 'print len(st$) ex%
  ' calculate the sum, two nibbles each, first nibble is with :X, thus only one nibble
  FOR i = 1 TO (Len(st$)-ex%) STEP 2
   IF i=1 THEN
@@ -256,7 +261,6 @@ SUB VESum(st$, sum%, sums$, ex%)
    sum%=sum%+val("&H"+cp$)
  NEXT i
  sum%=(&H55-(sum% AND &HFF)) AND &HFF
- print sum% " " hex$(sum%)
- sums$=right$("00"+hex$(sum%),2)
-  
+ 'print sum% " " hex$(sum%)
+ sums$=right$("00"+hex$(sum%),2)  
 END SUB
