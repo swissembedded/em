@@ -1,0 +1,41 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO Keba EV Charger control
+' @VERSION 1.0
+' Please make sure the Keba station is configured correctly
+' Make sure DIP-switch DWS1.3 = ON
+' KeContact_P20_UDP_ProgrGuide_en.pdf
+
+' Some examples on usage 
+'charger IP
+'server$="192.168.0.25"
+'start:
+' err%=KEBAInfo( server$, info$)
+' print err% info$
+' pause 60000
+'GOTO start
+
+' Read KEBA UDP command "i"
+' server$ ip address of the charger
+' info$ firmware and model info
+' return value < 0 on error
+FUNCTION KEBAInfo( server$, info$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAInfo=-1
+  EXIT FUNCTION
+ ENDIF
+ 
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "i")
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" THEN
+  KEBAInfo=-2
+  EXIT FUNCTION  
+ ENDIF
+ info$=rsp$
+ KEBAInfo=0
+END FUNCTION

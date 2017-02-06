@@ -1,7 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2015 - 2017 swissEmbedded GmbH, All rights reserved.
-' This example parse 
 ' @DESCRIPTION EMDO read ABB CDD microinverter data over xml (library)
 ' @VERSION 1.0
 ' Please make sure the CDD is configured correctly.
