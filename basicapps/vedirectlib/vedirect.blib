@@ -58,7 +58,7 @@ FUNCTION VEDirectTxt(itf$, lbl$, vl$)
  toks$=""
  m%=-1
  IF interf$="RS485" THEN
-  m%=StreamSearch(RS485Read(num%,5000),"toka$", 10000)
+  m%=StreamSearch(RS485Read(val(num$),5000),"toka$", 10000)
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
@@ -146,7 +146,7 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
  toks$=""
  m%=-1
  IF interf$="RS485" THEN
-  RS485Write(num%, p$)
+  RS485Write(val(num$), p$)
   ' No reply on restart command
   IF cmd$<>"6" THEN m%=StreamSearch(RS485Read(num%,5000),"toka$", 5000)
  ELSE

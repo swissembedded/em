@@ -1,0 +1,157 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO ABL EVCC library
+' @VERSION 1.0
+' Montage- und Bedienungsanleitung EVCC (ab V2.7)
+' Please contact ABL SURSUM for documentation
+' Make sure EMDO RS485 is configured with RS485: 38400, 8, 1, n
+' Termination needed on both ends (120Ohm), you can use EMDO build in termination
+' Some examples on usage 
+'charger IP
+'server$="192.168.0.25"
+'start:
+' err%=ABLCmd( "RS485:1", 1, param)
+' print err% param
+' pause 60000
+'GOTO start
+
+' ABL command
+' itf$ interface
+' cmd% command number 
+' param
+' 0=Reset
+' 1=Get revision of firmware, return version
+' 2=Get mode, return mode
+'  Code-sequence A>B2 (EV connected, E1-FE connected, bBreakCharge-flag cleared)
+'  0000>0064>0012>0001>0002>0013>0003>0065>0066>0067>0004
+'  Code-sequence B2>C (charging requested by EV)
+'  0004>0005
+'  Code-sequence C>B’ (charging interrupted by EV)
+'  0005>0068>0009
+'  Code-sequence B’>A (EV disconnected after charging interrupted)
+'  0009>0015>0016>0000
+'  A1 0000
+'  B1.1 0064>0012>0001
+'  B1.2 0002>0013>0003
+'  B2 0065>0066>0067>0004 (before 1st charging)
+'  B' 0068>0009 (charging interrupted by EV)
+'  C 0005
+'  D 0006
+'  A2 0015>0016>0000 (EV disconnected after charging)
+'  E 0033, 0035, 0037,0039
+'  A' 0017
+' 3=Switch mode to Manual
+' 4=Get Status of output, return status
+'  0000 all outputs are off
+'  0001 LED1 on
+'  0002 LED2 on
+'  0004 K1 on
+'  0008 K2 on
+'  0016 K3 on
+'  0032 CP high-side-driver on
+'  0064 CP low-side-driver on
+' 5=Set ouput, cmd parameter
+'  0001 LED1
+'  0002 LED2
+'  0004 K1
+'  0008 do not use
+'  0016 K3
+'  0032 CP high-side-driver
+'  0064 CP high-side-driver
+' 6=Clear output, cmd parameter
+'  0001 LED1
+'  0002 LED2
+'  0004 K1
+'  0008 do not use
+'  0016 K3
+'  0032 CP high-side-driver
+'  0064 CP high-side-driver
+' 7=Get ADC-value of pos. Ucp, returns 0.017 x val[V]
+' 8=Get ADC-value of neg. Ucp, returns 0.017 x val[V]
+' 9=Get ADC-value of Ucs, return 0000...1023
+' 10=Get Status of input, returns status
+'  0000 none active
+'  0001 E1 active
+'  0002 E2 active
+'  0003 E1 & E2 active
+' 11=Get Ic, returns xxxx is PWM scaled 0.1%, IC = PWM×0.6A resp. (PWM-64)×2.5A
+' 12=Set Icmax, cmd parameter
+'  0000 6A
+'  0001 10A
+'  0002 13A
+'  0003 16A
+'  0004 20A
+'  0005 30A
+'  0006 32A
+'  0007 63A
+'  0008 70A
+'  0009 80A
+'  0010 Idefault
+'  0080..0970 PWM value 8%...97%
+'  0999 charging not allowed (99%)
+'  PWM = Idefault/0.6A resp. PWM = 64 + Idefault/2.5A
+' 13=Switch PWM on
+' 14=Switch PWM off
+' 15=Set Idefault
+' 22=Set address of device, cmd parameter address 1..8
+' 23=Get address of device, returns address 1..8
+' 24=Load factory settings and reset, returns version
+' 25=Stop charging, leave MANUAL mode, jump to A
+' 26=Get Idefault, returns value
+'  xxxx is PWM scaled 0.1%
+'  Idefault = PWM×0.6A resp. (PWM-64)×2.5A
+' 27=Set bBreackCharge-flag
+' 28=Clear bBreakCharge-flag
+' 29=Get bBreakCharge-flag, return 0000 bBreakCharge=0, 0001 bBreakCharge=1
+' 30=Jump to A'
+' 31=Restart/Jump to OFF (enabled only in A')
+' return value < 0 on error
+FUNCTION ABLCmd( itf$, cmd%, param)
+ LOCAL err%, n%, con%, interf$, num$, rq$, rsp$
+ interf$=split$(0,itf$,":")
+ num$=split$(1,itf$,":")
+ ' request
+ rq$="!n "+right$("00"+str$(cmd%),2)
+ if cmd%=0 OR cmd%=24 then
+  rq$=rq$+" 1111"
+ else if cmd%=5 OR cmd%=6 OR cmd%=12 OR cmd%=15 then
+  rq$=rq$+" "+right$("0000"+str$(cint(param)),4)
+ else if cmd%=22 then
+  rq$=rq$+" 111"+right$("0"+str$(cint(param)),1)
+ endif 
+ rq$=rq$+chr$(13)+chr$(10)
+ ' tranceive over interface
+ rsp$=""
+ IF interf$="RS485" THEN
+  DO WHILE RS485Read(val(num$),1,0) >=0
+  LOOP
+  n%=RS485Write(val(num$),rq$)
+  rsp$=rs485ReadLn$(val(num$),5000)
+ ELSE
+  ' Send it over ethernet
+  con%=SocketClient( 1, interf$, val(num$) )   
+  IF con% >0 THEN
+   n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+   rsp$=SocketReadLn$(con%,5000)
+   n%=SocketClose( con% )
+  ENDIF
+ ENDIF
+ 'Check response
+ IF rsp$=="" THEN
+  ABLCmd=-2
+  EXIT FUNCTION  
+ ENDIF
+ IF split$(0,rsp$," ")<>">n" OR split$(1,rsp$," ")<>right$("00"+str$(cmd%),2) THEN
+  ABLCmd=-3
+  EXIT FUNCTION  
+ ENDIF
+ IF cmd%=1 OR cmd%=24 THEN
+  param=val(split$(1,rsp$,"V"))
+ ELSE IF cmd%=2 OR cmd%=4 OR (cmd%>=7 AND cmd%<=11) OR cmd%=23 OR cmd%=26 OR cmd%=29 THEN
+  param=val(split$(2,rsp$," "))
+ ELSE
+  param=0
+ ENDIF
+ ABLCmd=0
+END FUNCTION
