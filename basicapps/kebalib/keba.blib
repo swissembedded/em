@@ -1,11 +1,13 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
-' @DESCRIPTION EMDO Keba EV Charger control
+' @DESCRIPTION EMDO Keba EV Charger control P20, P30, BMW wallbox
 ' @VERSION 1.0
 ' Please make sure the Keba station is configured correctly
 ' Make sure DIP-switch DWS1.3 = ON
-' KeContact_P20_UDP_ProgrGuide_en.pdf
+' http://www.keba.com/en/emobility/service-support/downloads/Downloads
+' UDP Programmer's Guide V2.0 
+' If you have problems, pls ensure that latest firmware is installed on your Keba
 
 ' Some examples on usage 
 'charger IP
@@ -16,7 +18,8 @@
 ' pause 60000
 'GOTO start
 
-' Read KEBA UDP command "i"
+' KEBA UDP command "i"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
 ' info$ firmware and model info
 ' return value < 0 on error
@@ -39,10 +42,14 @@ FUNCTION KEBAInfo( server$, info$)
  KEBAInfo=0
 END FUNCTION
 
-' Read KEBA UDP command "failsafe"
+' KEBA UDP command "failsafe"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
+' tmo% timeout to enter failsafe mode during charging if no KEBAEnable or KEBACurrent is send
+' maxcur% max charging current in mA during failsafe mode 0, 6000-63000
+' sv% 0=enable until next startup of charger, 1=enable failsafe at startup of charger
 ' return value < 0 on error
-FUNCTION KEBAFailsafe( server$)
+FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
  LOCAL err%, n%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
@@ -50,7 +57,7 @@ FUNCTION KEBAFailsafe( server$)
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
- n%=SocketWrite( con%, "failsafe")
+ n%=SocketWrite( con%, "failsafe "+str$(tmo%)+" "+str$(maxcur%)+" "+str$(sv%))
  rsp$=SocketReadLn$(con%,5000)
  n%=SocketClose( con% )
  IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
@@ -60,7 +67,8 @@ FUNCTION KEBAFailsafe( server$)
  KEBAFailsafe=0
 END FUNCTION
 
-' Read KEBA UDP command "report"
+' KEBA UDP command "report"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
 ' id$ ID of the retrieved report
 ' prod$ model name
@@ -93,7 +101,7 @@ FUNCTION KEBAReport( server$, id$, prod$, ser$, firm$)
  firma$(1)=chr$(34)
  firma$(2)="firm$"
  firm$=""
- n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$",5000)
  m%=SocketClose( con% )
 
  IF n% <> 15 THEN
@@ -106,7 +114,7 @@ END FUNCTION
 ' Read KEBA UDP command "report 2"
 ' server$ ip address of the charger
 ' id$ ID of the retrieved report
-' state% current state of the wallbox
+' st% current state of the wallbox
 ' err1% detail code state 4
 ' err2% detail code state 4
 ' plug% current condition of loading connection
@@ -123,7 +131,7 @@ END FUNCTION
 ' ser$ serial number
 ' sec% system clock since wallbox start
 ' return value < 0 on error
-FUNCTION KEBAReport2( server$, id$, prod$, ser$, firm$)
+FUNCTION KEBAReport2( server$, id$, st%, err1%, err2%)
  LOCAL err%, n%, m%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
@@ -215,11 +223,11 @@ END FUNCTION
 ' server$ ip address of the charger
 ' en% enable or disable
 ' return value < 0 on error
-FUNCTION KEBAEna( server$, en%)
+FUNCTION KEBAEnable( server$, en%)
  LOCAL err%, n%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
-  KEBAEna=-1
+  KEBAEnable=-1
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
@@ -227,21 +235,21 @@ FUNCTION KEBAEna( server$, en%)
  rsp$=SocketReadLn$(con%,5000)
  n%=SocketClose( con% )
  IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
-  KEBAEna=-2
+  KEBAEnable=-2
   EXIT FUNCTION  
  ENDIF
- KEBAEna=0
+ KEBAEnable=0
 END FUNCTION
 
 ' Read KEBA UDP command "curr"
 ' server$ ip address of the charger
 ' cur% current in mA
 ' return value < 0 on error
-FUNCTION KEBACurr( server$, cur%)
+FUNCTION KEBACurrent( server$, cur%)
  LOCAL err%, n%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
-  KEBACurr=-1
+  KEBACurrent=-1
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
@@ -249,10 +257,10 @@ FUNCTION KEBACurr( server$, cur%)
  rsp$=SocketReadLn$(con%,5000)
  n%=SocketClose( con% )
  IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
-  KEBACurr=-2
+  KEBACurrent=-2
   EXIT FUNCTION  
  ENDIF
- KEBACurr=0
+ KEBACurrent=0
 END FUNCTION
 
 ' Read KEBA UDP command "output"
