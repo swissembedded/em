@@ -67,24 +67,26 @@ FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
  KEBAFailsafe=0
 END FUNCTION
 
-' KEBA UDP command "report"
+' KEBA UDP command "report1"
 ' P20,P30,BMW wallbox
 ' server$ ip address of the charger
 ' id$ ID of the retrieved report
 ' prod$ model name
 ' ser$ serial number
 ' firm$ firmware version
+' com% communication module installed(P30 only)
+' sec% current clock (P30 only)
 ' return value < 0 on error
-FUNCTION KEBAReport( server$, id$, prod$, ser$, firm$)
+FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$)
  LOCAL err%, n%, m%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
-  KEBAReport=-1
+  KEBAReport1=-1
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "report")
- LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ LOCAL ida$(3),proda$(3),sera$(3),firma$(3),coma$(3),coms$, seca$(3), secs$
  ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
  ida$(1)=chr$(34)
  ida$(2)="id$"
@@ -101,14 +103,26 @@ FUNCTION KEBAReport( server$, id$, prod$, ser$, firm$)
  firma$(1)=chr$(34)
  firma$(2)="firm$"
  firm$=""
- n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$",5000)
+ ' P30 only
+ coma$(0)=chr$(34)+"COM-module"+chr$(34)+": "
+ coma$(1)=","
+ coma$(2)="coms$"
+ coms$="0"
+ seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
+ seca$(1)="}"
+ seca$(2)="secs$"
+ secs$="0"
+
+ n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$","coma$","seca$",5000)
  m%=SocketClose( con% )
 
- IF n% <> 15 THEN
-  KEBAReport=-2
+ IF n% <> 15 AND n% <> 63 THEN
+  KEBAReport1=-2
   EXIT FUNCTION
  ENDIF
- KEBAReport=0
+ com%=val(coms$)
+ sec%=val(secs$)
+ KEBAReport1=0
 END FUNCTION
 
 ' Read KEBA UDP command "report 2"
@@ -123,15 +137,18 @@ END FUNCTION
 ' maxcur% pilot max current in milliampere
 ' maxcurp% pilot max in 0.1%
 ' curhw% highest possible charging current
-' currusr% current user current
+' curusr% user current
 ' curfs% current failsafe function
 ' tmofs% timeout failsafe
+' curtim% current preset curtimer (P30 only)
+' tmoct% remaining time to accept current value (P30 only)
+' se% set energy limit (P30 only)
 ' out% relay output x2
 ' inp% input x1
 ' ser$ serial number
 ' sec% system clock since wallbox start
 ' return value < 0 on error
-FUNCTION KEBAReport2( server$, id$, st%, err1%, err2%)
+FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,maxcurp%,curhw%,curusr%,curfs%,tmofs%,curtim%,tmoct%,se%,out%,inp%,ser$,sec%)
  LOCAL err%, n%, m%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
@@ -139,31 +156,116 @@ FUNCTION KEBAReport2( server$, id$, st%, err1%, err2%)
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
- n%=SocketWrite( con%, "report")
- LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ n%=SocketWrite( con%, "report2")
+ LOCAL ida$(3),ids$, sta$(3),sts$,erra1$(3),errs1$,erra2$(3),errs2$,pluga$(3),plugs$,ensysa$(3),ensyss$,enusera$(3),enusers$
  ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
  ida$(1)=chr$(34)
  ida$(2)="id$"
  id$=""
- proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
- proda$(1)=chr$(34)
- proda$(2)="prod$"
- prod$=""
+ sta$(0)=chr$(34)+"State"+chr$(34)+": "
+ sta$(1)=","
+ sta$(2)="sts$"
+ sts$="0"
+ erra1$(0)=chr$(34)+"Error1"+chr$(34)+": "
+ erra1$(1)=","
+ erra1$(2)="errs1$"
+ errs1$="0"
+ erra2$(0)=chr$(34)+"Error2"+chr$(34)+": "
+ erra2$(1)=","
+ erra2$(2)="errs2$"
+ errs2$="0"
+ pluga$(0)=chr$(34)+"Plug"+chr$(34)+": "
+ pluga$(1)=","
+ pluga$(2)="plugs$"
+ plugs$="0"
+ ensysa$(0)=chr$(34)+"Enable sys"+chr$(34)+": "
+ ensysa$(1)=","
+ ensysa$(2)="ensyss$"
+ ensyss$="0"
+ enusera$(0)=chr$(34)+"Enable user"+chr$(34)+": "
+ enusera$(1)=","
+ enusera$(2)="enusers$"
+ enusers$="0"
+ LOCAL maxcura$(3),maxcurs$,maxcurpa$(3),maxcurps$,curhwa$(3),curhws$,curusra$(3),curusrs$,curfsa$(3),curfss$
+ maxcura$(0)=chr$(34)+"Max curr"+chr$(34)+": "
+ maxcura$(1)=","
+ maxcura$(2)="maxcurs$"
+ maxcurs$="0"
+ maxcurpa$(0)=chr$(34)+"Max curr %"+chr$(34)+": "
+ maxcurpa$(1)=","
+ maxcurpa$(2)="maxcurps$"
+ maxcurps$="0"
+ curhwa$(0)=chr$(34)+"Curr HW"+chr$(34)+": "
+ curhwa$(1)=","
+ curhwa$(2)="curhws$"
+ curhws$="0"
+ curusra$(0)=chr$(34)+"Curr user"+chr$(34)+": "
+ curusra$(1)=","
+ curusra$(2)="curusrs$"
+ curusrs$="0"
+ curfsa$(0)=chr$(34)+"Curr FS"+chr$(34)+": "
+ curfsa$(1)=","
+ curfsa$(2)="curfss$"
+ curfss$="0"
+ LOCAL tmofsa$(3),tmofss$,curtima$(3),curtims$,tmocta$(3),tmocts$, sea$(3),ses$,outa$(3),outs$,inpa$(3),inps$,sera$(3),sers$, seca$(3), secs$
+ tmofsa$(0)=chr$(34)+"Tmo FS"+chr$(34)+": "
+ tmofsa$(1)=","
+ tmofsa$(2)="tmofss$"
+ tmofss$="0"
+ curtima$(0)=chr$(34)+"Curr timer"+chr$(34)+": "
+ curtima$(1)=","
+ curtima$(2)="curtims$"
+ curtims$="0"
+ tmocta$(0)=chr$(34)+"Tmo CT"+chr$(34)+": "
+ tmocta$(1)=","
+ tmocta$(2)="tmocts$"
+ tmocts$="0"
+ sea$(0)=chr$(34)+"Setenergy"+chr$(34)+": "
+ sea$(1)=","
+ sea$(2)="ses$"
+ ses$="0"
+ outa$(0)=chr$(34)+"Output"+chr$(34)+": "
+ outa$(1)=","
+ outa$(2)="outs$"
+ outs$="0"
+ inpa$(0)=chr$(34)+"Input"+chr$(34)+": "
+ inpa$(1)=","
+ inpa$(2)="inps$"
+ inps$="0"
  sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
  sera$(1)=chr$(34)
  sera$(2)="ser$"
  ser$=""
- firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
- firma$(1)=chr$(34)
- firma$(2)="firm$"
- firm$=""
- n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
+ seca$(1)="}"
+ seca$(2)="secs$"
+ secs$="0"
+ 
+ n%=StreamSearch(SocketRead(con%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
  m%=SocketClose( con% )
 
- IF n% <> 15 THEN
+ IF n% <> 2097151 AND n% <> 262143 THEN
   KEBAReport2=-2
   EXIT FUNCTION
  ENDIF
+ st%=val(sts$)
+ err1%=val(errs1$)
+ err2%=val(errs2$)
+ plug%=val(plugs$)
+ ensys%=val(ensyss$)
+ enuser%=val(enusers$)
+ maxcur%=val(maxcurs$)
+ maxcurp%=val(maxcurps$)
+ curhw%=val(curhws$)
+ curusr%=val(curusrs$)
+ curfs%=val(curfss$)
+ tmofs%=val(tmofss$)
+ curtim%=val(curtims$)
+ tmoct%=val(tmocts$)
+ se%=val(ses$)
+ out%=val(outs$)
+ inp%=val(inps$)
+ sec%=val(secs$)
  KEBAReport2=0
 END FUNCTION
 
