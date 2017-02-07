@@ -156,7 +156,7 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
- n%=SocketWrite( con%, "report2")
+ n%=SocketWrite( con%, "report 2")
  LOCAL ida$(3),ids$, sta$(3),sts$,erra1$(3),errs1$,erra2$(3),errs2$,pluga$(3),plugs$,ensysa$(3),ensyss$,enusera$(3),enusers$
  ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
  ida$(1)=chr$(34)
@@ -285,7 +285,7 @@ END FUNCTION
 ' ser$ serial number
 ' sec% system clock since wallbox start
 ' return value < 0 on error
-FUNCTION KEBAReport3( server$, id$, prod$, ser$, firm$)
+FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%)
  LOCAL err%, n%, m%, con%, rsp$
  con%=SocketClient( 0, server$, 7090 )
  IF con% < 0 THEN
@@ -293,31 +293,81 @@ FUNCTION KEBAReport3( server$, id$, prod$, ser$, firm$)
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
- n%=SocketWrite( con%, "report")
- LOCAL ida$(3),ids$, proda$(3), prods$, sera$(3), sers$, firma$(3), firms$
+ n%=SocketWrite( con%, "report 3")
+ LOCAL ida$(3), Ua1$(3), Us1$, Ua2$(3), Us2$, Ua3$(3), Us3$
  ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
  ida$(1)=chr$(34)
  ida$(2)="id$"
  id$=""
- proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
- proda$(1)=chr$(34)
- proda$(2)="prod$"
- prod$=""
+ Ua1$(0)=chr$(34)+"U1"+chr$(34)+": "
+ Ua1$(1)=","
+ Ua1$(2)="Ua1$"
+ Us1$="0"
+ Ua2$(0)=chr$(34)+"U2"+chr$(34)+": "
+ Ua2$(1)=","
+ Ua2$(2)="Ua2$"
+ Us2$="0"
+ Ua3$(0)=chr$(34)+"U3"+chr$(34)+": "
+ Ua3$(1)=","
+ Ua3$(2)="Ua3$"
+ Us3$="0"
+ LOCAL Ia1$(3), Is1$, Ia2$(3), Is2$, Ia3$(3), Is3$
+ Ia1$(0)=chr$(34)+"I1"+chr$(34)+": "
+ Ia1$(1)=","
+ Ia1$(2)="Ia1$"
+ Is1$="0"
+ Ia2$(0)=chr$(34)+"I2"+chr$(34)+": "
+ Ia2$(1)=","
+ Ia2$(2)="Ia2$"
+ Is2$="0"
+ Ia3$(0)=chr$(34)+"I3"+chr$(34)+": "
+ Ia3$(1)=","
+ Ia3$(2)="Ia3$"
+ Is3$="0"
+ LOCAL Pa$(3), Ps$, PFa$(3), PFs$, Ea$(3),Es$, Etota$(3), Etots$
+ Pa$(0)=chr$(34)+"P"+chr$(34)+": "
+ Pa$(1)=","
+ Pa$(2)="Ps$"
+ Ps$="0"
+ PFa$(0)=chr$(34)+"PF"+chr$(34)+": "
+ PFa$(1)=","
+ PFa$(2)="PFs$"
+ PFs$="0"
+ Ea$(0)=chr$(34)+"E pres"+chr$(34)+": "
+ Ea$(1)=","
+ Ea$(2)="Es$"
+ Es$="0"
+ Etota$(0)=chr$(34)+"E total"+chr$(34)+": "
+ Etota$(1)=","
+ Etota$(2)="Etots$"
+ Etots$="0"
+ LOCAL sera$(3), seca$(3), secs$
  sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
  sera$(1)=chr$(34)
  sera$(2)="ser$"
  ser$=""
- firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
- firma$(1)=chr$(34)
- firma$(2)="firm$"
- firm$=""
- n%=StreamSearch(SocketRead(con%),"ida$,"proda$","sera$","firma$",5000)
+ seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
+ seca$(1)="}"
+ seca$(2)="secs$"
+ secs$="0"
+ n%=StreamSearch(SocketRead(con%),"ida$","Ua1$","Ua2$","Ua3$","Ia1$","Ia2$","Ia3$","Pa$","PFa$","Ea$","Etota$","sera$","seca$",5000)
  m%=SocketClose( con% )
 
- IF n% <> 15 THEN
+ IF n% <> 16383 THEN
   KEBAReport3=-2
   EXIT FUNCTION
  ENDIF
+ U1%=val(Us1$)
+ U2%=val(Us1$)
+ U3%=val(Us1$)
+ I1%=val(Is1$)
+ I2%=val(Is2$)
+ I3%=val(Is3$)
+ P%=val(Ps$)
+ PF%=val(PFs$)
+ E%=val(Es$)
+ Etot%=val(Etots$)
+ sec%=val(secs$)
  KEBAReport3=0
 END FUNCTION
 
