@@ -125,7 +125,8 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$)
  KEBAReport1=0
 END FUNCTION
 
-' Read KEBA UDP command "report 2"
+' KEBA UDP command "report 2"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
 ' id$ ID of the retrieved report
 ' st% current state of the wallbox
@@ -269,7 +270,8 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  KEBAReport2=0
 END FUNCTION
 
-' Read KEBA UDP command "report 3"
+' KEBA UDP command "report 3"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
 ' id$ ID of the retrieved report
 ' U1% voltage phase 1
@@ -371,9 +373,108 @@ FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, E
  KEBAReport3=0
 END FUNCTION
 
-' Read KEBA UDP command "ena"
+' KEBA UDP command "report 100"
+' P30,BMW wallbox
 ' server$ ip address of the charger
-' en% enable or disable
+' off% history offset 1..30
+' id$ ID calling report
+' sess% session counter
+' curhw% highest possible charging current
+' estart% total energy at start
+' epres% delivered energy
+' started% session started timestamp
+' ended% session ended timestamp
+' reason% reason session has ended
+' tag$ rfid tag
+' clss$ rfid class
+' ser$ serial number
+' sec% system clock since wallbox start
+' return value < 0 on error
+FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, started%, ended%, reason%, tag$, clss$, ser$, sec%)
+ LOCAL err%, n%, m%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAReport100=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "report "+str$(100+off%))
+ LOCAL ida$(3), sessa$(3), sesss$, curhwa$(3), curhws$, estarta$(3), estarts$, epresa$(3), epress$
+ ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
+ ida$(1)=chr$(34)
+ ida$(2)="id$"
+ id$=""
+ sessa$(0)=chr$(34)+"Session ID"+chr$(34)+": "
+ sessa$(1)="}"
+ sessa$(2)="sesss$"
+ sesss$="0"
+ curhwa$(0)=chr$(34)+"Curr HW   "+chr$(34)+": "
+ curhwa$(1)=","
+ curhwa$(2)="curhws$"
+ curhws$="0"
+ estarta$(0)=chr$(34)+"E Start   "+chr$(34)+": "
+ estarta$(1)=","
+ estarta$(2)="estarts$"
+ estarts$="0"
+ epresa$(0)=chr$(34)+"E Pres    "+chr$(34)+": "
+ epresa$(1)=","
+ epresa$(2)="epress$"
+ epress$="0"
+ LOCAL starteda$(3), starteds$, endeda$(3), endeds$
+ starteda$(0)=chr$(34)+"started[s]"+chr$(34)+": "
+ starteda$(1)=","
+ starteda$(2)="starteds$"
+ starteds$="0"
+ endeda$(0)=chr$(34)+"ended[s]  "+chr$(34)+": "
+ endeda$(1)=","
+ endeda$(2)="endeds$"
+ endeds$="0"
+ LOCAL reasona$(3), reasons$, taga$(3), clssa$(3), clsss$
+ reasona$(0)=chr$(34)+"reason "+chr$(34)+": "
+ reasona$(1)=","
+ reasona$(2)="reasons$"
+ reasons$="0"
+ taga$(0)=chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34)
+ taga$(1)=chr$(34)
+ taga$(2)="tag$"
+ tag$=""
+ clssa$(0)=chr$(34)+"RFID class"+chr$(34)+": "+chr$(34)
+ clssa$(1)=chr$(34)
+ clssa$(2)="clss$"
+ clss$=""
+ LOCAL sera$(3), seca$(3), secs$
+ sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
+ sera$(1)=chr$(34)
+ sera$(2)="ser$"
+ ser$=""
+ seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
+ seca$(1)="}"
+ seca$(2)="secs$"
+ secs$="0"
+ n%=StreamSearch(SocketRead(con%),"ida$","sessa$","curhwa$", "estarta$", "epresa$", "starteda$","endeda$", "reasona$","taga$","clssa$", "sera$","seca$", 5000)
+ m%=SocketClose( con% )
+
+ IF n% <> 8191 THEN
+  KEBAReport100=-2
+  EXIT FUNCTION
+ ENDIF
+ sess%=val(sesss$)
+ curhw%=val(curhws$)
+ estart%=val(estarts$)
+ epres%=val(epress$)
+ started%=val(starteds$)
+ ended%=val(endeds$)
+ reason%=val(reasons$)
+ tag%=val(tags$)
+ clss%=val(clsss$)
+ sec%=val(secs$)
+ KEBAReport100=0
+END FUNCTION
+
+' KEBA UDP command "ena"
+' P20,P30,BMW wallbox
+' server$ ip address of the charger
+' en% enable or disable 0=disabled, 1=enabled
 ' return value < 0 on error
 FUNCTION KEBAEnable( server$, en%)
  LOCAL err%, n%, con%, rsp$
@@ -383,7 +484,7 @@ FUNCTION KEBAEnable( server$, en%)
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
- n%=SocketWrite( con%, "ena "+str$(ena%))
+ n%=SocketWrite( con%, "ena "+str$(en%))
  rsp$=SocketReadLn$(con%,5000)
  n%=SocketClose( con% )
  IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
@@ -393,9 +494,10 @@ FUNCTION KEBAEnable( server$, en%)
  KEBAEnable=0
 END FUNCTION
 
-' Read KEBA UDP command "curr"
+' KEBA UDP command "curr"
+' P20,P30,BMW wallbox
 ' server$ ip address of the charger
-' cur% current in mA
+' cur% current in mA range 6000...63000
 ' return value < 0 on error
 FUNCTION KEBACurrent( server$, cur%)
  LOCAL err%, n%, con%, rsp$
@@ -415,7 +517,8 @@ FUNCTION KEBACurrent( server$, cur%)
  KEBACurrent=0
 END FUNCTION
 
-' Read KEBA UDP command "output"
+' KEBA UDP command "output"
+' P30,BMW wallbox
 ' server$ ip address of the charger
 ' out% output 0=open, 1=closed
 ' return value < 0 on error
@@ -435,4 +538,147 @@ FUNCTION KEBAOutput( server$, out%)
   EXIT FUNCTION  
  ENDIF
  KEBAOutput=0
+END FUNCTION
+
+' KEBA UDP command "currtime"
+' P30,BMW wallbox
+' server$ ip address of the charger
+' cur% current in mA range 6000...63000
+' dly% delay in seconds 860400 max
+' return value < 0 on error
+FUNCTION KEBACurrentTime( server$, cur%, dly%)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBACurrentTime=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "currtime "+str$(cur%)+" "+str$(dly%))
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBACurrentTime=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBACurrentTime=0
+END FUNCTION
+
+' KEBA UDP command "setenergy"
+' P30,BMW wallbox
+' server$ ip address of the charger
+' egy% charging energy limit in 0.1Wh ,0=no limit
+' return value < 0 on error
+FUNCTION KEBAEnergy( server$, egy%)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAEnergy=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "setenergy "+str$(egy%))
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAEnergy=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAEnergy=0
+END FUNCTION
+
+' KEBA UDP command "start"
+' P30,BMW wallbox
+' server$ ip address of the charger
+' tag$ rfid tag
+' clss$ rfid classifier
+' return value < 0 on error
+FUNCTION KEBAStart( server$, tag$, clss$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAStart=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "start "+tag$+" "+clss$)
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAStart=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAStart=0
+END FUNCTION
+
+' KEBA UDP command "stop"
+' P30,BMW wallbox
+' server$ ip address of the charger
+' tok$ rfid token
+' return value < 0 on error
+FUNCTION KEBAStop( server$, tok$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBAStop=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "stop "+tok$)
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBAStop=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBAStop=0
+END FUNCTION
+
+' KEBA UDP command "display"
+' P30
+' server$ ip address of the charger
+' act% activate the usage
+' min% minimal duration for text display
+' max% maximal duration for text display
+' txt$ text 23 chars max
+' return value < 0 on error
+FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBADisplay=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "display "+str$(act%)+" "+str$(min%)+" "+str$(max%)+" 0 "+txt$)
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBADisplay=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBADisplay=0
+END FUNCTION
+
+' KEBA UDP command "unlock"
+' send ena 0 command prior to unlock!
+' P20,P30,BMW wallbox
+' server$ ip address of the charger
+' return value < 0 on error
+FUNCTION KEBAUnlock( server$)
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBACurrent=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketOption(con%,"SO_RCVTIMEO",5000)
+ n%=SocketWrite( con%, "unlock")
+ rsp$=SocketReadLn$(con%,5000)
+ n%=SocketClose( con% )
+ IF rsp$=="" OR left$(rsp$,6,2)<>"OK" THEN
+  KEBACurrent=-2
+  EXIT FUNCTION  
+ ENDIF
+ KEBACurrent=0
 END FUNCTION

@@ -3,6 +3,9 @@
 ' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
 ' Phoenix EV control electric car charger with excess energy over modbus TCP and RTU
 ' Testet with Wallb-e Pro
+' Compatible to all Phoenix EV based charger systems
+' http://www.wallbe.de/
+' http://www.car-go-electric.de/
 ' Make sure that DIP 7 = 1 and DIP 10 = 1 are set, which allows to start charging by
 ' Key switch (EN digital input) or modbus enable
 ' @DESCRIPTION EMDO Phoenix EV Control electric car charger
