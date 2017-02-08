@@ -14,40 +14,127 @@
 'Adjust server IP and username to your bridge setting (see developers url below for details)
 'server$="192.168.0.14"
 'start:
+'err%=LMMakeSimpleFrame(frm$,"i120","inverter broken")
+'err%=LMSendNotification( server$,notid$, "critical","alert",60000,10,"alarms","bicycle",10,frm$,"","","","" ) 
 'GOTO start
+
+' LaMetric make simpleframe
+' frm$ frame that will be generated
+' icn$ icon id or base64
+' txt$ message
+FUNCTION LMMakeSimpleFrame(frm$, icn$, txt$)
+ IF (len(icn$)+len(txt$)) > 240 THEN
+  LMMakeSimpleFrame=-1
+  EXIT FUNCTION
+ ENDIF
+ frm$="{ " + chr$(34)+"icon"+chr$(34)+":"+chr$(34)+icn$+chr$(34)+","+chr$(34)+"text"+chr$(34)+":"+chr$(34)+txt$+chr$(34)+" }"
+ LMMakeSimpleFrame=0
+END FUNCTION
+
+' LaMetric make goalframe
+' frm$ frame that will be generated
+' icn$ icon id or base64
+' fst start value
+' fcur current value
+' fend end value
+FUNCTION LMMakeGoalFrame(frm$, icn$, fst, fcur, fend)
+ LOCAL st$, cu$, en$
+ st$=str$(fst)
+ cu$=str$(fcur)
+ en$=str$(fend)
+ IF (len(icn$)+len(st$)+len(cu$)+len(en$)) > 180 THEN
+  LMMakeGoalFrame=-1
+  EXIT FUNCTION
+ ENDIF
+ frm$={ chr$(34)+"icon"+chr$(34)+":"+chr$(34)+icn$+chr$(34)+", "
+ frm$=frm$+chr$(34)+"goalData"+chr$(34)+":{ "
+ frm$=frm$+chr$(34)+"start"+chr$(34)+": "+st$+", "
+ frm$=frm$+chr$(34)+"current"+chr$(34)+": "+cu$+", "
+ frm$=frm$+chr$(34)+"end"+chr$(34)+": "+en$+", "
+ frm$=frm$+chr$(34)+"unit"+chr$(34)+": "+chr$(34)+"%"+chr$(34)+" } }"
+ LMMakeGoalFrame=0
+END FUNCTION
+
+' LaMetric make spike chart
+' frm$ frame that will be generated
+' arr$ with data e.g. 1,2,3
+FUNCTION LMMakeSpikeChart(frm$, arr$)
+ IF len(arr$) > 234 THEN
+  LMMakeSpikeChart=-1
+  EXIT FUNCTION
+ ENDIF
+ frm$="{ " + chr$(34)+"chartData"+chr$(34)+": [ "+arr$+" ] }"
+ LMMakeSpikeChart=0
+END FUNCTION
 
 ' Send notification to Lametric display
 ' server$ Lametric device ip
+' notid$ notification id that is returned by display
+' prio$ priority info, warning, critical
+' cyc% number of times the notification must be displayed, 0=dissmiss needed
+' cat$ sound is either notification or alarms
+' tp$ icon type none, info, alert
+' lt% lifetime in ms of the message
+' id$ sound id, e.g. notification, energy, etc.
+' rep% number of times the sound is repeated
+' frm1$ frame 1, use "" if empty
+' frm2$ frame 2, use "" if empty
+' frm3$ frame 3, use "" if empty
+' frm4$ frame 4, use "" if empty
+' frm5$ frame 5, use "" if empty
 ' return error code if negative value
-FUNCTION LaMetricSendNotification( server$ )
-    LOCAL err%, mes$,n%,rp$(3),ok$,al$
-    al$=""
-    IF alert% THEN al$=","+chr$(34)+"alert"+chr$(34)+":"+chr$(34)+"lselect"+chr$(34) 
-	mes$="{"+CHR$(34)+"hue"+CHR$(34)+":"+STR$(hue%)+","+CHR$(34)+"sat"+CHR$(34)+":"+STR$(sat%)+al$+"}"
-	
-	err%=HTTPRequest(server$, 80, con%, "PUT","/api/"+user$+"/lights/"+str$(id%)+"/state", "", "text/plain"+chr$(13)+chr$(10)+"Content-Type: text/plain"+chr$(13)+chr$(10)+"Content-Length: "+STR$(len(mes$)) , 5000)
-	IF err% <0 THEN
-	 LaMetricSendNotification=err%
-	 IF con%>=0 THEN err%=HTTPClose(con%)	
-	 EXIT FUNCTION
-	ENDIF
-	
-    ' Write content
-	n%=SocketWrite( con%,  mes$)
-	IF n% <> len(mes$) THEN
-	 LaMetricSendNotification=-1
-	 err%=HTTPClose(con%)	
-	 EXIT FUNCTION
-	ENDIF
-	rp$(0)=CHR$(34)+"success"+CHR$(34)
-	rp$(1)=":"
-	rp$(2)="ok$"
-	' We expect "success" reading
-	n%=StreamSearch(HTTPResponse(con%),"rp$",5000)
-    err%=HTTPClose(con%)	
-	if n%<>1 THEN
-	 LaMetricSendNotification=-2
-	 EXIT FUNCTION
-	ENDIF
-	LaMetricSendNotification=0
-END FUNCTION
+FUNCTION LMSendNotification( server$,notid$, prio$,tp$,lt%,cyc%,cat$,id$,rep%,frm1$,frm2$,frm3$,frm4$,frm5$ )
+ LOCAL err%, con%, url$, pr$,po$, l%, n%,ida$(3),cm1$,cm2$,cm3$,cm4$
+ pr$="{"+ chr$(34)+"priority"+chr$(34)+": "+chr$(34)+prio$+chr$(34)+", "
+ pr$=chr$(34)+"icon_type"+chr$(34)+": "+chr$(34)+tp$+chr$(34)+", "
+ pr$=chr$(34)+"lifetime"+chr$(34)+": "+lt%+", "
+ pr$=pr$+chr$(34)+"model"+chr$(34)+": { "
+ pr$=pr$+chr$(34)+"cycles"+chr$(34)+": "+str$(cyc%)+", "
+ pr$=pr$+chr$(34)+"frames"+chr$(34)+": ["
+ po$="],"+chr$(34)+"sound"+chr$(34)+": { "+chr$(34)+"category"+chr$(34)+": "+chr$(34)+cat$+chr$(34)+", "
+ po$=po$+chr$(34)+"id"+chr$(34)+": "+chr$(34)+id$+chr$(34)+", "
+ po$=po$+chr$(34)+"repeat"+chr$(34)+": "+str$(rep%)
+ po$=po$+" } } }"
+ if len(frm1$) then cm1$=", "
+ if len(frm2$) then cm2$=", "
+ if len(frm3$) then cm3$=", "
+ if len(frm4$) then cm4$=", "
+ l%=len(pr$)+len(frm1$)+len(cm1$)+len(frm2$)+len(cm2$)+len(frm3$)+len(cm3$)+len(frm4$)+len(cm4$)+len(frm5$)+len(po$)
+ url$="/api/v2/device/notifications"
+ ida$(0)=chr$(34)+"id"+chr$(34)+": "+chr$(34)
+ ida$(1)=chr$(34)
+ ida$(2)="notid$"
+ err%=HTTPRequest(server$, 80, con%, "POST",url$, "", str$(l%), 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  LMSendNotification=-1
+  EXIT FUNCTION
+ ENDIF
+ n%=SocketWrite( con%, pr$,frm1$,cm1$,frm2$,cm2$,frm3$,cm3$,frm4$,cm4$,frm5$,po$)
+ l%=StreamSearch(HTTPResponse(con%),"ida$",5000)
+ n%=HTTPClose(con%)
+
+ IF l%<>1 THEN
+  LMSendNotification=-1
+  EXIT FUNCTION
+ ENDIF
+ LMSendNotification=0
+ END FUNCTION
+
+' Delete notification to Lametric display
+' server$ Lametric device ip
+' notid$ notification id
+FUNCTION LMDelNotification( server$,notid$)
+ LOCAL err%, con%, n%, url
+ url$="/api/v2/device/notifications/"+notid$
+
+ err%=HTTPRequest(server$, 80, con%, "DELETE",url$, "", "", 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  LMDelNotification=-1
+  EXIT FUNCTION
+ n%=HTTPClose(con%)
+ LMDelNotification=0
+END FUNCTION 

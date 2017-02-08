@@ -14,7 +14,7 @@
 ' cmd$    GET, PUT, DELETE, POST....
 ' qry$    query string e.g. /report
 ' conn$   Connection type close or keep-alive
-' acc$    Accept string e.g. text/html,application/xml
+' acc$    Accept string e.g. text/html,application/xml or Content-Length
 ' tmo%    Timeout in ms
 ' return error code if negative value
 FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%)
@@ -41,11 +41,16 @@ FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%)
   conn$="close"
  ENDIF
  ' accept string
- IF acc$="" THEN
-  acc$="text/html,application/xml"
+ IF cmd$="GET" THEN
+  IF acc$="" THEN acc$="text/html,application/xml"
+  acc$="Accept: "+acc$
+ ELSE IF cmd$="POST" OR cmd$="PUT" THEN
+  acc$="Content-Lenght: "+acc$
  ENDIF
+ 
+ 
  ' Write request
- n%=SocketWrite( con%,  cmd$," ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,"Accept: ",acc$,13,10,13,10 )
+ n%=SocketWrite( con%,  cmd$," ", qry$, " HTTP/1.1",13,10,"Host: ",server$, 13,10,"Connection: close",13,10,acc$,13,10,13,10 )
  IF n% < 0 THEN
   PRINT "Write problem" con%
   HTTPRequest=n%
