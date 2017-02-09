@@ -193,8 +193,8 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' Vitocomfort 200 7554507 A5-04-01 
  ' Temperatur 0-40°C
  ' Humidity 0-100%
- ' temp=db1/250*40
- ' humidity = db2/250*100
+ ' temp=db1%/250*40
+ ' humidity = db2%/250*100
  
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
