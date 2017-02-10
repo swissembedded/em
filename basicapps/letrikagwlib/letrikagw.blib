@@ -1,0 +1,63 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO read Letrikasol Sungate microinverter data (library)
+' @VERSION 1.0
+' Please make sure the SunGate Gateway is configured correctly and has latest firmware.
+' test with http://sunagte_ip/get_plant_info
+
+' Some examples on usage 
+'Loading Http library, make sure it is installed on EMDO
+'LIBRARY LOAD "http"
+
+'Adjust server IP and username to your bridge setting (see developers url below for details)
+'server$="192.168.0.23"
+'start:
+' err%=LSReader(server$, kWh, kW, stat$)
+' print err% kWh kW stat$
+' pause 60000
+'GOTO start
+
+' Read SunGate data and parse the kWh, kW, status fields
+' server$ server ip
+' kWh kWh production total
+' kW  kW production total (all inverters)
+' stat$ status of the SunGate 
+' return negative value on error
+FUNCTION LSReader( server$, kWh, kW, stat$)
+ LOCAL err%, n%, con%
+ err%=HTTPRequest(server$, 80, con%, "GET","/get_plant_info", "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  LSReader=err%
+  EXIT FUNCTION
+ ENDIF	
+ ' Read the cdd status and production
+ LOCAL pouta$(3), pouts$, eouta$(3), eouts$, stata$(3), stats$
+ pouta$(0)="power"+CHR$(34)+":"
+ pouta$(1)=","
+ pouta$(2)="pouts$"
+ pouts$="0.0"
+ eouta$(0)="total_energy"+CHR$(34)+":"
+ eouta$(1)=","
+ eouta$(2)="eouts$"
+ eouts$="0.0"
+ stata$(0)="status"+CHR$(34)+":"+CHR$(34)
+ stata$(1)=CHR$(34)
+ stata$(2)="stats$"
+ stats$="error"
+
+ n%=StreamSearch(HTTPResponse(con%),"pouta$","eouta$","stata$",5000)
+ 
+ IF n% <> 7 THEN
+  n%=HTTPClose(con%)
+  LSReader=-1
+  EXIT FUNCTION  
+ ENDIF
+ n%=HTTPClose(con%)
+ ' parse values
+ kW=val(pouts$)/1000.0
+ kWh=val(eouts$)/1000.0
+ LSReader=0
+END FUNCTION
