@@ -7,6 +7,8 @@
 ' Please contact ABL SURSUM for documentation
 ' Make sure EMDO RS485 is configured with RS485: 38400, 8, 1, n
 ' Termination needed on both ends (120Ohm), you can use EMDO build in termination
+' WARNING: The EVCC controller does have a nominal setting for max charging current, but this value can be overwritten
+' by control commands. Pls make sure that the max current is within nominal rating. 
 ' Some examples on usage 
 'charger IP
 'server$="192.168.0.25"
