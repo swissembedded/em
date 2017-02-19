@@ -160,7 +160,25 @@ SUB eoLog(tp%,da$,oda$,msg$)
  print s$
 END FUNCTION
 
+' Callback eoRx1BS helper function for Contact and Switches
+' D5-00-01
+' It receives the 1BS telegram and parses the contact state
+' Receive Contact and switches page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' lrn%   learn button 0=pressed, 1=not pressed
+' co%   contact 0=open, 1=closed
+FUNCTION eoRxContactSwitch(tp%,id%,db0%,lrn%,co%)
+ lrn%=(db0% and 8)/8
+ co%=(db0% and 1)
+ eoRxContactSwitch=0
+END FUNCTION
+
 ' Callback eoRxRPS helper function for Rocker
+' F6-02-01, F6-02-02, F6-02-03
 ' It receives the RPS telegram and parses the rocker states
 ' Receive Rocker Switch, 2 Rocker, page 15
 ' We get type info and two bits on status which help us to interpret
@@ -170,38 +188,39 @@ END FUNCTION
 ' db0%   data db0  (from callback eoRxRPS)
 ' st%    status  (from callback eoRxRPS)
 ' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
-' bow1%  0=released, 1=pressed
+' bow%  0=released, 1=pressed
 ' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
 ' ac%    0= No 2nd action, 1=2nd action valid
-FUNCTION eoRxRocker(tp%,id%,db0%,st%,rock1%,bow1%,rock2%,ac%)
+' Return negative on error, return value state of T21 and NU (required for interpretation)
+FUNCTION eoRxRocker(tp%,id%,db0%,st%,rock1%,bow%,rock2%,ac%)
  select case (st% and &h30)
   case &H30 ' T21=1, NU = 1
    rock1%=(db0% and &he0)/32
-   bow1%=(db0% and &h10)/16
+   bow%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
-   ac2%=(db0% and &h1)
+   ac%=(db0% and &h1)
    'print "eoRxRocker30:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
-   eoRxRocker=0
+   eoRxRocker=3
    exit function
   case &H20 'T21=1, NU = 0
    num%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16  
    'print "eoRxRocker20:" hex$(id%) tp% num% bow%
-   eoRxRocker=1
+   eoRxRocker=2
    exit function
   case &H10 'T21=0, NU = 1   
    rock1%=(db0% and &he0)/32
-   bow1%=(db0% and &h10)/16
+   bow%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
-   ac2%=(db0% and &h1)   
+   ac%=(db0% and &h1)   
    'print "eoRxRocker10:" hex$(id%) tp% rock1% bow1% rock2% ac2%
-   eoRxRocker=2
+   eoRxRocker=1
    exit function
   case &H00 'T21=0, NU = 0   
    num%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16
    'print "eoRxRocker00:" hex$(id%) tp% num% bow%  
-   eoRxRocker=3
+   eoRxRocker=0
    exit function
  end select
  eoRxRocker=-1
