@@ -23,7 +23,7 @@ END FUNCTION
  
 '@lib_destroy
 FUNCTION __enocean_destroy()
-  
+  ON ENOCEAN DETACH
 END SUB
 
 ' This function is called upon the reception of an enocean packet.
