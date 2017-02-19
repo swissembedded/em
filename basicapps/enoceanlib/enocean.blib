@@ -24,7 +24,7 @@ END FUNCTION
 '@lib_destroy
 FUNCTION __enocean_destroy()
   ON ENOCEAN DETACH
-END SUB
+END FUNCTION
 
 ' This function is called upon the reception of an enocean packet.
 ' EMDO can hold up to 2 packets on its stack.
@@ -35,6 +35,7 @@ END SUB
 ' 4BS telegram: eoRx4BS(tp%,id%,db3%,db2%,db1%,db0%,st%)
 ' VLD telegram: eoRxVLD(tp%,id%,db$,st%,crc8%)
 FUNCTION eoReceive()
+ print called
  LOCAL n%,tp%,da$,oda$,rorg%
  LOCAL cb$,db3%,db2%,db1%,db0%,id%,st%,db$,crc8% 
  DO
