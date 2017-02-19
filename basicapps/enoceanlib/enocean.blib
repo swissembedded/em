@@ -18,7 +18,7 @@
 '@lib_init
 FUNCTION __enocean_init()
  ' Register enocean receive packet callback automatically on library load 
- ON ENOCEAN EOReceive
+ ON ENOCEAN eoReceive
 END FUNCTION
  
 '@lib_destroy
@@ -26,68 +26,58 @@ FUNCTION __enocean_destroy()
   
 END SUB
 
-
-' Send a RPS/1BS message over enocean
-' 
-' eoTransmitRPS(&H50, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light on
-' eoTransmitRPS(&H70, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light off
-SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
- ' Pls see enocean EEP 2.6.2 specification and ESP3 specification
- ' Type = 1 is radio
- ' Data = F6 (RORG = RPS / 1BS), switch state (0x50 = on, 0x70 = off)
- ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)  
-  msg$ = chr$(&hF6)
-  msg$ += chr$(db0%)  
-  msg$ += conv("u32/bbe",txid%)
-  ' &H30 'T21=1, NU = 1
-  ' &H20 'T21=1, NU = 0
-  ' &H10 'T21=0, NU = 1   
-  ' &H00 'T21=0, NU = 0   
-  msg$ += chr$(st%) 
-  ' Send  
-  msg$ += chr$(&H03)
-  ' Broadcast &Hffffffff or actuator id
-  msg$+=conv("u32/bbe",rxid%)
-  msg$ += chr$(&HFF)
-  ' no encryption &H00
-  msg$+=chr$(enc%) 
-  num% = EnoceanTransmit(1, msg$) 
-END SUB
-
 ' This function is called upon the reception of an enocean packet.
 ' EMDO can hold up to 2 packets on its stack.
 ' it is important that the callback functions immediately return to allow the processing of the full stack
+' it tries to call the following callbacks
+' RPS telegram: eoRxRPS(tp%, id%, db0%, st%)
+' 1BS telegram: eoRx1BS(tp%, id%, db0%)
+' 4BS telegram: eoRx4BS(tp%,id%,db3%,db2%,db1%,db0%,st%)
+' VLD telegram: eoRxVLD(tp%,id%,db$,st%,crc8%)
 FUNCTION eoReceive()
- LOCAL n%, cb$,tp%, da$, oda$
+ LOCAL n%,tp%,da$,oda$,rorg%
+ LOCAL cb$,db3%,db2%,db1%,db0%,id%,st%,db$,crc8% 
  DO
+  ' Process all telegram from stack
   n%=EnoceanReceive(tp%,da$,oda$)
   IF NOT n% THEN    
    'check rx packet 
    'e.g. F6002A42DF20 / 1FFFFFFFF360
    '     A5005081823D780 / 1FFFFFFFF560
    'first two characters are rorg  
-   LOCAL rorg%
    rorg%=asc(left$(da$,1))  
    select case rorg%
     case &hf6
-     'RPS telegram: DB0, Sender ID, Status (page 11)    
-     'Rocker switches come here  
+     'RPS telegram: DB0, Sender ID, Status
+     'Rocker Switch, 2 Rocker
+     'Rocker Switch, 4 Rocker
+     'Position Switch, Home and Office Application
+     'Detectors
+     'Mechanical Handle
+     cb$="eoRxRPS"
      db0%=asc(mid$(da$,2,1))
      id%=conv("bbe/u32",mid$(da$,3,4))    
      st%=asc(mid$(da$,7,1))
-     eoRxRocker(tp%,id%,db0%,st%)
-     EXIT FUNCTION
+     IF Exists(cb$) >= 0 THEN
+      CALL(cb$,tp%,id%,db0%,st%)
+     ELSE
+      eoLog(tp%,da$,oda$,"eo rx")
+     ENDIF
+     exit select
     case &hd5
      'Contacts and Switches
      '1BS telegram: DB0, Sender ID, Status (page 11)
+     cb$="eoRx1BS"
+     db0%=asc(mid$(da$,2,1))
+     id%=conv("bbe/u32",mid$(da$,3,4))
      IF Exists(cb$) >= 0 THEN
       CALL(cb$,tp%,id%,db0%)
-	 ELSE
-	  IF eoLog(tp%,da$,oda$,"eo rx")
+     ELSE
+      eoLog(tp%,da$,oda$,"eo rx")
      ENDIF
-     EXIT FUNCTION
-    case &ha5  
-     ' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
+     exit select
+    case &ha5
+     '4BS telegram: DB3-DB0, Sender ID, Status (page 12)
      'Temperature Sensors
      'Temperature and Humidity Sensor
      'Barometric Sensor
@@ -104,7 +94,8 @@ FUNCTION eoReceive()
      'Digital Input
      'Energy Management
      'Central Commands
-     'Universal 
+     'Universal
+     cb$="eoRx4BS"
      eoLog(tp%,da$,oda$,"eo rx") 
      db3%=asc(mid$(da$,2,1))
      db2%=asc(mid$(da$,3,1))
@@ -112,8 +103,12 @@ FUNCTION eoReceive()
      db0%=asc(mid$(da$,5,1))
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
-     eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
-     EXIT FUNCTION
+     IF Exists(cb$) >= 0 THEN
+      CALL(cb$,tp%,id%,db3%,db2%,db1%,db0%,st%)
+     ELSE
+      eoLog(tp%,da$,oda$,"eo rx")
+     ENDIF
+     exit select
     case &hd2
      'VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
      'Room Control Panel
@@ -122,15 +117,21 @@ FUNCTION eoReceive()
      'Light, Switching + Blind Control
      'CO2, Humidity, Temperature, Day / NIght and Autonomy
      'Blinds Control for Position and Angle
+     cb$="eoRxVLD"
      eoLog(tp%,da$,oda$,"eo rx")  
      db$=mid$(da$, 2,len(da$)-7)
-     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))    
+     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
      st%=asc(mid$(da$,len(da$)-1,1))
      crc8%=asc(right$(da$,1))
-     eoRxVariable(tp%,id%,db$,st%,crc8%)
-     EXIT FUNCTION
+     IF Exists(cb$) >= 0 THEN
+      CALL(cb$,tp%,id%,db$,st%,crc8%)
+     ELSE
+      eoLog(tp%,da$,oda$,"eo rx")
+     ENDIF
+     exit select
     case else
-     eoLog(tp%,da$,oda$,"eo unknown rx ")  
+     eoLog(tp%,da$,oda$,"eo unknown rx ")
+     exit select
     end select
    ELSE 
     EXIT LOOP
@@ -159,37 +160,52 @@ SUB eoLog(tp%,da$,oda$,msg$)
  print s$
 END FUNCTION
 
+' Callback eoRxRPS helper function for Rocker
+' It receives the RPS telegram and parses the rocker states
 ' Receive Rocker Switch, 2 Rocker, page 15
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
-SUB eoRxRocker(tp%,id%,db0%,st%)
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
+' bow1%  0=released, 1=pressed
+' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
+' ac%    0= No 2nd action, 1=2nd action valid
+FUNCTION eoRxRocker(tp%,id%,db0%,st%,rock1%,bow1%,rock2%,ac%)
  select case (st% and &h30)
   case &H30 ' T21=1, NU = 1
    rock1%=(db0% and &he0)/32
    bow1%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
    ac2%=(db0% and &h1)
-   print "eoRxRocker30:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
-   ' add your code here press event on rock1% (switch 1-4) ptm210
+   'print "eoRxRocker30:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
+   eoRxRocker=0
+   exit function
   case &H20 'T21=1, NU = 0
    num%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16  
-   print "eoRxRocker20:" hex$(id%) tp% num% bow%  
-   ' add your code here for release event on bow% ptm210
+   'print "eoRxRocker20:" hex$(id%) tp% num% bow%
+   eoRxRocker=1
+   exit function
   case &H10 'T21=0, NU = 1   
    rock1%=(db0% and &he0)/32
    bow1%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
-   ac2%=(db0% and &h1)
-   print "eoRxRocker10:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
-   ' add your code here  
+   ac2%=(db0% and &h1)   
+   'print "eoRxRocker10:" hex$(id%) tp% rock1% bow1% rock2% ac2%
+   eoRxRocker=2
+   exit function
   case &H00 'T21=0, NU = 0   
    num%=(db0% and &he0)/32
-   bow%=(db0% and &h10)/16  
-   print "eoRxRocker00:" hex$(id%) tp% num% bow%  
-   ' add your code here  
+   bow%=(db0% and &h10)/16
+   'print "eoRxRocker00:" hex$(id%) tp% num% bow%  
+   eoRxRocker=3
+   exit function
  end select
-END SUB
+ eoRxRocker=-1
+END FUNCTION
 
 ' Receive Sensor info, page 15
 SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
@@ -642,5 +658,33 @@ print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  '   meter3 = meter3 * 0.1
  ' endif
  
+END SUB
+
+
+' Send a RPS/1BS message over enocean
+' 
+' eoTransmitRPS(&H50, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light on
+' eoTransmitRPS(&H70, &H30, &H00000000, &HFFFFFFFF, &H00) -> switch light off
+SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
+ ' Pls see enocean EEP 2.6.2 specification and ESP3 specification
+ ' Type = 1 is radio
+ ' Data = F6 (RORG = RPS / 1BS), switch state (0x50 = on, 0x70 = off)
+ ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)  
+  msg$ = chr$(&hF6)
+  msg$ += chr$(db0%)  
+  msg$ += conv("u32/bbe",txid%)
+  ' &H30 'T21=1, NU = 1
+  ' &H20 'T21=1, NU = 0
+  ' &H10 'T21=0, NU = 1   
+  ' &H00 'T21=0, NU = 0   
+  msg$ += chr$(st%) 
+  ' Send  
+  msg$ += chr$(&H03)
+  ' Broadcast &Hffffffff or actuator id
+  msg$+=conv("u32/bbe",rxid%)
+  msg$ += chr$(&HFF)
+  ' no encryption &H00
+  msg$+=chr$(enc%) 
+  num% = EnoceanTransmit(1, msg$) 
 END SUB
 
