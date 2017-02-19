@@ -1,0 +1,53 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' Solaredge Modbus Control EMDO modbus example
+' Documentation from Solaredge
+' @DESCRIPTION EMDO Control Solaredge Inverter and Storedge
+' @VERSION 1.0
+
+
+'Some examples on usage:
+'LIBRARY LOAD "modbus"
+'SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n"
+'slv%=1
+'itf$="RTU:RS485:1"
+'itf$="TCP:192.168.0.250:502"
+'start:
+' err%=SEDynPowerControl(itf$,slv%, DynEn%)
+' print "Solaredge " err% DynEn%
+' pause 30000
+' goto start
+
+' Solaredge Get Dynamic Power Control
+' itf$ modbus interface (see EMDO modbus library for details)
+' slv% modbus slave address
+' DynEn% enable dynamic control
+' return value error code
+FUNCTION SEDynPowerControl(itf$, slv%, DynEn%)
+ LOCAL err%, rUac$, rIac$, rkW$, rkWhI$, rkWhE$
+ 
+ err%= mbFunc(itf$,slv%,4,0,6,rUac$,500) OR mbFunc(itf$,slv%,4,6,6,rIac$,500) OR mbFunc(itf$,slv%,4,&HC,6,rkW$,500) OR mbFunc(itf$,slv%,4,&H15A,6,rkWhI$,500) OR mbFunc(itf$,slv%,4,&H160,6,rkWhE$,500)
+ IF err% THEN
+  EastronEnergyMeter=err%
+  EXIT FUNCTION
+ ENDIF 
+ ' Convert register values to float32
+ Uac1=conv("bbe/f32",mid$(rUac$,1,4))
+ Uac2=conv("bbe/f32",mid$(rUac$,5,4))
+ Uac3=conv("bbe/f32",mid$(rUac$,9,4)) 
+ Iac1=conv("bbe/f32",mid$(rIac$,1,4))
+ Iac2=conv("bbe/f32",mid$(rIac$,5,4))
+ Iac3=conv("bbe/f32",mid$(rIac$,9,4)) 
+ kW1=conv("bbe/f32",mid$(rkW$,1,4))/1000.0
+ kW2=conv("bbe/f32",mid$(rkW$,5,4))/1000.0
+ kW3=conv("bbe/f32",mid$(rkW$,9,4)) /1000.0
+ kWhI1=conv("bbe/f32",mid$(rkWhI$,1,4))
+ kWhI2=conv("bbe/f32",mid$(rkWhI$,5,4))
+ kWhI3=conv("bbe/f32",mid$(rkWhI$,9,4)) 
+ kWhE1=conv("bbe/f32",mid$(rkWhE$,1,4))
+ kWhE2=conv("bbe/f32",mid$(rkWhE$,5,4))
+ kWhE3=conv("bbe/f32",mid$(rkWhE$,9,4)) 
+ EastronEnergyMeter=0
+END FUNCTION
+

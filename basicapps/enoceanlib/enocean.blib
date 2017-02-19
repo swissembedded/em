@@ -21,7 +21,7 @@ FUNCTION __enocean_init()
  ON ENOCEAN EOReceive
 END FUNCTION
  
-@lib_destroy
+'@lib_destroy
 FUNCTION __enocean_destroy()
   
 END SUB
@@ -35,7 +35,7 @@ SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
  ' Pls see enocean EEP 2.6.2 specification and ESP3 specification
  ' Type = 1 is radio
  ' Data = F6 (RORG = RPS / 1BS), switch state (0x50 = on, 0x70 = off)
- ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)	 
+ ' OptData = 03 (send) Boardcast FF FF FF FF, dBm (FF), 00 (unencrypted)  
   msg$ = chr$(&hF6)
   msg$ += chr$(db0%)  
   msg$ += conv("u32/bbe",txid%)
@@ -50,81 +50,93 @@ SUB eoTransmitRPS(db0%, st%, txid%, rxid%, enc%)
   msg$+=conv("u32/bbe",rxid%)
   msg$ += chr$(&HFF)
   ' no encryption &H00
-  msg$+=chr$(enc%)	
-  num% = EnoceanTransmit(1, msg$)	
+  msg$+=chr$(enc%) 
+  num% = EnoceanTransmit(1, msg$) 
 END SUB
 
-' Poll this routine periodically to parse the enocean packets on the stack. EMDO can hold 8 packets on its stack.
-SUB eoReceive()
- n%=EnoceanReceive(tp%,da$,oda$) 
- IF NOT n% THEN    
-  'check rx packet 
-  'e.g. F6002A42DF20 / 1FFFFFFFF360
-  '     A5005081823D780 / 1FFFFFFFF560
-  'first two characters are rorg  
-  rorg%=asc(left$(da$,1))  
-  select case rorg%
-   case &hf6 
-   ' RPS telegram: DB0, Sender ID, Status (page 11)    
-    ' Rocker switches come here 	
-	db0%=asc(mid$(da$,2,1))
-	id%=conv("bbe/u32",mid$(da$,3,4))    
-	st%=asc(mid$(da$,7,1))
-	eoRxRocker(tp%,id%,db0%,st%)
-	EXIT SUB
-   case &hd5
-    ' Contacts and Switches
-	' 1BS telegram: DB0, Sender ID, Status (page 11)
-	eoLog(tp%,da$,oda$,"eo rx")  
-	EXIT SUB
-   case &ha5  
-    ' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
-    ' Temperature Sensors
-	' Temperature and Humidity Sensor
-	' Barometric Sensor
-	' Light Sensor
-	' Occupancy Sensor
-	' Light, Temperature and Occupancy Sensor
-	' Gas Sensor
-	' Room Operating Panel
-	' Controller Status
-	' Automated Meter Reading
-	' Environmental Applications
-	' Multi-Func Sensor
-	' HVAC Components
-	' Digital Input
-	' Energy Management
-	' Central Commands
-	' Universal	
-    eoLog(tp%,da$,oda$,"eo rx") 
-    db3%=asc(mid$(da$,2,1))
-	db2%=asc(mid$(da$,3,1))
-	db1%=asc(mid$(da$,4,1))
-	db0%=asc(mid$(da$,5,1))
-	id%=conv("bbe/u32",mid$(da$,6,4))    
-	st%=asc(mid$(da$,10,1))
-	eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
-	EXIT SUB
-   case &hd2
-    ' VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
-    ' Room Control Panel
-	' Electronic switches and dimmers
-	' Sensors for Temperature, Illumination, Occupancy and smoke
-	' Light, Switching + Blind Control
-	' CO2, Humidity, Temperature, Day / NIght and Autonomy
-	' Blinds Control for Position and Angle
-    eoLog(tp%,da$,oda$,"eo rx")  
-	db$=mid$(da$, 2,len(da$)-7)
-	id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))    
-	st%=asc(mid$(da$,len(da$)-1,1))
-	crc8%=asc(right$(da$,1))
-	eoRxVariable(tp%,id%,db$,st%,crc8%)
-    EXIT SUB
-	case else
-	 eoLog(tp%,da$,oda$,"eo unknown rx ")  
-  end select
- ENDIF ' rx
-END SUB
+' This function is called upon the reception of an enocean packet.
+' EMDO can hold up to 2 packets on its stack.
+' it is important that the callback functions immediately return to allow the processing of the full stack
+FUNCTION eoReceive()
+ LOCAL n%, cb$,tp%, da$, oda$
+ DO
+  n%=EnoceanReceive(tp%,da$,oda$)
+  IF NOT n% THEN    
+   'check rx packet 
+   'e.g. F6002A42DF20 / 1FFFFFFFF360
+   '     A5005081823D780 / 1FFFFFFFF560
+   'first two characters are rorg  
+   LOCAL rorg%
+   rorg%=asc(left$(da$,1))  
+   select case rorg%
+    case &hf6
+     'RPS telegram: DB0, Sender ID, Status (page 11)    
+     'Rocker switches come here  
+     db0%=asc(mid$(da$,2,1))
+     id%=conv("bbe/u32",mid$(da$,3,4))    
+     st%=asc(mid$(da$,7,1))
+     eoRxRocker(tp%,id%,db0%,st%)
+     EXIT FUNCTION
+    case &hd5
+     'Contacts and Switches
+     '1BS telegram: DB0, Sender ID, Status (page 11)
+     IF Exists(cb$) >= 0 THEN
+      CALL(cb$,tp%,id%,db0%)
+	 ELSE
+	  IF eoLog(tp%,da$,oda$,"eo rx")
+     ENDIF
+     EXIT FUNCTION
+    case &ha5  
+     ' 4BS telegram: DB3-DB0, Sender ID, Status (page 12)
+     'Temperature Sensors
+     'Temperature and Humidity Sensor
+     'Barometric Sensor
+     'Light Sensor
+     'Occupancy Sensor
+     'Light, Temperature and Occupancy Sensor
+     'Gas Sensor
+     'Room Operating Panel
+     'Controller Status
+     'Automated Meter Reading
+     'Environmental Applications
+     'Multi-Func Sensor
+     'HVAC Components
+     'Digital Input
+     'Energy Management
+     'Central Commands
+     'Universal 
+     eoLog(tp%,da$,oda$,"eo rx") 
+     db3%=asc(mid$(da$,2,1))
+     db2%=asc(mid$(da$,3,1))
+     db1%=asc(mid$(da$,4,1))
+     db0%=asc(mid$(da$,5,1))
+     id%=conv("bbe/u32",mid$(da$,6,4))    
+     st%=asc(mid$(da$,10,1))
+     eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
+     EXIT FUNCTION
+    case &hd2
+     'VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
+     'Room Control Panel
+     'Electronic switches and dimmers
+     'Sensors for Temperature, Illumination, Occupancy and smoke
+     'Light, Switching + Blind Control
+     'CO2, Humidity, Temperature, Day / NIght and Autonomy
+     'Blinds Control for Position and Angle
+     eoLog(tp%,da$,oda$,"eo rx")  
+     db$=mid$(da$, 2,len(da$)-7)
+     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))    
+     st%=asc(mid$(da$,len(da$)-1,1))
+     crc8%=asc(right$(da$,1))
+     eoRxVariable(tp%,id%,db$,st%,crc8%)
+     EXIT FUNCTION
+    case else
+     eoLog(tp%,da$,oda$,"eo unknown rx ")  
+    end select
+   ELSE 
+    EXIT LOOP
+   ENDIF
+  LOOP 
+END FUNCTION
 
 ' log a telegram
 SUB eoLog(tp%,da$,oda$,msg$)
@@ -145,7 +157,7 @@ SUB eoLog(tp%,da$,oda$,msg$)
   s$=s$+h$
  next
  print s$
-END SUB
+END FUNCTION
 
 ' Receive Rocker Switch, 2 Rocker, page 15
 ' We get type info and two bits on status which help us to interpret
@@ -180,7 +192,7 @@ SUB eoRxRocker(tp%,id%,db0%,st%)
 END SUB
 
 ' Receive Sensor info, page 15
-SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)	
+SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
  print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
  ' add your code here you can make subcalls here to your own routines
  select case id%
@@ -428,15 +440,15 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' FFR61-230V, FZK61NP-230V
  ' select case (db3%)
  '     case &H70
- ' 	    channelst$ = "channel 1 ON"
- ' 	case &H50
- ' 	    channelst$ = "channel 1 OFF"
- ' 	case &H30
- ' 	    channelst$ = "channel 2 ON"
- ' 	case &H10
- ' 	    channelst$ = "channel 2 OFF"
- ' 	case &H00
- ' 	    channelst$ = "released"
+ '      channelst$ = "channel 1 ON"
+ '  case &H50
+ '      channelst$ = "channel 1 OFF"
+ '  case &H30
+ '      channelst$ = "channel 2 ON"
+ '  case &H10
+ '      channelst$ = "channel 2 OFF"
+ '  case &H00
+ '      channelst$ = "released"
  ' end select
 
  ' FHK61U-230V
@@ -451,33 +463,33 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' FHK61-230V, FHK61SSR-230V
  ' select case (db3%)
  '     case &H70
- ' 	    mode$ = "normal mode"
- ' 	case &H50
- ' 	    mode$ = "night reduction"
- ' 	case &H30
- ' 	    mode$ = "setback mode"
+ '      mode$ = "normal mode"
+ '  case &H50
+ '      mode$ = "night reduction"
+ '  case &H30
+ '      mode$ = "setback mode"
  ' end select
 
  ' FHK61SSR-230V
  ' select case (db3%)
  '     case &H70
- ' 	    signalmode$ = "thaw signal input active"
- ' 	case &H50
- ' 	    signalmode$ = "thaw signal input inactive"
+ '      signalmode$ = "thaw signal input active"
+ '  case &H50
+ '      signalmode$ = "thaw signal input inactive"
  ' end select
 
  ' FMS61NP-230V
  ' select case (db3%)
  '     case &H70
- ' 	    channelst$ = "channel 1 ON"
- ' 	case &H50
- ' 	    channelst$ = "channel 1 OFF"
- ' 	case &H30
- ' 	    channelst$ = "channel 2 ON"
- ' 	case &H10
- ' 	    channelst$ = "channel 2 OFF"
- ' 	case &H00
- ' 	    channelst$ = "released"
+ '      channelst$ = "channel 1 ON"
+ '  case &H50
+ '      channelst$ = "channel 1 OFF"
+ '  case &H30
+ '      channelst$ = "channel 2 ON"
+ '  case &H10
+ '      channelst$ = "channel 2 OFF"
+ '  case &H00
+ '      channelst$ = "released"
  ' end select
  
  ' FMZ61-230V
@@ -492,13 +504,13 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' FSB61NP-230V, FSB71
  ' select case (db3%)
  '  case &H70
- ' 	    position$ = "upper stop position"
- ' 	case &H50
- ' 	    position$ = "lower stop position"
- ' 	case &H10
- ' 	    position$ = "Start up"
- ' 	case &H20
- ' 	    position$ = "Start down"
+ '      position$ = "upper stop position"
+ '  case &H50
+ '      position$ = "lower stop position"
+ '  case &H10
+ '      position$ = "Start up"
+ '  case &H20
+ '      position$ = "Start down"
  ' end select
 
  ' FSR61NP-230V, FSR61-230V, FSR61/8-24V, FSR61LN-230V,
@@ -517,58 +529,58 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
  ' ORG5
  ' select case (db3%)
  '  case &H70
- ' 	    dimstat$ = "dimmer on"
- ' 	case &H50
- ' 	    dimstat$ = "dimmer off"
+ '      dimstat$ = "dimmer on"
+ '  case &H50
+ '      dimstat$ = "dimmer off"
  ' end select
  ' ORG = 0x07
  ' dimval = db2%
  ' select case (db3%)
  '  case &H09
- ' 	    dimstat$ = "dimmer on"
- ' 	case &H08
- ' 	    dimstat$ = "dimmer off"
+ '      dimstat$ = "dimmer on"
+ '  case &H08
+ '      dimstat$ = "dimmer off"
  ' end select
  
  ' FUD14, FUD14/800W, FSG14/1-10V
  ' ORG5
  ' select case (db3%)
  '  case &H70
- ' 	    dimstat$ = "dimmer on"
- ' 	case &H50
- ' 	    dimstat$ = "dimmer off"
+ '      dimstat$ = "dimmer on"
+ '  case &H50
+ '      dimstat$ = "dimmer off"
  ' end select
  ' ORG = 0x07
  ' dimval% = db2%
  ' select case (db3%)
  '  case &H09
- ' 	    dimstat$ = "dimmer on"
- ' 	case &H08
- ' 	    dimstat$ = "dimmer off"
+ '      dimstat$ = "dimmer on"
+ '  case &H08
+ '      dimstat$ = "dimmer off"
  ' end select
 
  ' FSB14
  ' select case (db3%)
  '  case &H70
- ' 	    position$ = "upper stop position"
- ' 	case &H50
- ' 	    position$ = "lower stop position"
- ' 	case &H10
- ' 	    position$ = "Start up"
- ' 	case &H20
- ' 	    position$ = "Start down"
+ '      position$ = "upper stop position"
+ '  case &H50
+ '      position$ = "lower stop position"
+ '  case &H10
+ '      position$ = "Start up"
+ '  case &H20
+ '      position$ = "Start down"
  ' end select
 
  ' F4HK14, FHK14, FAE14LPR, FAE14SSR
  ' select case (db3%)
  '  case &H70
- ' 	    mode$ = "normal mode"
- ' 	case &H50
- ' 	    mode$ = "night reduction"
- ' 	case &H30
- ' 	    mode$ = "setback mode"
- ' 	case &H10
- ' 	    mode$ = "OFF"
+ '      mode$ = "normal mode"
+ '  case &H50
+ '      mode$ = "night reduction"
+ '  case &H30
+ '      mode$ = "setback mode"
+ '  case &H10
+ '      mode$ = "OFF"
  ' end select
 
  ' FMSR14
