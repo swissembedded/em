@@ -18,12 +18,14 @@
 '@lib_init
 FUNCTION __enocean_init()
  ' Register enocean receive packet callback automatically on library load 
+ print "init enocean"
  ON ENOCEAN eoReceive
 END FUNCTION
  
 '@lib_destroy
 FUNCTION __enocean_destroy()
-  ON ENOCEAN DETACH
+  ON ENOCEAN eoReceive DETACH
+  print "deinit enocean"
 END FUNCTION
 
 ' This function is called upon the reception of an enocean packet.
@@ -35,7 +37,7 @@ END FUNCTION
 ' 4BS telegram: eoRx4BS(tp%,id%,db3%,db2%,db1%,db0%,st%)
 ' VLD telegram: eoRxVLD(tp%,id%,db$,st%,crc8%)
 FUNCTION eoReceive()
- print called
+ print "called"
  LOCAL n%,tp%,da$,oda$,rorg%
  LOCAL cb$,db3%,db2%,db1%,db0%,id%,st%,db$,crc8% 
  DO
