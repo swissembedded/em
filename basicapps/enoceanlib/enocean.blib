@@ -161,6 +161,109 @@ SUB eoLog(tp%,da$,oda$,msg$)
  print s$
 END FUNCTION
 
+
+' Callback eoRxRPS helper function for Rocker
+' F6-02-01, F6-02-02
+' It receives the RPS telegram and parses the rocker states
+' Receive Rocker Switch, 2 Rocker, page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, -1=invalid
+' bow%  0=released, 1=pressed
+' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, -1=invalid
+' ac%    0= No 2nd action, 1=2nd action valid
+' num%   number of buttons 0=no button, 3= 3 or 4 buttons, -1=invalid
+' Return negative on error, return value state of T21 and NU (required for interpretation)
+' &H30, &H20, &H10 &H00
+FUNCTION eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%, ac%)
+ rock1%=-1
+ rock2%=-1
+ ac%=-1
+ num%=-1
+ bow%=-1
+ select case (st% and &h30)
+  case &H30 ' T21=1, NU = 1
+   rock1%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac%=(db0% and &h1)
+   'print "eoRxRocker30:" hex$(id%) tp% rock1% bow% rock2% ac2%   
+   eoRxF60201=3
+   exit function
+  case &H20 'T21=1, NU = 0
+   num%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   'print "eoRxRocker20:" hex$(id%) tp% num% bow%
+   eoRxF60201=2
+   exit function
+  case &H10 'T21=0, NU = 1   
+   rock1%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac%=(db0% and &h1)   
+   'print "eoRxRocker10:" hex$(id%) tp% rock1% bow% rock2% ac%
+   eoRxF60201=1
+   exit function
+  case &H00 'T21=0, NU = 0   
+   num%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   'print "eoRxRocker00:" hex$(id%) tp% num% bow%  
+   eoRxF60201=0
+   exit function
+ end select
+ eoRxF60201=-1
+END FUNCTION
+
+' Callback eoRxRPS helper function for Rocker
+' F6-02-03
+' It receives the RPS telegram and parses the rocker states
+' Receive Rocker Switch, 2 Rocker, page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' rock% Rocker: &H30=Button A0 (automatic mode), &H10=Button A1 (manual mode), &H70=Button B0 (dim light up), &H50=Button B1 (dim light down)
+' Return negative on error, returns enum
+' &H30, &H10, &H50 &H70
+FUNCTION eoRxF60203(tp%,id%,db0%,st%,rock%)
+ rock%=(db0% and &h70)
+ eoRxF60203=rock%
+END FUNCTION
+
+' Callback eoRxRPS helper function for Rocker
+' F6-02-04
+' It receives the RPS telegram and parses the rocker states
+' Receive Rocker Switch, 2 Rocker, page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' bow%  0=released, 1=pressed
+' rocka0% Rocker a0: 0=not pressed, 1=pressed
+' rocka1% Rocker a0: 0=not pressed, 1=pressed
+' rockb0% Rocker b0: 0=not pressed, 1=pressed
+' rockb1% Rocker b1: 0=not pressed, 1=pressed
+' Return negative on error, return state 1=pressed or 0=released 
+' &H30, &H20, &H10 &H00
+FUNCTION eoRxF60204(tp%,id%,db0%,st%,bow%, bc%, rocka0%, rocka1%, rockb0%,rockb1%)
+ bow%=(db0% and &H80)/128
+ bc%=(db0% and &H40)/64
+ rocka0%=(db0% and &h01)
+ rocka1%=(db0% and &h02)/2
+ rockb0%=(db0% and &h04)/4
+ rockb1%=(db0% and &h08)/8
+ eoRxF60204=rock%
+END FUNCTION
+
+
 ' Callback eoRx1BS helper function for Contact and Switches
 ' D5-00-01
 ' It receives the 1BS telegram and parses the contact state
@@ -172,60 +275,13 @@ END FUNCTION
 ' db0%   data db0  (from callback eoRxRPS)
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' co%   contact 0=open, 1=closed
-FUNCTION eoRxContactSwitch(tp%,id%,db0%,lrn%,co%)
+FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
  lrn%=(db0% and 8)/8
  co%=(db0% and 1)
- eoRxContactSwitch=0
+ eoRxD50001=co%
 END FUNCTION
 
-' Callback eoRxRPS helper function for Rocker
-' F6-02-01, F6-02-02, F6-02-03
-' It receives the RPS telegram and parses the rocker states
-' Receive Rocker Switch, 2 Rocker, page 15
-' We get type info and two bits on status which help us to interpret
-' Depending on switch type press and release events can be parsed
-' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
-' st%    status  (from callback eoRxRPS)
-' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
-' bow%  0=released, 1=pressed
-' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0
-' ac%    0= No 2nd action, 1=2nd action valid
-' Return negative on error, return value state of T21 and NU (required for interpretation)
-FUNCTION eoRxRocker(tp%,id%,db0%,st%,rock1%,bow%,rock2%,ac%)
- select case (st% and &h30)
-  case &H30 ' T21=1, NU = 1
-   rock1%=(db0% and &he0)/32
-   bow%=(db0% and &h10)/16
-   rock2%=(db0% and &h0e)/2
-   ac%=(db0% and &h1)
-   'print "eoRxRocker30:" hex$(id%) tp% rock1% bow1% rock2% ac2%   
-   eoRxRocker=3
-   exit function
-  case &H20 'T21=1, NU = 0
-   num%=(db0% and &he0)/32
-   bow%=(db0% and &h10)/16  
-   'print "eoRxRocker20:" hex$(id%) tp% num% bow%
-   eoRxRocker=2
-   exit function
-  case &H10 'T21=0, NU = 1   
-   rock1%=(db0% and &he0)/32
-   bow%=(db0% and &h10)/16
-   rock2%=(db0% and &h0e)/2
-   ac%=(db0% and &h1)   
-   'print "eoRxRocker10:" hex$(id%) tp% rock1% bow1% rock2% ac2%
-   eoRxRocker=1
-   exit function
-  case &H00 'T21=0, NU = 0   
-   num%=(db0% and &he0)/32
-   bow%=(db0% and &h10)/16
-   'print "eoRxRocker00:" hex$(id%) tp% num% bow%  
-   eoRxRocker=0
-   exit function
- end select
- eoRxRocker=-1
-END FUNCTION
+
 
 ' Receive Sensor info, page 15
 SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
