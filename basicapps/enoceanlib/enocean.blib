@@ -63,7 +63,7 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,3,4))    
      st%=asc(mid$(da$,7,1))
      IF Exists(cb$) >= 0 THEN
-      CALL(cb$,tp%,id%,db0%,st%)
+      n%=CALL(cb$,tp%,id%,db0%,st%)
      ELSE
       eoLog(tp%,da$,oda$,"eo RPS rx")
      ENDIF
@@ -74,7 +74,7 @@ FUNCTION eoReceive()
      db0%=asc(mid$(da$,2,1))
      id%=conv("bbe/u32",mid$(da$,3,4))
      IF Exists(cb$) >= 0 THEN
-      CALL(cb$,tp%,id%,db0%)
+      n%=CALL(cb$,tp%,id%,db0%)
      ELSE
       eoLog(tp%,da$,oda$,"eo 1BS rx")
      ENDIF
@@ -105,7 +105,7 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
      IF Exists(cb$) >= 0 THEN
-      CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
+      n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
      ELSE
       eoLog(tp%,da$,oda$,"eo 4BS rx")
      ENDIF
@@ -123,7 +123,7 @@ FUNCTION eoReceive()
      st%=asc(mid$(da$,len(da$)-1,1))
      crc8%=asc(right$(da$,1))
      IF Exists(cb$) >= 0 THEN
-      CALL(cb$,tp%,id%,db$,st%,crc8%)
+      n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
      ELSE
       eoLog(tp%,da$,oda$,"eo vld rx")
      ENDIF
