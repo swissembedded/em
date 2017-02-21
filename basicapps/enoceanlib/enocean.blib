@@ -38,8 +38,9 @@ END FUNCTION
 ' VLD telegram: eoRxVLD(tp%,id%,db$,st%,crc8%)
 FUNCTION eoReceive()
  print "called"
- LOCAL n%,tp%,da$,oda$,rorg%
+ LOCAL n%,tp%,da$,oda$,rorg%,num%
  LOCAL cb$,db3%,db2%,db1%,db0%,id%,st%,db$,crc8% 
+ num%=0
  DO
   ' Process all telegram from stack
   n%=EnoceanReceive(tp%,da$,oda$)
@@ -64,9 +65,8 @@ FUNCTION eoReceive()
      IF Exists(cb$) >= 0 THEN
       CALL(cb$,tp%,id%,db0%,st%)
      ELSE
-      eoLog(tp%,da$,oda$,"eo rx")
+      eoLog(tp%,da$,oda$,"eo RPS rx")
      ENDIF
-     exit select
     case &hd5
      'Contacts and Switches
      '1BS telegram: DB0, Sender ID, Status (page 11)
@@ -76,9 +76,8 @@ FUNCTION eoReceive()
      IF Exists(cb$) >= 0 THEN
       CALL(cb$,tp%,id%,db0%)
      ELSE
-      eoLog(tp%,da$,oda$,"eo rx")
+      eoLog(tp%,da$,oda$,"eo 1BS rx")
      ENDIF
-     exit select
     case &ha5
      '4BS telegram: DB3-DB0, Sender ID, Status (page 12)
      'Temperature Sensors
@@ -99,7 +98,6 @@ FUNCTION eoReceive()
      'Central Commands
      'Universal
      cb$="eoRx4BS"
-     eoLog(tp%,da$,oda$,"eo rx") 
      db3%=asc(mid$(da$,2,1))
      db2%=asc(mid$(da$,3,1))
      db1%=asc(mid$(da$,4,1))
@@ -107,11 +105,10 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
      IF Exists(cb$) >= 0 THEN
-      CALL(cb$,tp%,id%,db3%,db2%,db1%,db0%,st%)
+      CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
      ELSE
-      eoLog(tp%,da$,oda$,"eo rx")
+      eoLog(tp%,da$,oda$,"eo 4BS rx")
      ENDIF
-     exit select
     case &hd2
      'VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
      'Room Control Panel
@@ -121,7 +118,6 @@ FUNCTION eoReceive()
      'CO2, Humidity, Temperature, Day / NIght and Autonomy
      'Blinds Control for Position and Angle
      cb$="eoRxVLD"
-     eoLog(tp%,da$,oda$,"eo rx")  
      db$=mid$(da$, 2,len(da$)-7)
      id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
      st%=asc(mid$(da$,len(da$)-1,1))
@@ -129,21 +125,22 @@ FUNCTION eoReceive()
      IF Exists(cb$) >= 0 THEN
       CALL(cb$,tp%,id%,db$,st%,crc8%)
      ELSE
-      eoLog(tp%,da$,oda$,"eo rx")
+      eoLog(tp%,da$,oda$,"eo vld rx")
      ENDIF
-     exit select
     case else
      eoLog(tp%,da$,oda$,"eo unknown rx ")
-     exit select
     end select
    ELSE 
     EXIT DO
    ENDIF
-  LOOP 
+   num%=num%+1
+  LOOP
+  eoReceive=num%
 END FUNCTION
 
 ' log a telegram
 SUB eoLog(tp%,da$,oda$,msg$)
+ LOCAL s$, h$
  s$=msg$+" tp:"+str$(tp%)+" da:"
  for i=1 TO len(da$)
   h$=hex$(asc(mid$(da$,i,1)))
@@ -161,7 +158,7 @@ SUB eoLog(tp%,da$,oda$,msg$)
   s$=s$+h$
  next
  print s$
-END FUNCTION
+END SUB
 
 
 ' Callback eoRxRPS helper function for Rocker
@@ -283,6 +280,28 @@ FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
  eoRxD50001=co%
 END FUNCTION
 
+' Callback eoRx4BS helper function for Temperature and Humidity Sensor
+' A5-04-01
+' It receives the 1BS telegram and parses the contact state
+' Receive Contact and switches page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRx4BS)
+' id%    sender id  (from callback eoRx4BS)
+' db0%   data db1  (from callback eoRx4BS)
+' db1%   data db1  (from callback eoRx4BS)
+' db2%   data db1  (from callback eoRx4BS)
+' hum    humidity 0..100%
+' tmp    0..40 degree C
+' lrn%   learn button 0=pressed, 1=not pressed
+' ts%   temperatur sensor 1=available, 0=not available
+FUNCTION eoRxA50401(tp%,id%,db0%,db1%,db2%,hum,tmp,lrn%,ts%)
+ lrn%=(db0% and 8)/8
+ ts%=(db0% and 2)/2
+ temp=db1%/250*40
+ humidity=db2%/250*100
+ eoRxA50401=co%
+END FUNCTION
 
 
 ' Receive Sensor info, page 15
