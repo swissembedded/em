@@ -137,7 +137,7 @@ FUNCTION eoReceive()
      exit select
     end select
    ELSE 
-    EXIT LOOP
+    EXIT DO
    ENDIF
   LOOP 
 END FUNCTION
