@@ -297,18 +297,22 @@ END FUNCTION
 ' ttp%  telegram type (A5-04-03 only)
 FUNCTION eoRxA504XX(tp%,id%,db0%,db1%,db2%,xx%,hum,tmp,lrn%,ts%,ttp%)
  lrn%=(db0% and 8)/8
- ts%=(db0% and 2)/2
-
  SELECT CASE xx%
   CASE &H01
    tmp = (40/250)*db1%
    hum = (100/250)*db2%
+   ts%=(db0% and 2)/2
+   ttp%=-1
   CASE &H02
    tmp = (80/250)*db1%-20
    hum = (100/250)*db2%
+   ts%=(db0% and 2)/2
+   ttp%=-1
   CASE &H03
    tmp = (80/1023)*(db1%+((db2% AND 3)*256))-20
    hum = (100/255)*db2%
+   ttp%=(db0% and 1)
+   ts%=-1
   CASE ELSE
    ' unknown
    eoRxA504XX=-1
