@@ -315,11 +315,36 @@ SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%)
    print db1% (255-db1%)/255.0*40.0
  end select 
  
- ' Vitocomfort 200 7554507 A5-04-01 
- ' Temperatur 0-40°C
- ' Humidity 0-100%
- ' temp=db1%/250*40
- ' humidity = db2%/250*100
+ ' Vitocomfort 200 7554507 A5-04-01
+  ' Temperatur 0-40°C
+  ' Humidity 0-100% 
+  ' temp=(255-db1%)/250*40
+  ' humidity = db2%/250*100
+ ' Vitocomfort 200 7554507 A5-04-02
+  ' Temperatur -20-60°C
+  ' Humidity 0-100%
+ ' Vitocomfort 200 7554507 A5-04-03
+  ' Temperatur -20-60°C 10-bit measurement
+  ' Humidity 0-100%
+ FUNCTION eoConvertA504XX(tp%, db2%, db1%, t, lrn%)
+  LOCAL temp, humidity
+  IF lrn% = 0
+   ' This is a teach-in telegram
+   EXIT FUNCTION
+  ENDIF
+  ' Otherwise, it's a data telegram, extract temp & humidity
+  SELECT CASE tp%
+   CASE &H01
+    temp = (40/250)*db1%
+    humidity = (100/250)*db2%
+   CASE &H02
+    temp = (80/250)*db1%-20
+    humidity = (100/250)*db2%
+   CASE &H03
+    temp = (80/1023)*db1%-20
+    humidity = (100/255)*db2%
+  ENDSELECT
+ END FUNCTION
  
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
