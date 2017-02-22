@@ -277,9 +277,9 @@ FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
 END FUNCTION
 
 ' Callback eoRx4BS helper function for Temperature and Humidity Sensor
-' A5-04-01 Vitocomfort 200 7554507
-' A5-04-02 (Eltako)
-' A5-04-03 (ITEC)
+' A5-04-01 0..40 degree C 8 bit, (Vitocomfort 200 7554507)
+' A5-04-02 -20..60 degree C 8 bit, (Eltako)
+' A5-04-03 -20..60 degree C 10bit, (ITEC)
 ' It receives the 1BS telegram and parses the contact state
 ' Receive Contact and switches page 15
 ' We get type info and two bits on status which help us to interpret
@@ -356,7 +356,7 @@ END FUNCTION
 ' db1%   data db1  (from callback eoRx4BS)
 ' db2%   data db1  (from callback eoRx4BS)
 ' xx%    type 01,02,03
-' tmp    temperature 0..40 degree C
+' tmp    temperature see above degree C
 ' lrn%   learn button 0=pressed, 1=not pressed
 FUNCTION eoRxA502XX(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
  lrn%=(db0% and 8)/8
