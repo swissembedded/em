@@ -62,11 +62,8 @@ FUNCTION eoReceive()
      db0%=asc(mid$(da$,2,1))
      id%=conv("bbe/u32",mid$(da$,3,4))    
      st%=asc(mid$(da$,7,1))
-     IF Exists(cb$) >= 0 THEN
-	  print "calling" cb$
-      n%=CALL(cb$,tp%,id%,db0%,st%)
-	  print "called" n%
-     ELSE
+     n%=CALL(cb$,tp%,id%,db0%,st%)
+	 IF n% < 0 THEN
       eoLog(tp%,da$,oda$,"eo RPS rx")
      ENDIF
     case &hd5
@@ -75,11 +72,8 @@ FUNCTION eoReceive()
      cb$="eoRx1BS"
      db0%=asc(mid$(da$,2,1))
      id%=conv("bbe/u32",mid$(da$,3,4))
-     IF Exists(cb$) >= 0 THEN
-	  print "calling" cb$
-      n%=CALL(cb$,tp%,id%,db0%)
-	  print "called" n%
-     ELSE
+	 n%=CALL(cb$,tp%,id%,db0%)
+     IF n% < 0 THEN
       eoLog(tp%,da$,oda$,"eo 1BS rx")
      ENDIF
     case &ha5
@@ -108,11 +102,8 @@ FUNCTION eoReceive()
      db0%=asc(mid$(da$,5,1))
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
-     IF Exists(cb$) >= 0 THEN
-	  print "calling" cb$
-      n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
-	  print "called" n%
-     ELSE
+     n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
+	 IF n% < 0 THEN
       eoLog(tp%,da$,oda$,"eo 4BS rx")
      ENDIF
     case &hd2
@@ -128,11 +119,8 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
      st%=asc(mid$(da$,len(da$)-1,1))
      crc8%=asc(right$(da$,1))
-     IF Exists(cb$) >= 0 THEN
-	  print "calling" cb$
-      n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
-	  print "called" n%
-     ELSE
+	 n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
+     IF n% < 0 THEN
       eoLog(tp%,da$,oda$,"eo vld rx")
      ENDIF
     case else
@@ -289,7 +277,9 @@ FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
 END FUNCTION
 
 ' Callback eoRx4BS helper function for Temperature and Humidity Sensor
-' A5-04-01
+' A5-04-01 Vitocomfort 200 7554507
+' A5-04-02 (Eltako)
+' A5-04-03 (ITEC)
 ' It receives the 1BS telegram and parses the contact state
 ' Receive Contact and switches page 15
 ' We get type info and two bits on status which help us to interpret
@@ -299,61 +289,35 @@ END FUNCTION
 ' db0%   data db1  (from callback eoRx4BS)
 ' db1%   data db1  (from callback eoRx4BS)
 ' db2%   data db1  (from callback eoRx4BS)
+' xx%    type 01,02,03
 ' hum    humidity 0..100%
-' tmp    0..40 degree C
+' tmp    temperature 0..40 degree C
 ' lrn%   learn button 0=pressed, 1=not pressed
-' ts%   temperatur sensor 1=available, 0=not available
-FUNCTION eoRxA50401(tp%,id%,db0%,db1%,db2%,hum,tmp,lrn%,ts%)
+' ts%   temperatur sensor 1=available, 0=not available (A5-04-01 and A5-04-02 only)
+' ttp%  telegram type (A5-04-03 only)
+FUNCTION eoRxA504XX(tp%,id%,db0%,db1%,db2%,xx%,hum,tmp,lrn%,ts%,ttp%)
  lrn%=(db0% and 8)/8
  ts%=(db0% and 2)/2
- temp=db1%/250*40
- humidity=db2%/250*100
- eoRxA50401=co%
+
+ SELECT CASE xx%
+  CASE &H01
+   tmp = (40/250)*db1%
+   hum = (100/250)*db2%
+  CASE &H02
+   tmp = (80/250)*db1%-20
+   hum = (100/250)*db2%
+  CASE &H03
+   tmp = (80/1023)*(db1%+((db2% AND 3)*256))-20
+   hum = (100/255)*db2%
+  CASE ELSE
+   ' unknown
+   eoRxA504XX=-1
+   EXIT FUNCTION
+ ENDSELECT
+ eoRxA504XX=0
 END FUNCTION
 
 
-' Receive Sensor info, page 15
-SUB eoRxSensor(tp%,id%,db3%,db2%,db1%,db0%,st%) 
- print "eoRxSensor:" hex$(id%) tp% db3% db2% db1% db0% st%
- ' add your code here you can make subcalls here to your own routines
- select case id%
-  case &H01823D78 ' your sensor id (from sensor backside)
-   ' Enocean sensor STM3xx from demo kit
-   ' 255=0 degree celsius, 0=40 degree celsius 
-   print db1% (255-db1%)/255.0*40.0
- end select 
- 
- ' Vitocomfort 200 7554507 A5-04-01
-  ' Temperatur 0-40°C
-  ' Humidity 0-100% 
-  ' temp=(255-db1%)/250*40
-  ' humidity = db2%/250*100
- ' Vitocomfort 200 7554507 A5-04-02
-  ' Temperatur -20-60°C
-  ' Humidity 0-100%
- ' Vitocomfort 200 7554507 A5-04-03
-  ' Temperatur -20-60°C 10-bit measurement
-  ' Humidity 0-100%
- FUNCTION eoConvertA504XX(tp%, db2%, db1%, t, lrn%)
-  LOCAL temp, humidity
-  IF lrn% = 0
-   ' This is a teach-in telegram
-   EXIT FUNCTION
-  ENDIF
-  ' Otherwise, it's a data telegram, extract temp & humidity
-  SELECT CASE tp%
-   CASE &H01
-    temp = (40/250)*db1%
-    humidity = (100/250)*db2%
-   CASE &H02
-    temp = (80/250)*db1%-20
-    humidity = (100/250)*db2%
-   CASE &H03
-    temp = (80/1023)*db1%-20
-    humidity = (100/255)*db2%
-  ENDSELECT
- END FUNCTION
- 
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
