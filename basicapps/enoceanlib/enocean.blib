@@ -105,7 +105,9 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
      IF Exists(cb$) >= 0 THEN
+	  print "calling"
       n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
+	  print "called"
      ELSE
       eoLog(tp%,da$,oda$,"eo 4BS rx")
      ENDIF
