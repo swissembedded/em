@@ -64,7 +64,7 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,3,4))    
      st%=asc(mid$(da$,7,1))
      cbc$=cb$
-     IF exists(cbc$) THEN n%=CALL(cb$,tp%,id%,db0%,st%)
+     IF exists(cbc$)>=0 THEN n%=CALL(cb$,tp%,id%,db0%,st%)
      IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo RPS rx")
     case &hd5
      'Contacts and Switches
@@ -73,7 +73,7 @@ FUNCTION eoReceive()
      db0%=asc(mid$(da$,2,1))
      id%=conv("bbe/u32",mid$(da$,3,4))
      cbc$=cb$
-     IF exists(cbc$) THEN n%=CALL(cb$,tp%,id%,db0%)
+     IF exists(cbc$)>=0 THEN n%=CALL(cb$,tp%,id%,db0%)
      IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo 1BS rx")     
     case &ha5
      '4BS telegram: DB3-DB0, Sender ID, Status (page 12)
@@ -102,7 +102,7 @@ FUNCTION eoReceive()
      id%=conv("bbe/u32",mid$(da$,6,4))    
      st%=asc(mid$(da$,10,1))
      cbc$=cb$
-     IF exists(cbc$) THEN n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
+     IF exists(cbc$)>=0 THEN n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
      IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo 4BS rx")
     case &hd2
      'VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
@@ -118,7 +118,7 @@ FUNCTION eoReceive()
      st%=asc(mid$(da$,len(da$)-1,1))
      crc8%=asc(right$(da$,1))
      cbc$=cb$
-     IF exists(cbc$) THEN n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
+     IF exists(cbc$)>=0 THEN n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
      IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo vld rx")
     case else
      eoLog(tp%,da$,oda$,"eo unknown rx ")
