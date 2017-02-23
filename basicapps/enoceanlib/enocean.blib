@@ -274,6 +274,61 @@ FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
 END FUNCTION
 
 ' Callback eoRx4BS helper function for Temperature and Humidity Sensor
+' A5-02-01 -40..0 degree Celsius
+' A5-02-02 -30..+10
+' A5-02-03 -20..+20
+' A5-02-04 -10..+30
+' A5-02-05 0..+40
+' A5-02-06 10..+50
+' A5-02-07 20..+60
+' A5-02-08 30..+70
+' A5-02-09 40..+80
+' A5-02-0A 50..+90
+' A5-02-0B 60..+100
+' A5-02-10 -60..+20
+' A5-02-11 -50..+30
+' A5-02-12 -40..+40
+' A5-02-13 -30..+50
+' A5-02-14 -20..+60
+' A5-02-15 -10..+70
+' A5-02-16 0..+80
+' A5-02-17 10..+90
+' A5-02-18 20..+100
+' A5-02-1a 40..+120
+' A5-02-1b 50..+130
+' A5-02-20 -10..+41.2
+' A5-02-30 -40..+62.3
+' It receives the 1BS telegram and parses the contact state
+' Receive Contact and switches page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRx4BS)
+' id%    sender id  (from callback eoRx4BS)
+' db0%   data db1  (from callback eoRx4BS)
+' db1%   data db1  (from callback eoRx4BS)
+' db2%   data db1  (from callback eoRx4BS)
+' xx%    type 01,02,03
+' tmp    temperature see above degree C
+' lrn%   learn button 0=pressed, 1=not pressed
+FUNCTION eoRxA502XX(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
+ lrn%=(db0% and 8)/8
+ IF xx%>=&H01 AND xx%<=&H0B THEN
+  tmp=(255-db1%)/40+(xx%-1)*10-40
+ ELSEIF xx%>=&H10 AND xx%<=&1B THEN
+  tmp=(255-db1%)/80+(xx%-&H10)*10-60
+ ELSEIF xx%=&H20 THEN
+  tmp = (1024-(db1%+((db2% AND 3)*256)))/1023*51.2-10
+ ELSEIF xx%=&H21 THEN
+  tmp = (1024-(db1%+((db2% AND 3)*256)))/1023*102.3-40
+ ELSE
+  ' unknown
+  eoRxA502XX=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA502XX=0
+END FUNCTION
+
+' Callback eoRx4BS helper function for Temperature and Humidity Sensor
 ' A5-04-01 0..40 degree C 8 bit, (Vitocomfort 200 7554507)
 ' A5-04-02 -20..60 degree C 8 bit, (Eltako)
 ' A5-04-03 -20..60 degree C 10bit, (ITEC)
@@ -318,70 +373,68 @@ FUNCTION eoRxA504XX(tp%,id%,db0%,db1%,db2%,xx%,hum,tmp,lrn%,ts%,ttp%)
  eoRxA504XX=0
 END FUNCTION
 
-' Callback eoRx4BS helper function for Temperature and Humidity Sensor
-' A5-02-01 -40..0 degree Celsius
-' A5-02-02 -30..+10
-' A5-02-03 -20..+20
-' A5-02-04 -10..+30
-' A5-02-05 0..+40
-' A5-02-06 10..+50
-' A5-02-07 20..+60
-' A5-02-08 30..+70
-' A5-02-09 40..+80
-' A5-02-0A 50..+90
-' A5-02-0B 60..+100
-' A5-02-10 -60..+20
-' A5-02-11 -50..+30
-' A5-02-12 -40..+40
-' A5-02-13 -30..+50
-' A5-02-14 -20..+60
-' A5-02-15 -10..+70
-' A5-02-16 0..+80
-' A5-02-17 10..+90
-' A5-02-18 20..+100
-' A5-02-1a 40..+120
-' A5-02-1b 50..+130
-' A5-02-20 -10..+41.2
-' A5-02-30 -40..+62.3
-' It receives the 1BS telegram and parses the contact state
-' Receive Contact and switches page 15
-' We get type info and two bits on status which help us to interpret
-' Depending on switch type press and release events can be parsed
-' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db1  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db1  (from callback eoRx4BS)
-' xx%    type 01,02,03
-' tmp    temperature see above degree C
-' lrn%   learn button 0=pressed, 1=not pressed
-FUNCTION eoRxA502XX(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
- lrn%=(db0% and 8)/8
- IF xx%>=&H01 AND xx%<=&H0B THEN
-  tmp=(255-db1%)/40+(xx%-1)*10-40
- ELSE IF xx%>=&H10 AND xx%<=&1B THEN
-  tmp=(255-db1%)/80+(xx%-&H10)*10-60
- ELSE IF xx%=&H20 THEN
-  tmp = (1024-(db1%+((db2% AND 3)*256)))/1023*51.2-10
- ELSE IF xx%=&H21 THEN
-  tmp = (1024-(db1%+((db2% AND 3)*256)))/1023*102.3-40
- ELSE
-  ' unknown
-  eoRxA502XX=-1
-  EXIT FUNCTION
- ENDIF 
- eoRxA502XX=0
-END FUNCTION
-
-Barometric Sensor
-A5-05-01 500..1150
-FUNCTION eoRxA505XX(tp%,id%,db0%,db1%,db2%,bar,xx%,lrn%)
+' Barometric Sensor
+' A5-05-01 500..1150
+FUNCTION eoRxA505XX(tp%,id%,db0%,db2%,bar,xx%,lrn%,ttp%)
  lrn%=(db0% and 8)/8
  IF xx%=&H01 THEN
   bar=(650/1023)*db2%+500
+  ttp%=(db0% and 1)
  ELSE
   ' unknown
   eoRxA505XX=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA505XX=0
+END FUNCTION
+
+' Light Sensor
+' A5-06-01 300..60000 lux
+' A5-06-02 0..1020 lux
+' A5-06-03 0..1000 lux (10-bit measurement)
+' A5-06-04 0..65535 lux
+' A5-06-05 0..10200 lux
+' SVC         Supply voltage 0 to 5.1 Volts 
+' ill1, ill2  Illumination
+' temp        Ambient temperature (A5-06-04 only)
+' sv          Energy storage (A5-06-04 only)
+' RS%         Range select (used to select the range according to ill1 or ill2)
+' tmpav%      Temperature availability 1=available, 0=not available (A5-06-04 only)
+' enav%       Energy storage availability 1=available, 0=not available (A5-06-04 only)
+FUNCTION eoRxA506XX(tp%,id%,db0%,db1%,db2%,db3%,ill1,ill2,temp,sv,tempav%,enav%,svc,xx%,lrn%,rs%)
+ lrn%=(db0% and 8)/8
+ IF xx%=&H01 THEN
+  ill1=(5940/255)*db1%+600
+  ill2=(29700/255)*db2%+300
+  svc= (5.1/250)*db3%
+  tempav%=-1
+  enav%=-1
+ ElSEIF xx%=&H02 THEN
+  ill1=(1020/255)*db1%
+  ill2=(510/255)*db2%
+  svc=(5.1/250)*db3%
+  tempav%=-1
+  enav%=-1
+ ElSEIF xx%=&H03 THEN
+  ill1=db2%+((db1% AND 3)*256)
+  svc= (5.1/250)*db3%
+  tempav%=-1
+  enav%=-1
+ ElSEIF xx%=&H04 THEN
+  ill1=db1%+db2%
+  temp=(80/255)*db3%-20
+  sv=(100/15)*(db0% AND 240)
+  tempav%=(db0% AND 2)/2
+  enav%=db0% AND 1
+ ElSEIF xx%=&H05 THEN
+  ill1=(10200/255)*db1%
+  ill2=(5100/255)*db2%
+  svc= (5.1/250)*db3%
+  tempav%=-1
+  enav%=-1
+ ELSE
+  ' unknown
+  eoRxA506XX=-1
   EXIT FUNCTION
  ENDIF 
  eoRxA505XX=0
