@@ -373,6 +373,20 @@ FUNCTION eoRxA502XX(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
  eoRxA502XX=0
 END FUNCTION
 
+Barometric Sensor
+A5-05-01 500..1150
+FUNCTION eoRxA505XX(tp%,id%,db0%,db1%,db2%,bar,xx%,lrn%)
+ lrn%=(db0% and 8)/8
+ IF xx%=&H01 THEN
+  bar=(650/1023)*db2%+500
+ ELSE
+  ' unknown
+  eoRxA505XX=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA505XX=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
