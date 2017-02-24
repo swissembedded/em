@@ -437,7 +437,7 @@ FUNCTION eoRxA506XX(tp%,id%,db0%,db1%,db2%,db3%,ill1,ill2,temp,sv,tempav%,enav%,
   eoRxA506XX=-1
   EXIT FUNCTION
  ENDIF 
- eoRxA505XX=0
+ eoRxA506XX=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
