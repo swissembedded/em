@@ -144,8 +144,9 @@ END FUNCTION
 ' ac%    0= No 2nd action, 1=2nd action valid
 ' num%   number of buttons 0=no button, 3= 3 or 4 buttons, -1=invalid
 ' Return negative on error, return value state of T21 and NU (required for interpretation)
-' &H30, &H20, &H10 &H00
+' 0,1,2,3 and -1 on error
 FUNCTION eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+ eoRxF60201=-1
  rock1%=-1
  rock2%=-1
  ac%=-1
@@ -157,34 +158,29 @@ FUNCTION eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
    bow%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
    ac%=(db0% and &h1)
-   'print "eoRxRocker30:" hex$(id%) tp% rock1% bow% rock2% ac2%   
    eoRxF60201=3
-   exit function
   case &H20 'T21=1, NU = 0
    num%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16
-   'print "eoRxRocker20:" hex$(id%) tp% num% bow%
    eoRxF60201=2
-   exit function
   case &H10 'T21=0, NU = 1   
    rock1%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16
    rock2%=(db0% and &h0e)/2
    ac%=(db0% and &h1)   
-   'print "eoRxRocker10:" hex$(id%) tp% rock1% bow% rock2% ac%
    eoRxF60201=1
-   exit function
   case &H00 'T21=0, NU = 0   
    num%=(db0% and &he0)/32
    bow%=(db0% and &h10)/16
-   'print "eoRxRocker00:" hex$(id%) tp% num% bow%  
    eoRxF60201=0
-   exit function
  end select
- eoRxF60201=-1
+END FUNCTION
+' see eoRxF60201
+FUNCTION eoRxF60202(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+ eoRXF60202=eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
 END FUNCTION
 
-' Callback eoRxRPS helper function for Rocker
+' Callback eoRxRPS helper function for 2-Rocker
 ' F6-02-03
 ' It receives the RPS telegram and parses the rocker states
 ' Receive Rocker Switch, 2 Rocker, page 15
@@ -202,7 +198,7 @@ FUNCTION eoRxF60203(tp%,id%,db0%,st%,rock%)
  eoRxF60203=rock%
 END FUNCTION
 
-' Callback eoRxRPS helper function for Rocker
+' Callback eoRxRPS helper function for 2-Rocker
 ' F6-02-04
 ' It receives the RPS telegram and parses the rocker states
 ' Receive Rocker Switch, 2 Rocker, page 15
@@ -229,6 +225,145 @@ FUNCTION eoRxF60204(tp%,id%,db0%,st%,bow%,bc%,rocka0%,rocka1%,rockb0%,rockb1%)
  eoRxF60204=rock%
 END FUNCTION
 
+' Callback eoRxRPS helper function for 4-Rocker
+' F6-03-01
+' It receives the RPS telegram and parses the rocker states
+' Receive Rocker Switch, 2 Rocker, page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
+' bow%  0=released, 1=pressed
+' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
+' ac%    0= No 2nd action, 1=2nd action valid
+' num%   number of buttons 0=no button, 1= 2 buttons..7=8 buttons, -1=invalid
+' Return negative on error, return value state of T21 and NU (required for interpretation)
+' 0,1 and -1 on error
+FUNCTION eoRxF60301(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+ eoRxF60301=-1
+ rock1%=-1
+ rock2%=-1
+ ac%=-1
+ num%=-1
+ bow%=-1
+ select case (st% and &h30)
+  case &H10 'T21=0, NU = 1   
+   rock1%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac%=(db0% and &h1)   
+   eoRxF60301=1
+  case &H00 'T21=0, NU = 0   
+   num%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   eoRxF60301=0
+ end select
+END FUNCTION
+
+' Callback eoRxRPS helper function for 4-Rocker
+' F6-03-02
+' It receives the RPS telegram and parses the rocker states
+' Receive Rocker Switch, 2 Rocker, page 15
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
+' bow%  0=released, 1=pressed
+' rock2% Rocker 2: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
+' ac%    0= No 2nd action, 1=2nd action valid
+' num%   number of buttons 0=no button, 1= 2 buttons..7=8 buttons, -1=invalid
+' Return negative on error, return value state of T21 and NU (required for interpretation)
+' 0,1 and -1 on error
+FUNCTION eoRxF60302(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+ eoRxF60301=-1
+ rock1%=-1
+ rock2%=-1
+ ac%=-1
+ num%=-1
+ bow%=-1
+ select case (st% and &h30)
+  case &H10 'T21=0, NU = 1   
+   rock1%=(db0% and &he0)/32
+   bow%=(db0% and &h10)/16
+   rock2%=(db0% and &h0e)/2
+   ac%=(db0% and &h1)   
+   eoRxF60302=1
+  case &H00 'T21=0, NU = 0   
+   num%=(db0% and &he0)/32
+   eoRxF60302=0
+ end select
+END FUNCTION
+
+' Callback eoRxRPS helper function for Keycard
+' F6-04-01
+' It receives the RPS telegram and parses the keycard states
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' kc%   key card, 112=inserted, 0=taken out
+' 0,1 and -1 on error
+FUNCTION eoRxF60401(tp%,id%,db0%,st%,kc%)
+ eoRxF60401=-1
+ kc%=-1
+ select case (st% and &h30)
+  case &H30 'T21=1, NU = 1   
+   kc% = db0%
+   eoRxF60401=0
+  case &H20 'T21=1, NU = 0   
+   kc% = db0%
+   eoRxF60401=1
+ end select
+END FUNCTION
+
+' Callback eoRxRPS helper function for Keycard
+' F6-04-02
+' It receives the RPS telegram and parses the keycard states
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' bow%   energy box
+' bc%    button coding 0=button
+' soc%   state of the card 0=taken out, 1=inserted
+' 
+' 0,1 and -1 on error
+FUNCTION eoRxF60402(tp%,id%,db0%,st%,bow%,bc%,soc%)
+ eoRxF60402=0
+ bow%=(db0% and &H80)/128
+ bc%=(db0% and &H40)/64
+ soc%=(db0% and &H04)/4
+END FUNCTION
+
+' Callback eoRxRPS helper function for Leakage detector
+' F6-05-01
+' It receives the RPS telegram and parses the keycard states
+' We get type info and two bits on status which help us to interpret
+' Depending on switch type press and release events can be parsed
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' was%   alert signal that the sensor detected water leakage, 0x11 = water detected
+' 0 and -1 on error
+FUNCTION eoRxF60501(tp%,id%,db0%,st%,was%)
+ eoRxF60501=-1
+ select case (st% and &h30)
+  case &H30 'T21=1, NU = 1   
+   was% = db0%
+   eoRxF60501=0
+ end select
+END FUNCTION
 
 ' Callback eoRx1BS helper function for Contact and Switches
 ' D5-00-01
