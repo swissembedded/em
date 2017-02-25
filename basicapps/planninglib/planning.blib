@@ -1,0 +1,88 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' EMDO planning library, scheduling loads
+
+' Some examples on usage 
+' LIBRARY LOAD "planning"
+'start:
+' DISPATCH 1000
+'goto start
+ 
+'@lib_init
+FUNCTION __planning_init()
+ pbSize%=10
+ dim pbSch$(pbSize%)
+ 
+ pbCronDesc%=CrontabAdd("* * * * *")
+ IF pbCronDesc% < 0 THEN ERROR "Failed to add CRON entry"
+ ELSE ON CRON pbCronDesc% pgCron
+ 
+ pbTimerDesc%=SetTimer(10000)
+ IF pbTimerDesc% < 0 THEN ERROR "Failed to add Timer entry"
+ ELSE ON TIMER pbTimerDesc% pgTimer
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __planning_destroy()
+ LOCAL sc%
+ 'sc%=CrontabRemove(pbCronDesc%)
+END FUNCTION
+
+' Load planning recalculate every minute (cron based)
+' Cron handler called every minute
+' id% cron identifier
+' elapsed% time in ms elapsed since last schedule
+FUNCTION pbCron(id%,elapsed%)  
+ LOCAL it%,nm$,prio%,lpc$,ltc$,st$
+ for it%= 0 TO (pbSize%-1)
+  st$=pbSch$(id%)
+  if len(st$) > 0 THEN
+   prio%=val(split$(1,st$,";"))
+   nm$=split$(2,st$,";")
+   lpc$=split$(3,st$,";")
+   ltc$=split$(4,st$,";")
+  ENDIF 
+ next it%
+ 
+ pbCron=0
+END FUNCTION
+
+' Add load
+' id%  id of the load
+' nm$  name of the load
+' lpc$ load profile callback
+' ltc$ load trigger callback
+' return -1 on error, id% of added load
+FUNCTION pbAdd(id%, prio%, nm$, lpc$, ltc$)
+ LOCAL st$
+ pbAdd=-1
+ IF len(pbSch$(id%)) > 0 THEN
+  ' Id already exists
+  pbAdd=-1
+  EXIT FUNCTION
+ ENDIF
+ st$=str$(prio%)+";"+nm$+";"+lpc$+";"+ltc$
+ pbSch$(id%)=st$
+ pbAdd=is%
+END FUNCTION
+
+' Remove load from planning
+' id% id of the load to be removed
+' return -1 on error or id% that has been removed
+FUNCTION pbRemove(id%)
+ pbRemove=-1
+ IF len(pbSch$(id%)) > 0 THEN
+  pbSch$(id%)=""
+  pbRemove=id%
+ ENDIF
+END FUNCTION
+
+' Load planning every 10 seconds (timer based)
+' Timer handler called every minute
+' id% cron identifier
+' elapsed% time in ms elapsed since last schedule
+FUNCTION pbTimer(id%,elapsed%)  
+ PRINT "cron1 id=" id% " el=" elapsed% " date=" Date$()
+ pbTimer=0
+END FUNCTION
