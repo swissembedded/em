@@ -481,7 +481,7 @@ END FUNCTION
 ' db0%   data db0  (from callback eoRx4BS)
 ' db1%   data db1  (from callback eoRx4BS)
 ' db2%   data db2  (from callback eoRx4BS)
-' xx%    type 01,02,03
+' xx%    type 01,02,03,...,30
 ' tmp    temperature see above degree C
 ' lrn%   learn button 0=pressed, 1=not pressed
 FUNCTION eoRxA502xx(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
@@ -552,7 +552,7 @@ END FUNCTION
 ' db0%   data db0  (from callback eoRx4BS)
 ' db1%   data db1  (from callback eoRx4BS)
 ' db3%   data db3  (from callback eoRx4BS)
-' xx%    type 01,02,03
+' xx%    type 01
 ' bar    pressure in hPa
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' ttp%  telegram type
@@ -582,7 +582,7 @@ END FUNCTION
 ' db1%   data db1  (from callback eoRx4BS)
 ' db2%   data db2  (from callback eoRx4BS)
 ' db3%   data db3  (from callback eoRx4BS)
-' xx%    type 01,02,03
+' xx%    type 01,02,03,04,05
 ' su     supply voltage 0 to 5.1 Volts 
 ' ill1, ill2  Illumination
 ' rs%    range select, used to select the range according to ill1 (0) or ill2 (1) 
@@ -668,6 +668,44 @@ FUNCTION eoRxA507XX(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,lrn%,pirs%,sva%,ill)
   EXIT FUNCTION
  ENDIF 
  eoRxA507xx=0
+END FUNCTION
+
+' Callback eoRx4BS helper function for Light, Temperature and Occupancy Sensor
+' A5-08-01 0..510 lux, 0..51 degree C, Occupancy button
+' A5-08-02 0..1020 lux, 0..51 degree C, Ocuppancy button
+' A5-08-03 0..1530 lux, -30..+50 degree C, Occupancy button
+' tp%    type of the packet (from callback eoRx4BS)
+' id%    sender id  (from callback eoRx4BS)
+' db0%   data db0  (from callback eoRx4BS)
+' db1%   data db1  (from callback eoRx4BS)
+' db2%   data db2  (from callback eoRx4BS)
+' db3%   data db3  (from callback eoRx4BS)
+' xx%    type 01,02,03
+' su     supply voltage 0 to 5.0 Volts 
+' ill	 Illumination
+' temp   Temperature
+' lrn%   learn button 0=pressed, 1=not pressed
+' pirs%  PIR status 1=PIR off, 0=PIR
+' occ%   Occupation button 1=released, 0=pushed
+FUNCTION eoRxA508XX(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
+ lrn%=(db0% and 8)/8
+ su=(5.1/255)*db3%
+ pirs%=(db0% AND 2)/2
+ occ%=db0% AND 1
+ ill=-1
+ temp=-1
+ IF xx%=&H01 OR xx%=&H02
+  ill=(510*xx%/255)*db2%
+  temp=(51/255)*db1%
+ ELSEIF xx%=&H03
+  ill=(1530/255)*db2%
+  temp=(80/255)*db1%-30
+ ELSE
+  ' unknown
+  eoRxA508xx=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA508xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
