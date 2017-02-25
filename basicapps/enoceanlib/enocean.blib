@@ -228,7 +228,6 @@ END FUNCTION
 ' Callback eoRxRPS helper function for 4-Rocker
 ' F6-03-01
 ' It receives the RPS telegram and parses the rocker states
-' Receive Rocker Switch, 2 Rocker, page 15
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
@@ -266,7 +265,6 @@ END FUNCTION
 ' Callback eoRxRPS helper function for 4-Rocker
 ' F6-03-02
 ' It receives the RPS telegram and parses the rocker states
-' Receive Rocker Switch, 2 Rocker, page 15
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
@@ -310,6 +308,7 @@ END FUNCTION
 ' db0%   data db0  (from callback eoRxRPS)
 ' st%    status  (from callback eoRxRPS)
 ' kc%   key card, 112=inserted, 0=taken out
+' returns:
 ' 0,1 and -1 on error
 FUNCTION eoRxF60401(tp%,id%,db0%,st%,kc%)
  eoRxF60401=-1
@@ -336,13 +335,85 @@ END FUNCTION
 ' bow%   energy box
 ' bc%    button coding 0=button
 ' soc%   state of the card 0=taken out, 1=inserted
-' 
+' returns:
 ' 0,1 and -1 on error
 FUNCTION eoRxF60402(tp%,id%,db0%,st%,bow%,bc%,soc%)
  eoRxF60402=0
  bow%=(db0% and &H80)/128
  bc%=(db0% and &H40)/64
  soc%=(db0% and &H04)/4
+END FUNCTION
+
+' Callback eoRxRPS helper function for window handle
+' F6-10-00
+' It receives the RPS telegram and parses the window handle
+' We get type info and two bits on status which help us to interpret
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' win%   movement of the window handle
+' returns:
+' 0 to 2, -1 on error, 0= moved to left or right, 1=moved to down, 2=moved to up
+FUNCTION eoRxF61000(tp%,id%,db0%,st%,win%)
+ eoRxF61000=-1
+ win%=-1
+ select case (st% and &H30)
+  case &H20 'T21=1, NU = 0   
+   IF (db0% and &HD0) = &HC0 THEN
+    ' Moved from up to left
+	' Moved from down to left
+    ' Moved from up to right
+    ' Moved from down to right
+	win% = db0%
+	eoRxF61000=0
+   ELSE IF (db0% and &HF0) = &HF0 THEN
+    ' Moved from right to down
+	' Moved from left to down
+	win% = db0%
+	eoRxF61000=1
+   ELSE IF (db0% and &HF0) = &HD0 THEN
+    ' Moved from left to up
+	' Moved from right to up
+	win% = db0%
+	eoRxF61000=2
+  ENDIF
+ end select
+END FUNCTION
+
+' Callback eoRxRPS helper function for window handle
+' F6-10-01
+' It receives the RPS telegram and parses the window handle
+' We get type info and two bits on status which help us to interpret
+' tp%    type of the packet (from callback eoRxRPS)
+' id%    sender id  (from callback eoRxRPS)
+' db0%   data db0  (from callback eoRxRPS)
+' st%    status  (from callback eoRxRPS)
+' win%   movement of the window handle
+' returns:
+' 0 to 2, -1 on error, 0= moved to left or right, 1=moved to down, 2=moved to up
+FUNCTION eoRxF61001(tp%,id%,db0%,st%,hc%,hvl%)
+ eoRxF61001=-1
+ hc%=(db0% and 64)/64
+ hvl%=-1
+ IF (db0% and &H0D) = &H0C THEN
+  ' Moved from up to left
+  ' Moved from up to right
+  ' Moved from down to left
+  ' Moved from down to right
+  hvl% = db0% and &H0F
+  eoRxF61001=0
+ ELSE IF (db0% and &H0F) = &H0F THEN
+  ' Moved from right to down
+  ' Moved from left to down
+  hvl% = db0% and &H0F
+  eoRxF61001=1
+ ELSE IF (db0% and &H0F) = &H0D THEN
+  ' Moved from left to up
+  ' Moved from right to up  
+  hvl% = db0% and &H0F
+  eoRxF61001=2
+ ENDIF
 END FUNCTION
 
 ' Callback eoRxRPS helper function for Leakage detector
