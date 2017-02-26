@@ -648,14 +648,14 @@ END FUNCTION
 ' pirs%  PIR status 1: Motion detected, 0: Uncertain of occupancy status (A5-07-02 & A5-07-03) 
 ' sva%   Supply voltage availability 1: Supply voltage is supported, 0: Supply voltage is not supported
 ' ill    Illumination range: 0..1000 lux (A5-07-03 only)
-FUNCTION eoRxA507XX(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,lrn%,pirs%,sva%,ill)
+FUNCTION eoRxA507xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,lrn%,pirs%,sva%,ill)
  lrn%=(db0% and 8)/8
  su=(5.0/250)*db3%
  pirs%=-1
  sva%=-1
  ill=-1
  IF xx%=&H01
-  pirs%=(db1% AND 255)/255
+  pirs%=db1%
   sva%=db0% AND 1
  ELSEIF xx%=&H02
   pirs%=(db0% AND 128)/128
@@ -682,12 +682,12 @@ END FUNCTION
 ' db3%   data db3  (from callback eoRx4BS)
 ' xx%    type 01,02,03
 ' su     supply voltage 0 to 5.0 Volts 
-' ill	 Illumination
+' ill    Illumination
 ' temp   Temperature
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' pirs%  PIR status 1=PIR off, 0=PIR
 ' occ%   Occupation button 1=released, 0=pushed
-FUNCTION eoRxA508XX(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
+FUNCTION eoRxA508xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
  lrn%=(db0% and 8)/8
  su=(5.1/255)*db3%
  pirs%=(db0% AND 2)/2
