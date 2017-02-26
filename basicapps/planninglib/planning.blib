@@ -34,17 +34,20 @@ END FUNCTION
 ' id% cron identifier
 ' elapsed% time in ms elapsed since last schedule
 FUNCTION pbCron(id%,elapsed%)  
- LOCAL it%,nm$,prio%,lpc$,ltc$,st$
- for it%= 0 TO (pbSize%-1)
-  st$=pbSch$(id%)
-  if len(st$) > 0 THEN
-   prio%=val(split$(1,st$,";"))
-   nm$=split$(2,st$,";")
-   lpc$=split$(3,st$,";")
-   ltc$=split$(4,st$,";")
-  ENDIF 
- next it%
- 
+ LOCAL p%,it%,nm$,prio%,lpc$,ltc$,st$
+ FOR p%=1 TO 10
+  FOR it%= 0 TO (pbSize%-1)
+   st$=pbSch$(id%)
+   IF len(st$) > 0 THEN
+    prio%=val(split$(1,st$,";"))
+	IF p%=prio% THEN
+     nm$=split$(2,st$,";")
+     lpc$=split$(3,st$,";")
+     ltc$=split$(4,st$,";")
+	ENDIF
+   ENDIF
+  NEXT it%
+ NEXT p%
  pbCron=0
 END FUNCTION
 
@@ -85,4 +88,24 @@ END FUNCTION
 FUNCTION pbTimer(id%,elapsed%)  
  PRINT "cron1 id=" id% " el=" elapsed% " date=" Date$()
  pbTimer=0
+END FUNCTION
+
+' Load planning adaptive learning of the load profile (recording)
+' The data is stored binary (4 bytes per float)
+' nm$ name of the load
+' rtm% run time of the device (relative time since start)
+' vl  current value
+' vlt tolerance of the value, if value within tolerance, don't update (prevent flash wear out)
+' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
+FUNCTION pbRecord(nm$,rtm%,vl, vlt)
+END FUNCTION
+
+' Load planning adaptive learning of the load profile (retrieve)
+' The data is stored binary (4 bytes per float)
+' nm$ name of the load
+' rtm% run time of the device (relative time since start)
+' vl  current value
+' vlt tolerance of the value, if value within tolerance, don't update (prevent flash wear out)
+' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
+FUNCTION pbRetrieve(nm$,rtm%,vl)
 END FUNCTION
