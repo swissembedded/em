@@ -5,13 +5,44 @@
 
 ' Some examples on usage 
 ' LIBRARY LOAD "planning"
+ 'lpc$="pbLoads"
+ 'ltc$="pbProfile"
+' pbAdd(0,"dishwasher", lpc$, ltc$)
+' pbAdd(1,"dryer", lpc$, ltc$)
+' pbAdd(2,"washer", lpc$, ltc$)
+' pbAdd(3,"boilerlow", lpc$, ltc$)
+' pbAdd(4,"car", lpc$, ltc$)
+' pbAdd(5,"battery", lpc$, ltc$)
+' pbAdd(6,"boilerhigh", lpc$, ltc$)
+' pbAdd(7,"dehumidifier", lpc$, ltc$)
 'start:
 ' DISPATCH 1000
 'goto start
+
+' take care of the profile
+' id% load identifier
+' nm$ load name
+' FUNCTION pbProfile(id%,nm$)
+'  Read all energy meter data and update the profile
+' END FUNCTION
+
+' take care of planning
+' FUNCTION pbLoads(id%,nm$,ltc$,pE,pI,pP,pS)
+'  select case id%
+'   case 0
+'   case 1
+'   case 2
+'   case 3
+'   case 4
+'   case 5
+'   case 6
+'   case 7
+'  end select
+' END FUNCTION
  
 '@lib_init
 FUNCTION __planning_init()
- pbSize%=10
+ pbSize%=20
  pbMeterC$=pbMC"
  dim pbSch$(pbSize%)
  
@@ -42,34 +73,38 @@ END FUNCTION
 ' pP produced energy by generator
 ' pS stored energy in battery
 FUNCTION pbCron(id%,elapsed%)  
- LOCAL p%,it%,nm$,prio%,lpc$,ltc$,st$
+ LOCAL it%,nm$,prio%,lpc$,ltc$,st$
+ ' Read all load current consumption
+ FOR it%= 0 TO (pbSize%-1)
+  IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 and ltc$<>"" THEN
+   n%=CALL(ltc$,it%,nm$)
+  ENDIF
+ NEXT it%
+ 
  ' Read the power of the grid
- n%=CALL(pbMeterC$,pE,pI,pP,pS)
+ n%=CALL(pbMeterC$,pE,pI,pP,pS) 
  IF n% < 0 THEN
   pbCron=-1
   print pbMeterC$ " can't be called!"
   EXIT FUNCTION
  ENDIF
  ' Planning of the loads
- ' IF we export go through list from priority 1 to 10
  IF pE > 0.0 THEN
-  FOR p%=1 TO pbSize%
-   FOR it%= 1 TO pbSize%
-    IF pbGetLoad(it%,prio%,nm$,lpc$,ltc$)=p% THEN
-	 ' Call the load in priorized order to increase load
-	 n%=CALL(lpc$,id%,prio%,nm$,ltc$,pE,pI,pP,pS)
-    ENDIF
-   NEXT it%
-  NEXT p%
+  ' we export go from highest to lowest priority
+  FOR it%= 0 TO (pbSize%-1)
+   IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
+    ' Call the load in priorized order to increase load
+    n%=CALL(lpc$,id%,nm$,ltc$,pE,pI,pP,pS)
+   ENDIF
+  NEXT it%
  ELSE IF pI > 0.0 THEN
-  FOR p%=pbSize% TO 1 STEP -1
-   FOR it%= 1 TO pbSize%
-    IF pbGetLoad(it%,prio%,nm$,lpc$,ltc$)=p% THEN
-	 ' Call the load in priorized order to increase load
-	 n%=CALL(lpc$,id%,prio%,nm$,ltc$,pE,pI,pP,pS)
-    ENDIF
-   NEXT it%
-  NEXT p%
+  ' we export go from lowest to highest priority
+  FOR it%=(pbSize%-1) TO 0 STEP -1
+   IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
+    ' Call the load in priorized order to increase load
+    n%=CALL(lpc$,id%,nm$,ltc$,pE,pI,pP,pS)
+   ENDIF
+  NEXT it%
  ENDIF
  pbCron=0
 END FUNCTION
@@ -79,17 +114,16 @@ END FUNCTION
 ' nm$  name of the load
 ' lpc$ load profile callback
 ' ltc$ load trigger callback
-' return priority or -1 on error
-FUNCTION pbGetLoad(id%, prio%, nm$, lpc$,ltc$)
+' return priority 0 or -1 on error
+FUNCTION pbGetLoad(id%,nm$,lpc$,ltc$)
  LOCAL st$
  pbGetLoad=-1
  st$=pbSch$(id%)
- IF len(st$) > 0 THEN
-  prio%=val(split$(1,st$,";"))
-  nm$=split$(2,st$,";")
-  lpc$=split$(3,st$,";")
-  ltc$=split$(4,st$,";")
-  pbGetLoad=prio%
+ IF st$<>"" THEN
+  nm$=split$(1,st$,";")
+  lpc$=split$(2,st$,";")
+  ltc$=split$(3,st$,";")
+  pbGetLoad=0
  ENDIF
 END FUNCTION
 
@@ -99,15 +133,15 @@ END FUNCTION
 ' lpc$ load profile callback
 ' ltc$ load trigger callback
 ' return -1 on error, id% of added load
-FUNCTION pbAdd(id%, prio%, nm$, lpc$, ltc$)
+FUNCTION pbAdd(id%, nm$, lpc$, ltc$)
  LOCAL st$
  pbAdd=-1
- IF len(pbSch$(id%)) > 0 THEN
+ IF pbSch$(id%)<>"" THEN
   ' Id already exists
   pbAdd=-1
   EXIT FUNCTION
  ENDIF
- st$=str$(prio%)+";"+nm$+";"+lpc$+";"+ltc$
+ st$=nm$+";"+lpc$+";"+ltc$
  pbSch$(id%)=st$
  pbAdd=is%
 END FUNCTION
@@ -117,7 +151,7 @@ END FUNCTION
 ' return -1 on error or id% that has been removed
 FUNCTION pbRemove(id%)
  pbRemove=-1
- IF len(pbSch$(id%)) > 0 THEN
+ IF pbSch$(id%)<>"" THEN
   pbSch$(id%)=""
   pbRemove=id%
  ENDIF
