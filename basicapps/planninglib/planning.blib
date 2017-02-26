@@ -12,6 +12,7 @@
 '@lib_init
 FUNCTION __planning_init()
  pbSize%=10
+ pbMeterC$=pbMC"
  dim pbSch$(pbSize%)
  
  pbCronDesc%=CrontabAdd("* * * * *")
@@ -33,22 +34,63 @@ END FUNCTION
 ' Cron handler called every minute
 ' id% cron identifier
 ' elapsed% time in ms elapsed since last schedule
+' return -1 on error
+' Callbacks:
+' pbMC(pE,pI,pP,pS)
+' pE exported energy to grid
+' pI imported energy from grid
+' pP produced energy by generator
+' pS stored energy in battery
 FUNCTION pbCron(id%,elapsed%)  
  LOCAL p%,it%,nm$,prio%,lpc$,ltc$,st$
- FOR p%=1 TO 10
-  FOR it%= 0 TO (pbSize%-1)
-   st$=pbSch$(id%)
-   IF len(st$) > 0 THEN
-    prio%=val(split$(1,st$,";"))
-	IF p%=prio% THEN
-     nm$=split$(2,st$,";")
-     lpc$=split$(3,st$,";")
-     ltc$=split$(4,st$,";")
-	ENDIF
-   ENDIF
-  NEXT it%
- NEXT p%
+ ' Read the power of the grid
+ n%=CALL(pbMeterC$,pE,pI,pP,pS)
+ IF n% < 0 THEN
+  pbCron=-1
+  print pbMeterC$ " can't be called!"
+  EXIT FUNCTION
+ ENDIF
+ ' Planning of the loads
+ ' IF we export go through list from priority 1 to 10
+ IF pE > 0.0 THEN
+  FOR p%=1 TO pbSize%
+   FOR it%= 1 TO pbSize%
+    IF pbGetLoad(it%,prio%,nm$,lpc$,ltc$)=p% THEN
+	 ' Call the load in priorized order to increase load
+	 n%=CALL(lpc$,id%,prio%,nm$,ltc$,pE,pI,pP,pS)
+    ENDIF
+   NEXT it%
+  NEXT p%
+ ELSE IF pI > 0.0 THEN
+  FOR p%=pbSize% TO 1 STEP -1
+   FOR it%= 1 TO pbSize%
+    IF pbGetLoad(it%,prio%,nm$,lpc$,ltc$)=p% THEN
+	 ' Call the load in priorized order to increase load
+	 n%=CALL(lpc$,id%,prio%,nm$,ltc$,pE,pI,pP,pS)
+    ENDIF
+   NEXT it%
+  NEXT p%
+ ENDIF
  pbCron=0
+END FUNCTION
+
+' Get a load entry from the list
+' id%  id of the load
+' nm$  name of the load
+' lpc$ load profile callback
+' ltc$ load trigger callback
+' return priority or -1 on error
+FUNCTION pbGetLoad(id%, prio%, nm$, lpc$,ltc$)
+ LOCAL st$
+ pbGetLoad=-1
+ st$=pbSch$(id%)
+ IF len(st$) > 0 THEN
+  prio%=val(split$(1,st$,";"))
+  nm$=split$(2,st$,";")
+  lpc$=split$(3,st$,";")
+  ltc$=split$(4,st$,";")
+  pbGetLoad=prio%
+ ENDIF
 END FUNCTION
 
 ' Add load
@@ -92,20 +134,54 @@ END FUNCTION
 
 ' Load planning adaptive learning of the load profile (recording)
 ' The data is stored binary (4 bytes per float)
+' fn% filenumber to use
 ' nm$ name of the load
 ' rtm% run time of the device (relative time since start)
+' itv% recording interval e.g. every 60 for every minute
 ' vl  current value
-' vlt tolerance of the value, if value within tolerance, don't update (prevent flash wear out)
+' vlt tolerance of the value, if value within tolerance, don't update flash(prevent flash wear out)
 ' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
-FUNCTION pbRecord(nm$,rtm%,vl, vlt)
+' return -1 on error
+FUNCTION pbRecord(fn%,nm$,rtm%,itv%,vl,vlt,wt)
+local vlo, vln
+' load the value
+ ' Check if wt is in interval [0.0 1.0]
+ IF wt < 0.0 or wt > 1.0 THEN
+  pbRecord=-1
+  EXIT FUNCTION
+ ENDIF
+ vln=vlo*(1.0-wt)+vl*wt
+ ' Check if update is needed
+ IF abs(vln-vlo) < vlt then
+  pbRecord=0
+  EXIT FUNCTION
+ ENDIF
 END FUNCTION
 
 ' Load planning adaptive learning of the load profile (retrieve)
 ' The data is stored binary (4 bytes per float)
+' fn% filenumber to use
 ' nm$ name of the load
 ' rtm% run time of the device (relative time since start)
-' vl  current value
-' vlt tolerance of the value, if value within tolerance, don't update (prevent flash wear out)
-' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
-FUNCTION pbRetrieve(nm$,rtm%,vl)
+' itv% recording interval e.g. every 60 for every minute
+' vl value at given time
+' return -1 on error
+FUNCTION pbRetrieve(fn%,nm$,rtm%,itv%, vl)
+ LOCAL ps%,ln%
+ pbRetrieve=-1
+ IF rtm% < 0 THEN
+  pbRetrieve=-1
+  EXIT FUNCTION
+ ENDIF
+ ps%=(rtm%/itv%*4+1)
+ open "dev_"+nm$ for input as # fn%
+ ' check if this is past the end
+ ln%=lof # fn%
+ IF ln% >= (ps%+4) THEN
+  seek # fn%, ps%
+  pbRetrieve=ps%
+ ENDIF
+ close # fn%
 END FUNCTION
+
+
