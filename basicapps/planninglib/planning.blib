@@ -5,8 +5,8 @@
 
 ' Some examples on usage 
 ' LIBRARY LOAD "planning"
- 'lpc$="pbLoads"
- 'ltc$="pbProfile"
+ 'lpc$="pbProfile"
+ 'ltc$="pbTrigger"
 ' pbAdd(0,"dishwasher", lpc$, ltc$)
 ' pbAdd(1,"dryer", lpc$, ltc$)
 ' pbAdd(2,"washer", lpc$, ltc$)
@@ -24,19 +24,30 @@
 ' nm$ load name
 ' FUNCTION pbProfile(id%,nm$)
 '  Read all energy meter data and update the profile
+'  select case id%
+'   case 0 ' dishwasher
+'   case 1 ' dryer
+'   case 2 ' washer
+'   case 3 ' boilerlow
+'   case 4 ' car
+'   case 5 ' battery
+'   case 6 ' boiler high
+'   case 7 ' dehumidifier
+'  end select
 ' END FUNCTION
 
-' take care of planning
-' FUNCTION pbLoads(id%,nm$,ltc$,pE,pI,pP,pS)
+' take care of triggering loads (on/off, load changes)
+' FUNCTION pbTrigger(id%,md%,nm$,pE,pI,pP,pS)
+' Plan load changes, this routine is called every minute
 '  select case id%
-'   case 0
-'   case 1
-'   case 2
-'   case 3
-'   case 4
-'   case 5
-'   case 6
-'   case 7
+'   case 0 ' dishwasher
+'   case 1 ' dryer
+'   case 2 ' washer
+'   case 3 ' boilerlow
+'   case 4 ' car
+'   case 5 ' battery
+'   case 6 ' boiler high
+'   case 7 ' dehumidifier
 '  end select
 ' END FUNCTION
  
@@ -72,6 +83,17 @@ END FUNCTION
 ' pI imported energy from grid
 ' pP produced energy by generator
 ' pS stored energy in battery
+' pbProfile(id%,nm$)
+' id% load id
+' nm$ load name
+' pbTrigger(id%,md%,nm$,ltc$,pE,pI,pP,pS)
+' id% load id
+' md% mode 0=increase load, 1=decrease load, 0=maintain load
+' nm$ load name
+' pE power export
+' pI power import
+' pP power production
+' pS power storage
 FUNCTION pbCron(id%,elapsed%)  
  LOCAL it%,nm$,prio%,lpc$,ltc$,st$
  ' Read all load current consumption
@@ -94,7 +116,7 @@ FUNCTION pbCron(id%,elapsed%)
   FOR it%= 0 TO (pbSize%-1)
    IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
     ' Call the load in priorized order to increase load
-    n%=CALL(lpc$,id%,nm$,ltc$,pE,pI,pP,pS)
+    n%=CALL(ltc$,id%,0,nm$,pE,pI,pP,pS)
    ENDIF
   NEXT it%
  ELSE IF pI > 0.0 THEN
@@ -102,7 +124,15 @@ FUNCTION pbCron(id%,elapsed%)
   FOR it%=(pbSize%-1) TO 0 STEP -1
    IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
     ' Call the load in priorized order to increase load
-    n%=CALL(lpc$,id%,nm$,ltc$,pE,pI,pP,pS)
+    n%=CALL(ltc$,id%,1,nm$,pE,pI,pP,pS)
+   ENDIF
+  NEXT it%
+  ELSE
+  ' loads are fine, but we call it anyhow
+  FOR it%=0 TO (pbSize%-1)
+   IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
+    ' Call the load in priorized order to increase load
+    n%=CALL(ltc$,id%,2,nm$,pE,pI,pP,pS)
    ENDIF
   NEXT it%
  ENDIF
