@@ -22,10 +22,12 @@
 ' take care of the profile
 ' id% load identifier
 ' nm$ load name
-' FUNCTION pbProfile(id%,nm$)
+' FUNCTION pbProfile(id%,nm$,st%,rtm%,pL)
+'  LOCAL n%
 '  Read all energy meter data and update the profile
 '  select case id%
 '   case 0 ' dishwasher
+'          n%=pbRecord(1,nm$,rtm%,vl,0.02,0.1)
 '   case 1 ' dryer
 '   case 2 ' washer
 '   case 3 ' boilerlow
@@ -35,9 +37,8 @@
 '   case 7 ' dehumidifier
 '  end select
 ' END FUNCTION
-
 ' take care of triggering loads (on/off, load changes)
-' FUNCTION pbTrigger(id%,md%,nm$,pE,pI,pP,pS)
+' FUNCTION pbTrigger(id%,md%,nm$,st%,rnt%,rntm%,pL,pE,pI,pP,pS)
 ' Plan load changes, this routine is called every minute
 '  select case id%
 '   case 0 ' dishwasher
@@ -55,7 +56,13 @@
 FUNCTION __planning_init()
  pbSize%=20
  pbMeterC$=pbMC"
- dim pbSch$(pbSize%)
+ dim pbArrnm$(pbSize%) LENGTH 21
+ dim pbArrlpc$(pbSize%) LENGTH 11
+ dim pbArrltc$(pbSize%) LENGTH 11
+ dim pbArrst%(pbSize%)
+ dim pbArrrnt%(pbSize%)
+ dim pbArrrntm%(pbSize%)
+ dim pbArrpL(pbSize%)
  
  pbCronDesc%=CrontabAdd("* * * * *")
  IF pbCronDesc% < 0 THEN ERROR "Failed to add CRON entry"
@@ -95,11 +102,11 @@ END FUNCTION
 ' pP power production
 ' pS power storage
 FUNCTION pbCron(id%,elapsed%)  
- LOCAL it%,nm$,prio%,lpc$,ltc$,st$
+ LOCAL it%,nm$,lpc$,ltc$,st$,rtm%,pL
  ' Read all load current consumption
  FOR it%= 0 TO (pbSize%-1)
-  IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 and ltc$<>"" THEN
-   n%=CALL(ltc$,it%,nm$)
+  IF pbGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 and ltc$<>"" THEN
+   n%=CALL(ltc$,it%,nm$,st%,rtm%,pL)
   ENDIF
  NEXT it%
  
@@ -114,9 +121,9 @@ FUNCTION pbCron(id%,elapsed%)
  IF pE > 0.0 THEN
   ' we export go from highest to lowest priority
   FOR it%= 0 TO (pbSize%-1)
-   IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
+   IF pbGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 THEN
     ' Call the load in priorized order to increase load
-    n%=CALL(ltc$,id%,0,nm$,pE,pI,pP,pS)
+    n%=CALL(ltc$,id%,0,nm$,st%,rnt%,rntm%,pL,pE,pI,pP,pS)
    ENDIF
   NEXT it%
  ELSE IF pI > 0.0 THEN
@@ -124,7 +131,7 @@ FUNCTION pbCron(id%,elapsed%)
   FOR it%=(pbSize%-1) TO 0 STEP -1
    IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
     ' Call the load in priorized order to increase load
-    n%=CALL(ltc$,id%,1,nm$,pE,pI,pP,pS)
+    n%=CALL(ltc$,id%,1,nm$,st%,rnt%,rntm%,pL,pE,pI,pP,pS)
    ENDIF
   NEXT it%
   ELSE
@@ -132,7 +139,7 @@ FUNCTION pbCron(id%,elapsed%)
   FOR it%=0 TO (pbSize%-1)
    IF pbGetLoad(it%,nm$,lpc$,ltc$)=0 THEN
     ' Call the load in priorized order to increase load
-    n%=CALL(ltc$,id%,2,nm$,pE,pI,pP,pS)
+    n%=CALL(ltc$,id%,2,nm$,st%,rnt%,rntm%,pL,pE,pI,pP,pS)
    ENDIF
   NEXT it%
  ENDIF
@@ -144,36 +151,68 @@ END FUNCTION
 ' nm$  name of the load
 ' lpc$ load profile callback
 ' ltc$ load trigger callback
+' st%  state
+' rnt% runtime
+' rntm% maximale runtime
+' pL   load power
 ' return priority 0 or -1 on error
-FUNCTION pbGetLoad(id%,nm$,lpc$,ltc$)
+FUNCTION pbGetLoad(id%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)
  LOCAL st$
  pbGetLoad=-1
- st$=pbSch$(id%)
- IF st$<>"" THEN
-  nm$=split$(1,st$,";")
-  lpc$=split$(2,st$,";")
-  ltc$=split$(3,st$,";")
+ IF pbArrnm$(id%)<>"" THEN
+  nm$=pbArrnm$(id%)
+  lpc$=pbArrlpc$(id%)
+  ltc$=pbArrltc$(id%)
+  st%=pbArrst%(id%)
+  rnt%=pbArrrnt%(id%)
+  rntm%=pbArrrntm%(id%)
+  pL=pbArrpL(id%)
   pbGetLoad=0
+ ENDIF
+END FUNCTION
+
+' Set a load entry from the list
+' id%  id of the load
+' st%  state
+' rnt% runtime
+' rntm% maximale runtime
+' pL   load power
+' return priority 0 or -1 on error
+FUNCTION pbSetLoad(id%,st%,rnt%,rntm%,pL)
+ LOCAL st$
+ pbSetLoad=-1
+ IF pbArrnm$(id%)<>"" THEN
+  pbArrst%(id%)=st$
+  pbArrrnt%(id%)=rnt%
+  pbArrrntm%(id%)=rntm%
+  pbArrpL(id%)=pL
+  pbSetLoad=0
  ENDIF
 END FUNCTION
 
 ' Add load
 ' id%  id of the load
-' nm$  name of the load
-' lpc$ load profile callback
-' ltc$ load trigger callback
-' return -1 on error, id% of added load
-FUNCTION pbAdd(id%, nm$, lpc$, ltc$)
+' nm$  name of the load (max 20 character)
+' lpc$ load profile callback (max 10 characters)
+' ltc$ load trigger callback (max 10 characters)
+' rntm% maximal runtime
+' return -1 on error, 0 if load added
+FUNCTION pbAdd(id%, nm$, lpc$, ltc$,rntm%)
  LOCAL st$
  pbAdd=-1
- IF pbSch$(id%)<>"" THEN
+ IF pbArrnm$(id%)<>"" THEN
   ' Id already exists
   pbAdd=-1
   EXIT FUNCTION
  ENDIF
- st$=nm$+";"+lpc$+";"+ltc$
- pbSch$(id%)=st$
- pbAdd=is%
+ pbArrnm$(id%)=nm$
+ pbArrlpc$(id%)=lpc$
+ pbArrltc$(id%)=ltc$
+ pbArrst%(id%)=0
+ pbArrrnt%(id%)=0
+ pbArrrntm%(id%)=0
+ pbArrpL(id%)=0
+ pbAdd=0
 END FUNCTION
 
 ' Remove load from planning
@@ -181,8 +220,8 @@ END FUNCTION
 ' return -1 on error or id% that has been removed
 FUNCTION pbRemove(id%)
  pbRemove=-1
- IF pbSch$(id%)<>"" THEN
-  pbSch$(id%)=""
+ IF pbArrnm$(id%)<>"" THEN
+  pbArrnm$(id%)=""
   pbRemove=id%
  ENDIF
 END FUNCTION
@@ -201,13 +240,12 @@ END FUNCTION
 ' fn% filenumber to use
 ' nm$ name of the load
 ' rtm% run time of the device (relative time since start)
-' itv% recording interval e.g. every 60 for every minute
 ' vl  current value
 ' vlt tolerance of the value, if value within tolerance, don't update flash(prevent flash wear out)
 ' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
 ' return -1 on error
-FUNCTION pbRecord(fn%,nm$,rtm%,itv%,vl,vlt,wt)
-local vlo, vln
+FUNCTION pbRecord(fn%,nm$,rtm%,vl,vlt,wt)
+ local vlo, vln
 ' load the value
  ' Check if wt is in interval [0.0 1.0]
  IF wt < 0.0 or wt > 1.0 THEN
