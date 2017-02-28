@@ -27,7 +27,7 @@
 '  Read all energy meter data and update the profile
 '  select case id%
 '   case 0 ' dishwasher
-'          n%=pbRecord(1,nm$,rtm%,vl,0.02,0.1)
+'          n%=pbRecord(1,nm$,rtm%,60,vl,0.02,0.1)
 '   case 1 ' dryer
 '   case 2 ' washer
 '   case 3 ' boilerlow
@@ -151,8 +151,9 @@ END FUNCTION
 ' nm$  name of the load
 ' lpc$ load profile callback
 ' ltc$ load trigger callback
-' st%  state
-' rnt% runtime
+' st%  state 0=off, 1=running, 2=paused, 3=scheduled,
+'      negative values device specific error states
+' rnt% runtime in seconds
 ' rntm% maximale runtime
 ' pL   load power
 ' return priority 0 or -1 on error
@@ -239,12 +240,14 @@ END FUNCTION
 ' The data is stored binary (4 bytes per float)
 ' fn% filenumber to use
 ' nm$ name of the load
-' rtm% run time of the device (relative time since start)
+' rnt% run time of the device (relative time since start)
+' rntm% maximal runtime
+' ts% timescale (e.g. 60 for every minute)
 ' vl  current value
 ' vlt tolerance of the value, if value within tolerance, don't update flash(prevent flash wear out)
 ' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
 ' return -1 on error
-FUNCTION pbRecord(fn%,nm$,rtm%,vl,vlt,wt)
+FUNCTION pbRecord(fn%,nm$,rnt%,rntm%,ts%, vl,vlt,wt)
  local vlo, vln
 ' load the value
  ' Check if wt is in interval [0.0 1.0]
@@ -264,11 +267,12 @@ END FUNCTION
 ' The data is stored binary (4 bytes per float)
 ' fn% filenumber to use
 ' nm$ name of the load
-' rtm% run time of the device (relative time since start)
-' itv% recording interval e.g. every 60 for every minute
+' rnt% run time of the device (relative time since start)
+' rntm% maximal runtime
+' ts% timescale (e.g. 60 for every minute)
 ' vl value at given time
 ' return -1 on error
-FUNCTION pbRetrieve(fn%,nm$,rtm%,itv%, vl)
+FUNCTION pbRetrieve(fn%,nm$,rnt%,rntm%,ts%,vl)
  LOCAL ps%,ln%
  pbRetrieve=-1
  IF rtm% < 0 THEN
@@ -286,4 +290,13 @@ FUNCTION pbRetrieve(fn%,nm$,rtm%,itv%, vl)
  close # fn%
 END FUNCTION
 
-
+' Load planning optimize best start time
+' id%   id of the load
+' strt% calculated start time
+' crt%  criteria of costs 0=minimize excess energy, 1=minimize costs
+FUNCTION pbOptimize(id%,strt%, crt%)
+ ' calculate dynamic load of all running loads
+ ' add static load
+ ' subtract pv curve prognosis
+ ' find best start
+END FUNCTION
