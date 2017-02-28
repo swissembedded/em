@@ -293,7 +293,7 @@ END FUNCTION
 ' Load planning optimize best start time
 ' id%   id of the load
 ' strt% calculated start time
-' crt%  criteria of costs 0=minimize excess energy, 1=minimize costs
+' crt%  criteria of costs 0=minimize exported energy, 1=minimize imported energy, 2=minimize costs
 FUNCTION pbOptimize(id%,strt%, crt%)
  ' calculate dynamic load of all running loads
  ' add static load
