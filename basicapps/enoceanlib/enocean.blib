@@ -43,7 +43,7 @@ FUNCTION eoReceive()
  num%=0
  DO
   ' Process all telegram from stack
-  n%=EnoceanReceive(tp%,da$,oda$)
+  n%=EnoceanReceive(tp%,da$,oda$,0)
   IF NOT n% and tp%=1 THEN
    'check rx packet (radio type 1 only) 
    'e.g. F6002A42DF20 / 1FFFFFFFF360
