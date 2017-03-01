@@ -248,19 +248,32 @@ END FUNCTION
 ' wt  weight of the new value (0=don't learn at all..1=take new value, foget all old values)
 ' return -1 on error
 FUNCTION pbRecord(fn%,nm$,rnt%,rntm%,ts%, vl,vlt,wt)
- local vlo, vln
+ local vlo, vln, s$,t$,sc%
 ' load the value
  ' Check if wt is in interval [0.0 1.0]
- IF wt < 0.0 or wt > 1.0 THEN
+ IF wt < 0.0 or wt > 1.0 or rnt%<0 or rntm%<0 or rnt% > rntm% THEN
   pbRecord=-1
   EXIT FUNCTION
  ENDIF
+ ps%=(rtm%/ts%*4+1)
+ open "output/dev_"+nm$+".dat" for output as # fn%
+ seek # fn%, ps%, 0
+ s$=ReadFile(# fn%, 4) 
+ vlo=conv("ble/f32",s$)
  vln=vlo*(1.0-wt)+vl*wt
  ' Check if update is needed
- IF abs(vln-vlo) < vlt then
+ IF abs(vln-vlo) > vlt then
+  seek # fn%, ps%, 0
+  s$=conv("f32/ble",vlo)
+  sc%=WriteFile(# fn%, s$)  
+  IF sc% <> 4 THEN
+   pbRecord=-1
+  ELSE 
+   pbRecord=0
+ ELSE
   pbRecord=0
-  EXIT FUNCTION
  ENDIF
+ close # fn%
 END FUNCTION
 
 ' Load planning adaptive learning of the load profile (retrieve)
@@ -273,19 +286,28 @@ END FUNCTION
 ' vl value at given time
 ' return -1 on error
 FUNCTION pbRetrieve(fn%,nm$,rnt%,rntm%,ts%,vl)
- LOCAL ps%,ln%
+ LOCAL ps%,ln%,s$
  pbRetrieve=-1
- IF rtm% < 0 THEN
+ IF rnt% < 0 or rntm% <  or rnt% > rntm% THEN
   pbRetrieve=-1
   EXIT FUNCTION
  ENDIF
- ps%=(rtm%/itv%*4+1)
- open "dev_"+nm$ for input as # fn%
+ ps%=(rtm%/ts%*4+1)
+ open "output/dev_"+nm$+".dat" for input as # fn%
  ' check if this is past the end
  ln%=lof # fn%
  IF ln% >= (ps%+4) THEN
-  seek # fn%, ps%
-  pbRetrieve=ps%
+  seek # fn%, ps%, 0
+  s$=ReadFile(# fn%, 4)
+  vl=conv("ble/f32",s$)
+  IF MM.errno THEN
+   pbRetrieve=-1
+  ELSE
+   pbRetrieve=0
+  ENDIF
+ ELSE
+  vl=0
+  pbRetrieve=-2
  ENDIF
  close # fn%
 END FUNCTION
