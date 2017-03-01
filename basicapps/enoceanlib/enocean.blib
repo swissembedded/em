@@ -708,6 +708,120 @@ FUNCTION eoRxA508xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
  eoRxA508xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Gas Sensor
+' A5-09-02 CO Sensor 0..1020 ppm
+' A5-09-04 CO2 Sensor 0..2550 ppm, 0..+51 degree c
+' A5-09-05 VOC Sensor 0..65535 ppb
+' A5-09-06 Radon Sensor 0..1023 Bq/m3
+' A5-09-07 Particles Sensor 0..511 μg/m3 (PM10: Dust<10μm, PM2.5: Dust<2.5μm, PM1: Dust<1μm)
+' A5-09-08 Pure CO2 Sensor 0..2000 ppm
+' A5-09-09 Pure CO2 Sensor with Power Failure detection 0..2000 ppm
+' A5-09-0A Hydrogen Gas Sensor -20..+60 degree c, 0..65535 ppm 
+' A5-09-0B Radioactivity Sensor 0..6553 according to
+' tp%    type of the packet (from callback eoRx4BS)
+' id%    sender id  (from callback eoRx4BS)
+' db0%   data db0  (from callback eoRx4BS)
+' db1%   data db1  (from callback eoRx4BS)
+' db2%   data db2  (from callback eoRx4BS)
+' db3%   data db3  (from callback eoRx4BS)
+' xx%    type 02,04,05,..,0B
+' su     supply voltage 0 to 5.0 Volts 
+' conc   Gas concentration
+' temp   Temperature
+' hum	 Humidity
+' vocID% VOC identification 0= VOCT (total),      1= Formaldehyde,        2= Benzene, 
+'			    3= Styrene            4= Toluene,             5= Tetrachloroethylene,    
+'			    6= Xylene,            7= n-Hexane,            8= n-Octane
+'			    9= Cyclopentane,      10= Methanol,           11= Ethanol
+'			    12= 1-Pentanol,       13= Acetone,            14= ethylene Oxide
+'			    15= Acetaldehyde ue,  16= Acetic Acid,        17= Propionice Acid
+'			    18= Valeric Acid,     19= Butyric Acid,       20= Ammoniac
+'			    22= Hydrogen Sulfide, 23= Dimethylsulfide,    24= 2-Butanol (butyl Alcohol)
+'			    25= 2-Methylpropanol, 26= Diethyl ether,      255= ozone
+' act%   Radon activity
+' pm10%, pm25%, pm1% Particles 10, 2.5, 1 um
+' ract%  Radioactivity level
+' lrn%   learn button 0=pressed, 1=not pressed
+' ts%    T-Sensor 1= Temperature Sensor available 0= Temperature Sensor not available
+' hs%	 H-Sensor 1= Humidity Sensor available 0= Humidity Sensor not available
+' scm%   Scale multiplier for A5-09-05: 0= 0.01, 1= 0.1, 2= 1, 3= 10
+'                         for A5-09-0B: 0= 0.001, 1= 0.01, 2= 0.1, 3= 1, 4= 10, 5= 100, 6= 1000, 7= 10000, 8= 100000
+' pm10a%,pm25a%, pm1% Particles 10, 2.5, 1 um active bit
+' pdf%   Power failure detection 1= Power failure detected, 0= Power failure not detected
+' tsa%   Temperature sensor availability 1= Temp sensor is supported, 0= Temp sensor is not supported
+' sva%   Supply voltage availability 1: Supply voltage is supported, 0: Supply voltage is not supported
+' vu%    Value of radiation unit 0= μSv/h, 1= cpm, 2= Bq/L, 3= Bq/kg
+FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm1%,ract%,lrn%,ts%,hs%,scm%,pm10a%,pm25a%,pm1a%,pdf%,tsa%,sva%,vu%)
+ su=-1
+ conc=-1
+ temp=-1
+ hum=-1
+ vocID%=-1
+ act%=-1
+ pm10%=-1
+ pm25%=-1
+ pm1%=-1
+ ract%=-1
+ lrn%=(db0% and 8)/8
+ ts%=-1
+ hs%=-1
+ scm%=-1
+ pm10a%=-1
+ pm25a%=-1
+ pm1a%=-1
+ pdf%=-1
+ tsa%=-1
+ sva%=-1
+ vu%=-1
+ IF xx%=&H02 THEN
+  su=(5.1/255)*db3%
+  conc=(1020/255)*db2%
+  temp=(51/255)*db1%
+  ts%=(db0% AND 2)/2
+ ELSEIF xx%=&H04 THEN
+  hum=(1/2)*db3%
+  conc=10*db2%
+  temp=(51/255)*db1%
+  ts%=(db0% AND 2)/2
+  hs%=(db0% AND 4)/4
+ ELSEIF xx%=&H05 THEN
+  conc=db3%+db2%
+  vocID%=db1%
+  scm%=(db0% AND 3)/3
+ ELSEIF xx%=&H06 THEN
+  act%=db3%+((db2% AND 192)*256)
+ ELSEIF xx%=&H07 THEN
+  pm10%=db3%+((db2% AND 128)*256)
+  pm25%=((db2% AND 127)*256)+((db1% AND 192)*256)
+  pm1%=((db1% AND 63)*256)+((db0% AND 224)*256)
+  pm10a%=(db0% AND 4)/4
+  pm25a%=(db0% AND 2)/2
+  pm1a%=db0% AND 1
+ ELSEIF xx%=&H08 THEN
+  conc=(2000/255)*db1%
+ ELSEIF xx%=&H09 THEN
+  conc=(2000/255)*db1%
+  pdf%=(db0% AND 4)/4
+ ELSEIF xx%=&H0A THEN
+  conc=db3%+db2%
+  temp=(80/255)*db1%-20
+  su=(3.0/15)*((db0% AND 240)*256)+2.0
+  tsa%=(db0% AND 2)/2
+  sva%=db0% AND 1
+ ELSEIF xx%=&H0B THEN
+  su=(3.0/15)*((db3% AND 240)*256)+2.0
+  ract%=(6553/65535)*(db2%+db1%)
+  scm%=db0% AND 240
+  vu%=(db0% AND 6)/6
+  sva%=db0% AND 1
+ ELSE
+  ' unknown
+  eoRxA509xx=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA509xx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
