@@ -56,6 +56,7 @@
 FUNCTION __planning_init()
  pbSize%=20
  pbMeterC$=pbMC"
+ pbProdC$=pbPC"
  dim pbArrnm$(pbSize%) LENGTH 21
  dim pbArrlpc$(pbSize%) LENGTH 11
  dim pbArrltc$(pbSize%) LENGTH 11
@@ -287,9 +288,11 @@ END FUNCTION
 ' return -1 on error
 FUNCTION pbRetrieve(fn%,nm$,rnt%,rntm%,ts%,vl)
  LOCAL ps%,ln%,s$
+ vl=0
  pbRetrieve=-1
  IF rnt% < 0 or rntm% <  or rnt% > rntm% THEN
   pbRetrieve=-1
+  vl=0
   EXIT FUNCTION
  ENDIF
  ps%=(rtm%/ts%*4+1)
@@ -305,20 +308,61 @@ FUNCTION pbRetrieve(fn%,nm$,rnt%,rntm%,ts%,vl)
   ELSE
    pbRetrieve=0
   ENDIF
- ELSE
-  vl=0
+ ELSE  
   pbRetrieve=-2
  ENDIF
  close # fn%
 END FUNCTION
 
 ' Load planning optimize best start time
+' This algorithm requires two meters, one on the grid connection and one for pv production
+' fn% filenumber to use
 ' id%   id of the load
+' wd% planning window from now on in seconds, keep it as small as possible
 ' strt% calculated start time
 ' crt%  criteria of costs 0=minimize exported energy, 1=minimize imported energy, 2=minimize costs
-FUNCTION pbOptimize(id%,strt%, crt%)
- ' calculate dynamic load of all running loads
- ' add static load
- ' subtract pv curve prognosis
- ' find best start
+FUNCTION pbOptimize(fn%,id%,wd%,strt%,crt%)
+ local err%,n%,it%,cost,tn%,t%,rn%,pD,pS,pP,P,ft%,rft%
+ local pnm$,pst%,prnt%,prntm%,ppL
+ tn%=pbMid()
+ cost=0
+ ' Get info about the load to be planned. 
+ IF pbGetLoad(id%,pnm$,"","",pst%,prnt%,prntm%,ppL)<>0 THEN
+  pbOptimize=-1
+  strt%=0
+  EXIT FUNCTION
+ ENDIF
+ ' Search windows is from future to present as we want the load to start as early as possible
+ FOR t%=wd% TO 0 STEP -60
+  ' search within the runtime of the device
+  FOR rn%=prnt% TO prntm% step 60
+  ' calculate the time point for calculation
+  ft%=(tn%+t%+prntm%-prnt%) mod 86400
+  ' Calculate estimated production, if estimator callback exist, we take it, otherwise we take average from past
+  IF exists(pbProdC$)>0 THEN
+   n%=CALL(pbProdC$,ft%,pP)
+  ELSE
+   err%=pbRetrieve(fn%,"prod",ft%,86400,60,pP)
+  ENDIF
+  ' Calculate static
+  err%=pbRetrieve(fn%,"static",ft%,86400,60,pS)
+  ' Calculate dynamic load of all running and scheduled loads
+  pD=0
+  FOR it%= 0 TO (pbSize%-1)
+   IF pbGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 THEN
+    IF st%=1 THEN
+     err%=pbRetrieve(fn%,"static",rnt%+t%,rntm%,ts%,pL)
+     pD=pD+pL
+	ENDIF
+   ENDIF
+  NEXT it%
+  ' find best start
+ NEXT t%
+END FUNCTION
+
+' Load planning calculate now from midnight
+FUNCTION pbMid()
+ LOCAL tu%
+ tu%=Unixtime()
+ pbMid=DateSeconds(tu%)+DateMinutes(tu%)*60+DateHours(tu%)*3600
 END FUNCTION
