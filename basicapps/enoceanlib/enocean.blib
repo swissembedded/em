@@ -654,12 +654,12 @@ FUNCTION eoRxA507xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,lrn%,pirs%,sva%,ill)
  pirs%=-1
  sva%=-1
  ill=-1
- IF xx%=&H01
+ IF xx%=&H01 THEN
   pirs%=db1%
   sva%=db0% AND 1
- ELSEIF xx%=&H02
+ ELSEIF xx%=&H02 THEN
   pirs%=(db0% AND 128)/128
- ELSEIF xx%=&H03
+ ELSEIF xx%=&H03 THEN
   ill=db2%+((db1% AND 3)*256)
   pirs%=(db0% AND 128)/128
  ELSE
@@ -694,10 +694,10 @@ FUNCTION eoRxA508xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
  occ%=db0% AND 1
  ill=-1
  temp=-1
- IF xx%=&H01 OR xx%=&H02
+ IF xx%=&H01 OR xx%=&H02 THEN
   ill=(510*xx%/255)*db2%
   temp=(51/255)*db1%
- ELSEIF xx%=&H03
+ ELSEIF xx%=&H03 THEN
   ill=(1530/255)*db2%
   temp=(80/255)*db1%-30
  ELSE
