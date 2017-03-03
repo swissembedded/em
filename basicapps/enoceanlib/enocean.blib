@@ -729,14 +729,12 @@ END FUNCTION
 ' conc   Gas concentration
 ' temp   Temperature
 ' hum	 Humidity
-' vocID% VOC identification 0= VOCT (total),      1= Formaldehyde,        2= Benzene, 
-'			    3= Styrene            4= Toluene,             5= Tetrachloroethylene,    
-'			    6= Xylene,            7= n-Hexane,            8= n-Octane
-'			    9= Cyclopentane,      10= Methanol,           11= Ethanol
-'			    12= 1-Pentanol,       13= Acetone,            14= ethylene Oxide
-'			    15= Acetaldehyde ue,  16= Acetic Acid,        17= Propionice Acid
-'			    18= Valeric Acid,     19= Butyric Acid,       20= Ammoniac
-'			    22= Hydrogen Sulfide, 23= Dimethylsulfide,    24= 2-Butanol (butyl Alcohol)
+' vocID% VOC identification 0= VOCT (total),      1= Formaldehyde,        2= Benzene, 	       3= Styrene,
+'			    4= Toluene,           5= Tetrachloroethylene, 6= Xylene,           7= n-Hexane,
+'			    8= n-Octane           9= Cyclopentane,        10= Methanol,        11= Ethanol 			                   
+'			    12= 1-Pentanol,       13= Acetone,            14= ethylene Oxide   15= Acetaldehyde ue,
+'			    16= Acetic Acid,      17= Propionice Acid     18= Valeric Acid,    19= Butyric Acid, 
+'			    20= Ammoniac,         22= Hydrogen Sulfide,   23= Dimethylsulfide, 24= 2-Butanol (butyl Alcohol)			   
 '			    25= 2-Methylpropanol, 26= Diethyl ether,      255= ozone
 ' act%   Radon activity
 ' pm10%, pm25%, pm1% Particles 10, 2.5, 1 um
@@ -820,6 +818,162 @@ FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%
   EXIT FUNCTION
  ENDIF 
  eoRxA509xx=0
+END FUNCTION
+
+' Callback eoRx4BS helper function for Room Operating Panel
+' A5-10-01 Temperature Sensor, Set Point, Fan Speed and Occupancy Control: 0..+40 degree c
+' A5-10-02 Temperature Sensor, Set Point, Fan Speed and Day/Night Control: 0..+40 degree c
+' A5-10-03 Temperature Sensor, Set Point Control: 0..+40 degree c
+' A5-10-04 Temperature Sensor, Set Point and Fan Speed Control: 0..+40 degree c
+' A5-10-05 Temperature Sensor, Set Point and Occupancy Control: 0..+40 degree c
+' A5-10-06 Temperature Sensor, Set Point and Day/Night Control: 0..+40 degree c
+' A5-10-07 Temperature Sensor, Fan Speed Control: 0..+40 degree c
+' A5-10-08 Temperature Sensor, Fan Speed and Occupancy Control: 0..+40 degree c
+' A5-10-09 Temperature Sensor, Fan Speed and Day/Night Control: 0..+40 degree c
+' A5-10-0A Temperature Sensor, Set Point Adjust and Single Input Contact: 0..+40 degree c
+' A5-10-0B Temperature Sensor and Single Input Contact: 0..+40 degree c
+' A5-10-0C Temperature Sensor and Occupancy Control: 0..+40 degree c
+' A5-10-0D Temperature Sensor and Day/Night Control
+' A5-10-10 Temperature and Humidity Sensor, Set Point and Occupancy Control: 0..+40 degree c, 0..100% (humidity)
+' A5-10-11 Temperature and Humidity Sensor, Set Point and Day/Night Control: 0..+40 degree c, 0..100% (humidity)
+' A5-10-12 Temperature and Humidity Sensor and Set Point: 0..+40 degree c, 0..100% (humidity)
+' A5-10-13 Temperature and Humidity Sensor, Occupancy Control: 0..+40 degree c, 0..100% (humidity)
+' A5-10-14 Temperature and Humidity Sensor, Day/Night Control: 0..+40 degree c, 0..100% (humidity)
+' A5-10-15 10 Bit Temperature Sensor, 6 bit Set Point Control: -10 to 41.2 degree c, 0..63 (SP)
+' A5-10-16 10 Bit Temperature Sensor, 6 bit Set Point Control, Occupancy Control: -10 to 41.2 degree c, 0..63 (SP)
+' A5-10-17 10 Bit Temperature Sensor, Occupancy Control: -10 to 41.2 degree c, 0..63 (SP)
+' A5-10-18 Illumination, Temperature Set Point, Temperature Sensor, Fan Speed and Occupancy Control: 0..1000 lux, 0..+40 degree c
+' A5-10-19 Humidity, Temperature Set Point, Temperature Sensor, Fan Speed and Occupancy Control: 0..+40 degree c
+' A5-10-1A Supply voltage monitor, Temperature Set Point, Temperature Sensor, Fan Speed and Occupancy Control: 0..5 V, 0..+40 degree c
+' A5-10-1B Supply Voltage Monitor, Illumination, Temperature Sensor, Fan Speed and Occupancy Control: 0..5 V, 0..1000 lux, 0..+40 degree c
+' A5-10-1C Illumination, Illumination Set Point, Temperature Sensor, Fan Speed and Occupancy Control: 0..1000 lux, 0..+40 degree c
+' A5-10-1D Humidity, Humidity Set Point, Temperature Sensor, Fan Speed and Occupancy Control: 0..+40 degree c
+' A5-10-1E Supply Voltage Monitor, Illumination, Temperature Sensor, Fan Speed and Occupancy Control: 0..5 V, 0..1000 lux, 0..+40 degree c
+' A5-10-1F Temperature Sensor, Set Point, Fan Speed, Occupancy and Unoccupancy Control: 0..+40 degree c
+' A5-10-20 Temperature and Set Point with Special Heating States: 0..+40 degree c
+' A5-10-21 Temperature, Humidity and Set Point with Special Heating States: 0..+40 degree c
+' A5-10-22 Temperature, Setpoint, Humidity and Fan Speed: 0..+40 degree c
+' A5-10-23 Temperature, Setpoint, Humidity, Fan Speed and Occupancy: 0..+40 degree c
+' tp%    type of the packet (from callback eoRx4BS)
+' id%    sender id  (from callback eoRx4BS)
+' db0%   data db0  (from callback eoRx4BS)
+' db1%   data db1  (from callback eoRx4BS)
+' db2%   data db2  (from callback eoRx4BS)
+' db3%   data db3  (from callback eoRx4BS)
+' xx%    type 02,04,05,..,0B
+' fan%	 Turn-switch for fan speed: 210..255= Auto Stage, 190..209= Stage 0, 165..189= Stage 1, 145..164= Stage 2, 0..144= Stage 3
+' sp%	 Set point
+' temp   Temperature
+' hum    Humidity
+' ill    Illumination
+' tempsp Temperature Set point
+' su     Supply Voltage 0..5 volts
+' illsp  Illumination Set Point
+' tempf% Temperature flag 0= Temperature absent, 1= Temperature present
+' spf%   Set point flag 0= Set point absent, 1= Set point present
+' fanf%  Fan speed flag 0= Fan speed absent, 1= Fan speed present
+' spm%   Set point mode 0= Room temperature defined by SP, 1= Frost protection, 2= Automatic control, 3= Reserved
+' batt%  Battary state 0= Battery ok, 1= Battery low
+' lrn%   learn button 0=pressed, 1=not pressed
+' sw%    switch button for A5-10-01, A5-10-05, A5-10-08, A5-10-0C, A5-10-10, A5-10-13, A5-10-15..17, A5-10-1F (Occupancy button: 0= Button pressed, 1= Button released)
+'           		   A5-10-02, A5-10-06, A5-10-09, A5-10-0D, A5-10-11, A5-10-14 (Slide switch O/I: 0= Position I/Night/Off, 1= Position O/Day/On)
+'	    		   A5-10-0A, A5-10-0B (Contact state: 0= closed, 1= open)
+' oed%   Occupancy enable/disable 0= Occupancy enabled, 1= Occupancy disabled
+' ob%    Occupancy button 0= Button pressed, 1= Button released
+' unocc% Unoccupancy button 0= Button pressed, 1= Button released
+' act%   User activity 0= No user action, 1= User interaction
+' occ%   Occupancy button 0= Button pressed, 1= Button released
+FUNCTION eoRxA510xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf%,spf%,fanf%,spm%,batt%,lrn%,sw%,oed%,ob%,unocc%,act%,occ%)
+ fan%=-1
+ sp%=-1
+ temp=-1
+ hum=-1
+ ill=-1
+ tempsp=-1
+ su=-1
+ illsp=-1
+ tempf%=-1
+ spf%=-1
+ fanf%=-1
+ spm%=-1
+ batt%=-1
+ lrn%=(db0% AND 8)/8
+ sw%=-1
+ oed%=-1
+ ob%=-1
+ unocc%=-1
+ act%=-1
+ occ%=-1
+ IF xx%>=&H01 AND xx%<=&H0D THEN
+  temp=(40/-255)*(db1%-255)
+  IF xx%=&H01 OR xx%=&H02 OR xx%=&H04 OR xx%>=&H07 AND xx%<=&H09 THEN
+   fan%=db3%
+  IF xx%>=&H01 AND xx%<=&H06 OR xx%=&H0A THEN
+   sp%=db2%
+  IF xx%=&H01 OR xx%=&H02 OR xx%=&H05 OR xx%=&H06 OR xx%>=&H08 AND xx%<=&H0A THEN
+   sw%=db0% AND 1
+ ELSEIF xx%>=&H10 AND xx%<=&H14 THEN
+  temp=(40/250)*db1%
+  hum=(100/250)*db2%
+  IF xx%>=&H10 OR xx%<=&H12 THEN
+   sp%=db3%
+  ELSEIF xx%=&H12 THEN
+   sw%=db0% AND 1
+  ENDIF
+ ELSEIF xx%>=&H15 AND xx%<=&H17 THEN
+  temp=(51.2/1023)*(((db2% AND 3)*256)+db3%-1023)-10
+  IF xx%=&H15 OR xx%=&H16 THEN
+   sp%=db2% AND 253
+  IF xx%=&H16 OR xx%<=&H17 THEN
+   sw%=db0% AND 1
+ ELSEIF xx%>=&H18 AND xx%<=&H1E THEN
+  temp=(40/250)*(db1%-250)
+  fan%=db0% AND 112
+  oed%=(db0% AND 2)/2
+  ob%=db0% AND 1
+  IF xx%>=&H18 AND xx%<=&H1A THEN
+   tempsp=(40/-250)*(db2%-250)
+  IF xx%=&H18 OR xx%==&H1B OR xx%==&H1E THEN
+   ill=4*db3%
+  IF xx%=&H19 THEN
+   hum=(100/250)*db3%
+  IF xx%=&H1A OR xx%==&H1B OR xx%==&H1E THEN
+   su=(5/250)*db3%
+  IF xx%=&H1C THEN
+   ill=4*db3%
+   illsp=4*db2%
+  IF xx%=&H1D THEN
+   hum=4*db3%
+   humsp=4*db2%
+ ELSEIF xx%=&H1F THEN
+  fan=db3%
+  sp=db2%
+  temp=(40/255)*(db1%-255)
+  tempf%=(db0% AND 64)/64
+  spf%=(db0% AND 32)/32
+  fanf%=(db0% AND 16)/16
+  unocc%=(db0% AND 2)/2
+  sw%=db%0 AND 1
+ ELSEIF xx%>=&H20 AND xx%<=&H23 THEN
+  sp%=db3%
+  hum=(100/250)*db2%
+  temp=(40/250)*db1%
+  IF xx%=&H20 THEN
+   spm%=db0% AND 96
+   batt%=(db0% AND 16)/16
+   act%=db0% AND 1
+  ELSEIF xx%=&H21 THEN
+   fan%=db0% AND 224
+  ELSEIF xx%=&H24 THEN
+   fan%=db0% AND 224
+   occ%=db%0 AND 1
+  ENDIF
+ ELSE
+  ' unknown
+  eoRxA510xx=-1
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA510xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
