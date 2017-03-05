@@ -726,16 +726,17 @@ END FUNCTION
 ' db3%   data db3  (from callback eoRx4BS)
 ' xx%    type 02,04,05,..,0B
 ' su     supply voltage 0 to 5.0 Volts 
-' conc   Gas concentration
+' conc   Gas concentration in ppm
 ' temp   Temperature
-' hum	 Humidity
-' vocID% VOC identification 0= VOCT (total),      1= Formaldehyde,        2= Benzene, 	       3= Styrene,
-'			    4= Toluene,           5= Tetrachloroethylene, 6= Xylene,           7= n-Hexane,
-'			    8= n-Octane           9= Cyclopentane,        10= Methanol,        11= Ethanol 			                   
-'			    12= 1-Pentanol,       13= Acetone,            14= ethylene Oxide   15= Acetaldehyde ue,
-'			    16= Acetic Acid,      17= Propionice Acid     18= Valeric Acid,    19= Butyric Acid, 
-'			    20= Ammoniac,         22= Hydrogen Sulfide,   23= Dimethylsulfide, 24= 2-Butanol (butyl Alcohol)			   
-'			    25= 2-Methylpropanol, 26= Diethyl ether,      255= ozone
+' hum    Humidity
+' vocID% VOC identification 
+'         0= VOCT (total),      1= Formaldehyde,        2= Benzene,          3= Styrene,
+'         4= Toluene,           5= Tetrachloroethylene, 6= Xylene,           7= n-Hexane,
+'         8= n-Octane           9= Cyclopentane,        10= Methanol,        11= Ethanol,
+'         12= 1-Pentanol,       13= Acetone,            14= ethylene Oxide   15= Acetaldehyde ue,
+'         16= Acetic Acid,      17= Propionice Acid     18= Valeric Acid,    19= Butyric Acid,
+'         20= Ammoniac,         22= Hydrogen Sulfide,   23= Dimethylsulfide, 24= 2-Butanol (butyl Alcohol)
+'         25= 2-Methylpropanol, 26= Diethyl ether,      255= ozone
 ' act%   Radon activity
 ' pm10%, pm25%, pm1% Particles 10, 2.5, 1 um
 ' ract%  Radioactivity level
@@ -745,11 +746,11 @@ END FUNCTION
 ' scm%   Scale multiplier for A5-09-05: 0= 0.01, 1= 0.1, 2= 1, 3= 10
 '                         for A5-09-0B: 0= 0.001, 1= 0.01, 2= 0.1, 3= 1, 4= 10, 5= 100, 6= 1000, 7= 10000, 8= 100000
 ' pm10a%,pm25a%, pm1% Particles 10, 2.5, 1 um active bit
-' pdf%   Power failure detection 1= Power failure detected, 0= Power failure not detected
+' pfd%   Power failure detection 1= Power failure detected, 0= Power failure not detected
 ' tsa%   Temperature sensor availability 1= Temp sensor is supported, 0= Temp sensor is not supported
 ' sva%   Supply voltage availability 1: Supply voltage is supported, 0: Supply voltage is not supported
 ' vu%    Value of radiation unit 0= μSv/h, 1= cpm, 2= Bq/L, 3= Bq/kg
-FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm1%,ract%,lrn%,ts%,hs%,scm%,pm10a%,pm25a%,pm1a%,pdf%,tsa%,sva%,vu%)
+FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm1%,ract%,lrn%,ts%,hs%,scm%,pm10a%,pm25a%,pm1a%,pfd%,tsa%,sva%,vu%)
  su=-1
  conc=-1
  temp=-1
@@ -773,44 +774,44 @@ FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%
  vu%=-1
  IF xx%=&H02 THEN
   su=(5.1/255)*db3%
-  conc=(1020/255)*db2%
-  temp=(51/255)*db1%
+  conc=(1020.0/255.0)*db2%
+  temp=(51.0/255.0)*db1%
   ts%=(db0% AND 2)/2
  ELSEIF xx%=&H04 THEN
-  hum=(1/2)*db3%
-  conc=10*db2%
-  temp=(51/255)*db1%
+  hum=(1.0/2.0)*db3%
+  conc=10.0*db2%
+  temp=(51.0/255.0)*db1%
   ts%=(db0% AND 2)/2
   hs%=(db0% AND 4)/4
  ELSEIF xx%=&H05 THEN
-  conc=db3%+db2%
+  conc=(db3%*256)+db2%
   vocID%=db1%
   scm%=(db0% AND 3)/3
  ELSEIF xx%=&H06 THEN
-  act%=db3%+((db2% AND 192)*256)
+  act%=(db3%*4)+((db2% AND 192)/64)
  ELSEIF xx%=&H07 THEN
-  pm10%=db3%+((db2% AND 128)*256)
-  pm25%=((db2% AND 127)*256)+((db1% AND 192)*256)
-  pm1%=((db1% AND 63)*256)+((db0% AND 224)*256)
+  pm10%=(db3%*2)+((db2% AND 128)/128)
+  pm25%=((db2% AND 127)*4)+((db1% AND 192)/64)
+  pm1%=((db1% AND 63)*8)+((db0% AND 224)/32)
   pm10a%=(db0% AND 4)/4
   pm25a%=(db0% AND 2)/2
   pm1a%=db0% AND 1
  ELSEIF xx%=&H08 THEN
-  conc=(2000/255)*db1%
+  conc=(2000.0/255.0)*db1%
  ELSEIF xx%=&H09 THEN
-  conc=(2000/255)*db1%
-  pdf%=(db0% AND 4)/4
+  conc=(2000.0/255.0)*db1%
+  pfd%=(db0% AND 4)/4
  ELSEIF xx%=&H0A THEN
-  conc=db3%+db2%
-  temp=(80/255)*db1%-20
-  su=(3.0/15)*((db0% AND 240)*256)+2.0
+  conc=(db3%*256)+db2%
+  temp=(80.0/255.0)*db1%-20.0
+  su=(3.0/15.0)*((db0% AND 240)/16)+2.0
   tsa%=(db0% AND 2)/2
   sva%=db0% AND 1
  ELSEIF xx%=&H0B THEN
-  su=(3.0/15)*((db3% AND 240)*256)+2.0
-  ract%=(6553/65535)*(db2%+db1%)
-  scm%=db0% AND 240
-  vu%=(db0% AND 6)/6
+  su=(3.0/15.0)*((db3% AND 240)/16)+2.0
+  ract%=(6553.0/65535.0)*(db2%+db1%)
+  scm%=(db0% AND 240)/16
+  vu%=(db0% AND 6)/2
   sva%=db0% AND 1
  ELSE
   ' unknown
