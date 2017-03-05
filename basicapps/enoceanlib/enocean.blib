@@ -919,51 +919,53 @@ FUNCTION eoRxA510xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,fan%,sp%,temp,hum,ill,tempsp
    sw%=db0% AND 1
   ENDIF
  ELSEIF xx%>=&H15 AND xx%<=&H17 THEN
-  temp=(51.2/1023.0)*(((db2% AND 3)*256)+db3%-1023)-10
-  IF xx%=&H15 OR xx%=&H16 THEN
-   sp%=db2% AND 253
-  IF xx%=&H16 OR xx%<=&H17 THEN
+  temp=(51.2/1023.0)*(1023-(((db2% AND 3)*256)+db1%))-10.0
+  IF xx%=&H15 OR xx%=&H16 THEN sp%=(db2% AND 252)/4
+  IF xx%=&H16 OR xx%=&H17 THEN
    sw%=db0% AND 1
  ELSEIF xx%>=&H18 AND xx%<=&H1E THEN
-  temp=(40/250)*(db1%-250)
-  fan%=db0% AND 112
+  temp=(40.0/250.0)*(250-db1%)
+  fan%=(db0% AND 112)/16
   oed%=(db0% AND 2)/2
   ob%=db0% AND 1
-  IF xx%>=&H18 AND xx%<=&H1A THEN
-   tempsp=(40/-250)*(db2%-250)
-  IF xx%=&H18 OR xx%==&H1B OR xx%==&H1E THEN
-   ill=4*db3%
-  IF xx%=&H19 THEN
-   hum=(100/250)*db3%
-  IF xx%=&H1A OR xx%==&H1B OR xx%==&H1E THEN
-   su=(5/250)*db3%
+  IF xx%>=&H18 AND xx%<=&H1A THEN tempsp=(40.0/250.0)*(250-db2%)
+  IF xx%=&H18 OR xx%=&H1B OR xx%=&H1E THEN ill=4*db3%
+  IF xx%=&H19 THEN hum=(100.0/250.0)*db3%
+  IF xx%=&H1A OR xx%=&H1B OR xx%=&H1E THEN su=(5.0/250.0)*db3%
   IF xx%=&H1C THEN
-   ill=4*db3%
-   illsp=4*db2%
-  IF xx%=&H1D THEN
-   hum=4*db3%
-   humsp=4*db2%
+   ill=1000.0/250.0*db3%
+   illsp=1000.0/250.0*db2%
+  ELSE IF xx%=&H1D THEN
+   hum=100.0/250.0*db3%
+   humsp=100.0/250.0*db2%
+  ENDIF
  ELSEIF xx%=&H1F THEN
   fan=db3%
   sp=db2%
-  temp=(40/255)*(db1%-255)
+  temp=(40.0/255.0)*(255-db1%)
   tempf%=(db0% AND 64)/64
   spf%=(db0% AND 32)/32
   fanf%=(db0% AND 16)/16
   unocc%=(db0% AND 2)/2
-  sw%=db%0 AND 1
+  sw%=db0% AND 1
  ELSEIF xx%>=&H20 AND xx%<=&H23 THEN
   sp%=db3%
-  hum=(100/250)*db2%
-  temp=(40/250)*db1%
+  temp=(40.0/250.0)*db1%
   IF xx%=&H20 THEN
-   spm%=db0% AND 96
-   batt%=(db0% AND 16)/16
+   spm%=(db0% AND 96)/32
+   batt%=(db0% AND 32)/32
    act%=db0% AND 1
   ELSEIF xx%=&H21 THEN
-   fan%=db0% AND 224
-  ELSEIF xx%=&H24 THEN
-   fan%=db0% AND 224
+   spm%=(db0% AND 96)/32
+   hum=(100.0/250.0)*db2%
+   batt%=(db0% AND 32)/32
+   act%=db0% AND 1
+  ELSEIF xx%=&H22 THEN
+   hum=(100.0/250.0)*db2%
+   fan%=(db0% AND 224)/32
+  ELSEIF xx%=&H23 THEN
+   hum=(100.0/250.0)*db2%
+   fan%=(db0% AND 224)/32
    occ%=db%0 AND 1
   ENDIF
  ELSE
