@@ -322,7 +322,7 @@ END FUNCTION
 ' strt% calculated start time
 ' crt%  criteria of costs 0=minimize exported energy, 1=minimize imported energy, 2=minimize costs
 FUNCTION pbOptimize(fn%,id%,wd%,strt%,crt%)
- local err%,n%,it%,cost,tn%,t%,rn%,pD,pS,pP,P,ft%,rft%
+ local err%,n%,it%,cost,tn%,t%,rn%,pE,pI,pD,pS,pP,P,ft%,rft%
  local pnm$,pst%,prnt%,prntm%,ppL
  tn%=pbMid()
  cost=0
@@ -336,27 +336,41 @@ FUNCTION pbOptimize(fn%,id%,wd%,strt%,crt%)
  FOR t%=wd% TO 0 STEP -60
   ' search within the runtime of the device
   FOR rn%=prnt% TO prntm% step 60
-  ' calculate the time point for calculation
-  ft%=(tn%+t%+prntm%-prnt%) mod 86400
-  ' Calculate estimated production, if estimator callback exist, we take it, otherwise we take average from past
-  IF exists(pbProdC$)>0 THEN
-   n%=CALL(pbProdC$,ft%,pP)
-  ELSE
-   err%=pbRetrieve(fn%,"prod",ft%,86400,60,pP)
-  ENDIF
-  ' Calculate static
-  err%=pbRetrieve(fn%,"static",ft%,86400,60,pS)
-  ' Calculate dynamic load of all running and scheduled loads
-  pD=0
-  FOR it%= 0 TO (pbSize%-1)
-   IF pbGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 THEN
-    IF st%=1 THEN
-     err%=pbRetrieve(fn%,"static",rnt%+t%,rntm%,ts%,pL)
-     pD=pD+pL
-	ENDIF
+   ' calculate the time point for calculation
+   ft%=(tn%+t%+prntm%-prnt%) mod 86400
+   ' Calculate estimated production, if estimator callback exist, we take it, otherwise we take average from past
+   IF exists(pbProdC$)>0 THEN
+    n%=CALL(pbProdC$,ft%,pP)
+   ELSE
+    err%=pbRetrieve(fn%,"prod",ft%,86400,60,pP)
    ENDIF
-  NEXT it%
-  ' find best start
+   ' Calculate static
+   err%=pbRetrieve(fn%,"static",ft%,86400,60,pS)
+   ' Calculate dynamic load of all running and scheduled loads
+   pD=0
+   FOR it%= 0 TO (pbSize%-1)
+    IF pbGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 THEN
+     IF st%=1 THEN
+      err%=pbRetrieve(fn%,"static",rnt%+t%,rntm%,ts%,pL)
+      pD=pD+pL
+	 ENDIF
+    ENDIF
+   NEXT it%   
+   P=pP-(pS+pD)
+   IF P>0 THEN 
+    pE=pE+abs(P)
+   ELSE
+    pI=pI+abs(P)
+   ENDIF
+  NEXT rn%
+  ' calculate the costs
+  IF crt%=0 THEN
+   ' minimize exported energy
+  ELSE IF crt%=1 THEN
+   ' minimize imported energy
+  ELSE
+   ' minimize the costs
+  ENDIF
  NEXT t%
 END FUNCTION
 
