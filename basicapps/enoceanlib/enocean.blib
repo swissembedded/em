@@ -877,8 +877,8 @@ END FUNCTION
 ' batt%  Battary state 0= Battery ok, 1= Battery low
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' sw%    switch button for A5-10-01, A5-10-05, A5-10-08, A5-10-0C, A5-10-10, A5-10-13, A5-10-15..17, A5-10-1F (Occupancy button: 0= Button pressed, 1= Button released)
-'           		   A5-10-02, A5-10-06, A5-10-09, A5-10-0D, A5-10-11, A5-10-14 (Slide switch O/I: 0= Position I/Night/Off, 1= Position O/Day/On)
-'	    		   A5-10-0A, A5-10-0B (Contact state: 0= closed, 1= open)
+'         A5-10-02, A5-10-06, A5-10-09, A5-10-0D, A5-10-11, A5-10-14 (Slide switch O/I: 0= Position I/Night/Off, 1= Position O/Day/On)
+'         A5-10-0A, A5-10-0B (Contact state: 0= closed, 1= open)
 ' oed%   Occupancy enable/disable 0= Occupancy enabled, 1= Occupancy disabled
 ' ob%    Occupancy button 0= Button pressed, 1= Button released
 ' unocc% Unoccupancy button 0= Button pressed, 1= Button released
@@ -906,23 +906,20 @@ FUNCTION eoRxA510xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,fan%,sp%,temp,hum,ill,tempsp
  act%=-1
  occ%=-1
  IF xx%>=&H01 AND xx%<=&H0D THEN
-  temp=(40/-255)*(db1%-255)
-  IF xx%=&H01 OR xx%=&H02 OR xx%=&H04 OR xx%>=&H07 AND xx%<=&H09 THEN
-   fan%=db3%
-  IF xx%>=&H01 AND xx%<=&H06 OR xx%=&H0A THEN
-   sp%=db2%
-  IF xx%=&H01 OR xx%=&H02 OR xx%=&H05 OR xx%=&H06 OR xx%>=&H08 AND xx%<=&H0A THEN
-   sw%=db0% AND 1
+  temp=(40.0/-255.0)*(db1%-255)
+  IF xx%=&H01 OR xx%=&H02 OR xx%=&H04 OR (xx%>=&H07 AND xx%<=&H09) THEN fan%=db3%
+  IF (xx%>=&H01 AND xx%<=&H06) OR xx%=&H0A THEN sp%=db2%
+  IF xx%=&H01 OR xx%=&H02 OR xx%=&H05 OR xx%=&H06 OR (xx%>=&H08 AND xx%<=&H0B) THEN sw%=db0% AND 1
  ELSEIF xx%>=&H10 AND xx%<=&H14 THEN
-  temp=(40/250)*db1%
-  hum=(100/250)*db2%
+  temp=(40.0/250.0)*db1%
+  hum=(100.0/250.0)*db2%
   IF xx%>=&H10 OR xx%<=&H12 THEN
    sp%=db3%
-  ELSEIF xx%=&H12 THEN
+  ELSEIF xx%=&H13 THEN
    sw%=db0% AND 1
   ENDIF
  ELSEIF xx%>=&H15 AND xx%<=&H17 THEN
-  temp=(51.2/1023)*(((db2% AND 3)*256)+db3%-1023)-10
+  temp=(51.2/1023.0)*(((db2% AND 3)*256)+db3%-1023)-10
   IF xx%=&H15 OR xx%=&H16 THEN
    sp%=db2% AND 253
   IF xx%=&H16 OR xx%<=&H17 THEN
