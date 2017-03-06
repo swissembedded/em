@@ -32,102 +32,120 @@ END FUNCTION
 ' EMDO can hold up to 2 packets on its stack.
 ' it is important that the callback functions immediately return to allow the processing of the full stack
 ' it tries to call the following callbacks
-' RPS telegram: eoRxRPS(tp%, id%, db0%, st%)
-' 1BS telegram: eoRx1BS(tp%, id%, db0%,st%)
-' 4BS telegram: eoRx4BS(tp%,id%,db3%,db2%,db1%,db0%,st%)
-' VLD telegram: eoRxVLD(tp%,id%,db$,st%,crc8%)
+' Radio telegram: eoRxRadio(tp%, da$, oda$, rorg%, id%)
 FUNCTION eoReceive()
  print "called"
  LOCAL n%,tp%,da$,oda$,rorg%,num%
- LOCAL cb$,cbc$,db3%,db2%,db1%,db0%,id%,st%,db$,crc8% 
  num%=0
  DO
   ' Process all telegram from stack
   n%=EnoceanReceive(tp%,da$,oda$,0)
-  IF NOT n% and tp%=1 THEN
-   'check rx packet (radio type 1 only) 
-   'e.g. F6002A42DF20 / 1FFFFFFFF360
-   '     A5005081823D780 / 1FFFFFFFF560
-   'first two characters are rorg  
-   n%=-1
-   rorg%=asc(left$(da$,1))  
-   select case rorg%
-    case &hf6
-     'RPS telegram: DB0, Sender ID, Status
-     'Rocker Switch, 2 Rocker
-     'Rocker Switch, 4 Rocker
-     'Position Switch, Home and Office Application
-     'Detectors
-     'Mechanical Handle
-     cb$="eoRxRPS"
-     db0%=asc(mid$(da$,2,1))
-     id%=conv("bbe/u32",mid$(da$,3,4))    
-     st%=asc(mid$(da$,7,1))
-     n%=CALL(cb$,tp%,id%,db0%,st%)
-     IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo RPS rx")
-    case &hd5
-     'Contacts and Switches
-     '1BS telegram: DB0, Sender ID, Status (page 11)
-     cb$="eoRx1BS"
-     db0%=asc(mid$(da$,2,1))
-     id%=conv("bbe/u32",mid$(da$,3,4))
-	 st%=asc(mid$(da$,7,1))
-     n%=CALL(cb$,tp%,id%,db0%,st%)
-     IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo 1BS rx")
-    case &ha5
-     '4BS telegram: DB3-DB0, Sender ID, Status (page 12)
-     'Temperature Sensors
-     'Temperature and Humidity Sensor
-     'Barometric Sensor
-     'Light Sensor
-     'Occupancy Sensor
-     'Light, Temperature and Occupancy Sensor
-     'Gas Sensor
-     'Room Operating Panel
-     'Controller Status
-     'Automated Meter Reading
-     'Environmental Applications
-     'Multi-Func Sensor
-     'HVAC Components
-     'Digital Input
-     'Energy Management
-     'Central Commands
-     'Universal
-     cb$="eoRx4BS"
-     db3%=asc(mid$(da$,2,1))
-     db2%=asc(mid$(da$,3,1))
-     db1%=asc(mid$(da$,4,1))
-     db0%=asc(mid$(da$,5,1))
-     id%=conv("bbe/u32",mid$(da$,6,4))    
-     st%=asc(mid$(da$,10,1))
-     n%=CALL(cb$,tp%,id%,db0%,db1%,db2%,db3%,st%)
-     IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo 4BS rx")
-    case &hd2
-     'VLD telegram: DB_13-DB0 (depending on length), Sender ID, Status, CRC8
-     'Room Control Panel
-     'Electronic switches and dimmers
-     'Sensors for Temperature, Illumination, Occupancy and smoke
-     'Light, Switching + Blind Control
-     'CO2, Humidity, Temperature, Day / NIght and Autonomy
-     'Blinds Control for Position and Angle
-     cb$="eoRxVLD"
-     db$=mid$(da$, 2,len(da$)-7)
-     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
-     st%=asc(mid$(da$,len(da$)-1,1))
-     crc8%=asc(right$(da$,1))
-     n%=CALL(cb$,tp%,id%,db$,st%,crc8%)
-     IF n% < 0 THEN eoLog(tp%,da$,oda$,"eo vld rx")
-    case else
-     eoLog(tp%,da$,oda$,"eo unknown rx ")
-    end select
-   ELSE 
-    EXIT DO
-   ENDIF
+  IF n%>0 and tp%=1 THEN
    num%=num%+1
-  LOOP
-  eoReceive=num%
+   n%=CALL("eoRxRadio",tp%,da$,oda$,rorg%,id%)
+   eoLog(tp%,da$,oda$,"eoRxRadio")
+  ENDIF 
+ LOOP
+ eoReceive=num%
 END FUNCTION
 
+' Parse RPS telegram
+' tp%  telegram type (must be radio)
+' da$  data array
+' oda$ optional data array
+' db0% data byte 0
+' id%  sender id
+' st%  sender status
+' returns -1 on error (not radio packet)
+FUNCTION eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ LOCAL rorg%
+ rorg%=asc(left$(da$,1))
+ IF tp%<>1 OR rorg%<>&HF6 THEN
+  eoRxF6=-1
+ ENDIF
+ 'RPS telegram: DB0, Sender ID, Status
+ db0%=asc(mid$(da$,2,1))
+ id%=conv("bbe/u32",mid$(da$,3,4))    
+ st%=asc(mid$(da$,7,1))
+ eoRxF6=0
+END FUNCTION
+
+' Parse 1BS telegram
+' tp%  telegram type (must be radio)
+' da$  data array
+' oda$ optional data array
+' db0% data byte 0
+' id%  sender id
+' st%  sender status
+' returns -1 on error (not radio packet)
+FUNCTION eoRxD5(tp%,da$,oda$,db0%,id%,st%)
+ LOCAL rorg%
+ rorg%=asc(left$(da$,1))
+ IF tp%<>1 OR rorg%<>&HD5 THEN
+  eoRxD5=-1
+ ENDIF
+ 'Contacts and Switches
+ '1BS telegram: DB0, Sender ID, Status (page 11)
+ db0%=asc(mid$(da$,2,1))
+ id%=conv("bbe/u32",mid$(da$,3,4))
+ st%=asc(mid$(da$,7,1))
+ eoRxD5=0
+END FUNCTION
+
+' Parse 4BS telegram
+' tp%  telegram type (must be radio)
+' da$  data array
+' oda$ optional data array
+' db0% data byte 0
+' db1% data byte 1
+' db2% data byte 2
+' db3% data byte 3
+' id%  sender id
+' st%  sender status
+' returns -1 on error (not radio packet)
+FUNCTION eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ LOCAL rorg%
+ rorg%=asc(left$(da$,1))
+ IF tp%<>1 OR rorg%<>&HA5 THEN
+  eoRxA5=-1
+ ENDIF
+ '4BS telegram: DB3-DB0, Sender ID, Status (page 12)
+ db3%=asc(mid$(da$,2,1))
+ db2%=asc(mid$(da$,3,1))
+ db1%=asc(mid$(da$,4,1))
+ db0%=asc(mid$(da$,5,1))
+ id%=conv("bbe/u32",mid$(da$,6,4))    
+ st%=asc(mid$(da$,10,1))
+ eoRxA5=0
+END FUNCTION
+
+' Parse VLD telegram
+' tp%  telegram type (must be radio)
+' da$  data array
+' oda$ optional data array
+' db0% data byte 0
+' db1% data byte 1
+' db2% data byte 2
+' db3% data byte 3
+' id%  sender id
+' st%  sender status
+' crc16 checksum
+' returns -1 on error (not radio packet)
+FUNCTION eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ LOCAL rorg%
+ rorg%=asc(left$(da$,1))
+ IF tp%<>1 OR rorg%<>&HD2 THEN
+  eoRxD2=-1
+ ENDIF
+ 'VLD telegram: DB3-DB0 (depending on length), Sender ID, Status, CRC8
+ db$=mid$(da$, 2,len(da$)-7)
+ id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
+ st%=asc(mid$(da$,len(da$)-1,1))
+ crc8%=asc(right$(da$,1))
+ eoRxD2=0
+END FUNCTION
+ 
+ 
 ' Callback eoRxRPS helper function for Rocker
 ' F6-02-01, F6-02-02
 ' It receives the RPS telegram and parses the rocker states
@@ -135,8 +153,8 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, -1=invalid
 ' bow%  0=released, 1=pressed
@@ -145,7 +163,13 @@ END FUNCTION
 ' num%   number of buttons 0=no button, 3= 3 or 4 buttons, -1=invalid
 ' Return negative on error, return value state of T21 and NU (required for interpretation)
 ' 0,1,2,3 and -1 on error
-FUNCTION eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+FUNCTION eoRxF60201(tp%,da$,oda$,st%,rock1%,bow%,rock2%,num%,ac%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60201=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60201=-1
  rock1%=-1
  rock2%=-1
@@ -175,9 +199,11 @@ FUNCTION eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
    eoRxF60201=0
  end select
 END FUNCTION
+
 ' see eoRxF60201
-FUNCTION eoRxF60202(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
- eoRXF60202=eoRxF60201(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+FUNCTION eoRxF60202(tp%,da$,oda$,st%,rock1%,bow%,rock2%,num%,ac%)
+ LOCAL id%
+ eoRXF60202=eoRxF60201(tp%,da$,oda$,st%,rock1%,bow%,rock2%,num%,ac%)
 END FUNCTION
 
 ' Callback eoRxRPS helper function for 2-Rocker
@@ -187,13 +213,19 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' rock% Rocker: &H30=Button A0 (automatic mode), &H10=Button A1 (manual mode), &H70=Button B0 (dim light up), &H50=Button B1 (dim light down)
 ' Return negative on error, returns enum
 ' &H30, &H10, &H50 &H70
-FUNCTION eoRxF60203(tp%,id%,db0%,st%,rock%)
+FUNCTION eoRxF60203(tp%,da$,oda$,st%,rock%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60203=-1
+  EXIT FUNCTION
+ ENDIF
  rock%=(db0% and &h70)
  eoRxF60203=rock%
 END FUNCTION
@@ -205,8 +237,8 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' bow%  0=released, 1=pressed
 ' rocka0% Rocker a0: 0=not pressed, 1=pressed
@@ -215,7 +247,13 @@ END FUNCTION
 ' rockb1% Rocker b1: 0=not pressed, 1=pressed
 ' Return negative on error, return state 1=pressed or 0=released 
 ' &H30, &H20, &H10 &H00
-FUNCTION eoRxF60204(tp%,id%,db0%,st%,bow%,bc%,rocka0%,rocka1%,rockb0%,rockb1%)
+FUNCTION eoRxF60204(tp%,da$,oda$,st%,bow%,bc%,rocka0%,rocka1%,rockb0%,rockb1%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60203=-1
+  EXIT FUNCTION
+ ENDIF
  bow%=(db0% and &H80)/128
  bc%=(db0% and &H40)/64
  rocka0%=(db0% and &h01)
@@ -231,8 +269,8 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
 ' bow%  0=released, 1=pressed
@@ -241,7 +279,13 @@ END FUNCTION
 ' num%   number of buttons 0=no button, 1= 2 buttons..7=8 buttons, -1=invalid
 ' Return negative on error, return value state of T21 and NU (required for interpretation)
 ' 0,1 and -1 on error
-FUNCTION eoRxF60301(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+FUNCTION eoRxF60301(tp%,da$,oda$,st%,rock1%,bow%,rock2%,num%,ac%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60301=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60301=-1
  rock1%=-1
  rock2%=-1
@@ -268,8 +312,8 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' rock1% Rocker 1: 0=Button A1, 1=Button A0, 2=Button B1, 3=Button B0, 4=Button C1, 5=Button C0, 6=Button D1, 7=Button D0, -1=invalid
 ' bow%  0=released, 1=pressed
@@ -278,7 +322,13 @@ END FUNCTION
 ' num%   number of buttons 0=no button, 1= 2 buttons..7=8 buttons, -1=invalid
 ' Return negative on error, return value state of T21 and NU (required for interpretation)
 ' 0,1 and -1 on error
-FUNCTION eoRxF60302(tp%,id%,db0%,st%,rock1%,bow%,rock2%,num%,ac%)
+FUNCTION eoRxF60302(tp%,da$,oda$,st%,rock1%,bow%,rock2%,num%,ac%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60301=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60301=-1
  rock1%=-1
  rock2%=-1
@@ -304,13 +354,19 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' kc%   key card, 112=inserted, 0=taken out
 ' returns:
 ' 0,1 and -1 on error
-FUNCTION eoRxF60401(tp%,id%,db0%,st%,kc%)
+FUNCTION eoRxF60401(tp%,da$,oda$,st%,kc%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60401=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60401=-1
  kc%=-1
  select case (st% and &h30)
@@ -329,15 +385,21 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' bow%   energy box
 ' bc%    button coding 0=button
 ' soc%   state of the card 0=taken out, 1=inserted
 ' returns:
 ' 0,1 and -1 on error
-FUNCTION eoRxF60402(tp%,id%,db0%,st%,bow%,bc%,soc%)
+FUNCTION eoRxF60402(tp%,da$,oda$,st%,bow%,bc%,soc%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60402=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60402=0
  bow%=(db0% and &H80)/128
  bc%=(db0% and &H40)/64
@@ -349,13 +411,19 @@ END FUNCTION
 ' It receives the RPS telegram and parses the window handle
 ' We get type info and two bits on status which help us to interpret
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' win%   movement of the window handle
 ' returns:
 ' 0 to 2, -1 on error, 0= moved to left or right, 1=moved to down, 2=moved to up
-FUNCTION eoRxF61000(tp%,id%,db0%,st%,win%)
+FUNCTION eoRxF61000(tp%,da$,oda$,st%,win%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF61000=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF61000=-1
  win%=-1
  select case (st% and &H30)
@@ -386,13 +454,19 @@ END FUNCTION
 ' It receives the RPS telegram and parses the window handle
 ' We get type info and two bits on status which help us to interpret
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' win%   movement of the window handle
 ' returns:
 ' 0 to 2, -1 on error, 0= moved to left or right, 1=moved to down, 2=moved to up
-FUNCTION eoRxF61001(tp%,id%,db0%,st%,hc%,hvl%)
+FUNCTION eoRxF61001(tp%,da$,oda$,st%,hc%,hvl%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF61001=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF61001=-1
  hc%=(db0% and 64)/64
  hvl%=-1
@@ -422,12 +496,18 @@ END FUNCTION
 ' We get type info and two bits on status which help us to interpret
 ' Depending on switch type press and release events can be parsed
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' st%    status  (from callback eoRxRPS)
 ' was%   alert signal that the sensor detected water leakage, 0x11 = water detected
 ' 0 and -1 on error
-FUNCTION eoRxF60501(tp%,id%,db0%,st%,was%)
+FUNCTION eoRxF60501(tp%,da$,oda$,st%,was%)
+ LOCAL n%,id%
+ n%=eoRxF6(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxF60501=-1
+  EXIT FUNCTION
+ ENDIF
  eoRxF60501=-1
  select case (st% and &h30)
   case &H30 'T21=1, NU = 1   
@@ -440,11 +520,17 @@ END FUNCTION
 ' D5-00-01
 ' It receives the 1BS telegram and parses the contact state
 ' tp%    type of the packet (from callback eoRxRPS)
-' id%    sender id  (from callback eoRxRPS)
-' db0%   data db0  (from callback eoRxRPS)
+' da$    data array
+' oda$   optional data array
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' co%   contact 0=open, 1=closed
-FUNCTION eoRxD50001(tp%,id%,db0%,lrn%,co%)
+FUNCTION eoRxD50001(tp%,da$,oda$,lrn%,co%)
+ LOCAL n%,id%
+ n%=eoRxD5(tp%,da$,oda$,db0%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD50001=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  co%=(db0% and 1)
  eoRxD50001=co%
@@ -477,14 +563,18 @@ END FUNCTION
 ' A5-02-30 -40..+62.3
 ' It receives the 4BS telegram and parses the temperature and humidity sensor
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01,02,03,...,30
 ' tmp    temperature see above degree C
 ' lrn%   learn button 0=pressed, 1=not pressed
-FUNCTION eoRxA502xx(tp%,id%,db0%,db1%,db2%,xx%,tmp,lrn%)
+FUNCTION eoRxA502xx(tp%,da$,oda$,xx%,tmp,lrn%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA502xx=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  IF xx%>=&H01 AND xx%<=&H0B THEN
   tmp=(255-db1%)/40+(xx%-1)*10-40
@@ -508,17 +598,21 @@ END FUNCTION
 ' A5-04-03 -20..60 degree C 10bit, (ITEC)
 ' It receives the 4BS telegram and parses the temperature and humidity sensor
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01,02,03
 ' hum    humidity 0..100%
 ' tmp    temperature 0..40 degree C
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' ts%   temperatur sensor 1=available, 0=not available (A5-04-01 and A5-04-02 only)
 ' ttp%  telegram type (A5-04-03 only)
-FUNCTION eoRxA504xx(tp%,id%,db0%,db1%,db2%,xx%,hum,tmp,lrn%,ts%,ttp%)
+FUNCTION eoRxA504xx(tp%,da$,oda$,xx%,hum,tmp,lrn%,ts%,ttp%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA504xx=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  SELECT CASE xx%
   CASE &H01
@@ -548,15 +642,19 @@ END FUNCTION
 ' A5-05-01 500..1150 hPa
 ' It receives the 4BS telegram and parses the barometric pressure
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01
 ' bar    pressure in hPa
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' ttp%  telegram type
-FUNCTION eoRxA505xx(tp%,id%,db0%,db1%,db3%,xx%,bar,lrn%,ttp%)
+FUNCTION eoRxA505xx(tp%,da$,oda$,xx%,bar,lrn%,ttp%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA505xx=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  IF xx%=&H01 THEN
   bar=(650/1023)*db2%+500
@@ -577,11 +675,8 @@ END FUNCTION
 ' A5-06-05 0..10200 and 0..5100 lux (ITEC)
 ' It receives the 4BS telegram and parses the ligth intensity
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01,02,03,04,05
 ' su     supply voltage 0 to 5.1 Volts 
 ' ill1, ill2  Illumination
@@ -591,7 +686,13 @@ END FUNCTION
 ' sv     energy storage (A5-06-04 only)
 ' tav%   temperature availability 1=available, 0=not available (A5-06-04 only)
 ' enav%  energy storage availability 1=available, 0=not available (A5-06-04 only)
-FUNCTION eoRxA506xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill1,ill2,rs%,lrn%,temp,sv,tav%,enav%)
+FUNCTION eoRxA506xx(tp%,da$,oda$,xx%,su,ill1,ill2,rs%,lrn%,temp,sv,tav%,enav%)
+  LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA506xx=-1
+  EXIT FUNCTION
+ ENDIF
  ill1=-1
  ill2=-1
  temp=-1
@@ -636,11 +737,8 @@ END FUNCTION
 ' A5-07-02 Occupancy with Supply voltage monitor
 ' A5-07-03 Occupancy with Supply voltage monitor (10-bit illumination measurement)
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01,02,03
 ' su     supply voltage 0 to 5.0 Volts 
 ' lrn%   learn button 0=pressed, 1=not pressed
@@ -648,7 +746,13 @@ END FUNCTION
 ' pirs%  PIR status 1: Motion detected, 0: Uncertain of occupancy status (A5-07-02 & A5-07-03) 
 ' sva%   Supply voltage availability 1: Supply voltage is supported, 0: Supply voltage is not supported
 ' ill    Illumination range: 0..1000 lux (A5-07-03 only)
-FUNCTION eoRxA507xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,lrn%,pirs%,sva%,ill)
+FUNCTION eoRxA507xx(tp%,da$,oda$,xx%,su,lrn%,pirs%,sva%,ill)
+  LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA507xx=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  su=(5.0/250)*db3%
  pirs%=-1
@@ -675,11 +779,8 @@ END FUNCTION
 ' A5-08-02 0..1020 lux, 0..51 degree C, Ocuppancy button
 ' A5-08-03 0..1530 lux, -30..+50 degree C, Occupancy button
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 01,02,03
 ' su     supply voltage 0 to 5.0 Volts 
 ' ill    Illumination
@@ -687,7 +788,13 @@ END FUNCTION
 ' lrn%   learn button 0=pressed, 1=not pressed
 ' pirs%  PIR status 1=PIR off, 0=PIR
 ' occ%   Occupation button 1=released, 0=pushed
-FUNCTION eoRxA508xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,ill,temp,lrn%,pirs%,occ%)
+FUNCTION eoRxA508xx(tp%,da$,oda$,xx%,su,ill,temp,lrn%,pirs%,occ%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA508xx=-1
+  EXIT FUNCTION
+ ENDIF
  lrn%=(db0% and 8)/8
  su=(5.1/255)*db3%
  pirs%=(db0% AND 2)/2
@@ -719,11 +826,8 @@ END FUNCTION
 ' A5-09-0A Hydrogen Gas Sensor -20..+60 degree c, 0..65535 ppm 
 ' A5-09-0B Radioactivity Sensor 0..6553 according to
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 02,04,05,..,0B
 ' su     supply voltage 0 to 5.0 Volts 
 ' conc   Gas concentration in ppm
@@ -750,7 +854,13 @@ END FUNCTION
 ' tsa%   Temperature sensor availability 1= Temp sensor is supported, 0= Temp sensor is not supported
 ' sva%   Supply voltage availability 1: Supply voltage is supported, 0: Supply voltage is not supported
 ' vu%    Value of radiation unit 0= μSv/h, 1= cpm, 2= Bq/L, 3= Bq/kg
-FUNCTION eoRxA509xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm1%,ract%,lrn%,ts%,hs%,scm%,pm10a%,pm25a%,pm1a%,pfd%,tsa%,sva%,vu%)
+FUNCTION eoRxA509xx(tp%,da$,oda$,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm1%,ract%,lrn%,ts%,hs%,scm%,pm10a%,pm25a%,pm1a%,pfd%,tsa%,sva%,vu%)
+  LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA509xx=-1
+  EXIT FUNCTION
+ ENDIF
  su=-1
  conc=-1
  temp=-1
@@ -856,11 +966,8 @@ END FUNCTION
 ' A5-10-22 Temperature, Setpoint, Humidity and Fan Speed: 0..+40 degree c
 ' A5-10-23 Temperature, Setpoint, Humidity, Fan Speed and Occupancy: 0..+40 degree c
 ' tp%    type of the packet (from callback eoRx4BS)
-' id%    sender id  (from callback eoRx4BS)
-' db0%   data db0  (from callback eoRx4BS)
-' db1%   data db1  (from callback eoRx4BS)
-' db2%   data db2  (from callback eoRx4BS)
-' db3%   data db3  (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
 ' xx%    type 02,04,05,..,0B
 ' fan%	 Turn-switch for fan speed: 210..255= Auto Stage, 190..209= Stage 0, 165..189= Stage 1, 145..164= Stage 2, 0..144= Stage 3
 ' sp%	 Set point
@@ -884,7 +991,13 @@ END FUNCTION
 ' unocc% Unoccupancy button 0= Button pressed, 1= Button released
 ' act%   User activity 0= No user action, 1= User interaction
 ' occ%   Occupancy button 0= Button pressed, 1= Button released
-FUNCTION eoRxA510xx(tp%,id%,db0%,db1%,db2%,db3%,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf%,spf%,fanf%,spm%,batt%,lrn%,sw%,oed%,ob%,unocc%,act%,occ%)
+FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf%,spf%,fanf%,spm%,batt%,lrn%,sw%,oed%,ob%,unocc%,act%,occ%)
+  LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA510xx=-1
+  EXIT FUNCTION
+ ENDIF
  fan%=-1
  sp%=-1
  temp=-1
