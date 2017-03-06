@@ -35,13 +35,26 @@ END FUNCTION
 ' Radio telegram: eoRxRadio(tp%, da$, oda$, rorg%, id%)
 FUNCTION eoReceive()
  print "called"
- LOCAL n%,tp%,da$,oda$,rorg%,num%
+ LOCAL n%,tp%,da$,oda$,rorg%,num%,id%
  num%=0
+ id%=-1
  DO
   ' Process all telegram from stack
   n%=EnoceanReceive(tp%,da$,oda$,0)
   IF n%>0 and tp%=1 THEN
    num%=num%+1
+   select case rorg%
+    case &hf6
+     id%=conv("bbe/u32",mid$(da$,3,4))    
+    case &hd5
+     id%=conv("bbe/u32",mid$(da$,3,4))
+    case &ha5
+     id%=conv("bbe/u32",mid$(da$,6,4))    
+    case &hd2
+     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
+    case else
+     eoLog(tp%,da$,oda$,"eo unknown rx ")
+    end select
    n%=CALL("eoRxRadio",tp%,da$,oda$,rorg%,id%)
    eoLog(tp%,da$,oda$,"eoRxRadio")
   ENDIF 
