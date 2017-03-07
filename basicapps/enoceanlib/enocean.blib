@@ -600,7 +600,7 @@ FUNCTION eoRxA502xx(tp%,da$,oda$,xx%,tmp,lrn%)
   tmp = (1024-(db1%+((db2% AND 3)*256)))/1023*102.3-40
  ELSE
   ' unknown
-  eoRxA502xx=-1
+  eoRxA502xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA502xx=0
@@ -646,7 +646,7 @@ FUNCTION eoRxA504xx(tp%,da$,oda$,xx%,hum,tmp,lrn%,ts%,ttp%)
    ts%=-1
   CASE ELSE
    ' unknown
-   eoRxA504xx=-1
+   eoRxA504xx=-2
    EXIT FUNCTION
  ENDSELECT
  eoRxA504xx=0
@@ -675,7 +675,7 @@ FUNCTION eoRxA505xx(tp%,da$,oda$,xx%,bar,lrn%,ttp%)
   ttp%=(db0% and 1)
  ELSE
   ' unknown
-  eoRxA505xx=-1
+  eoRxA505xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA505xx=0
@@ -740,7 +740,7 @@ FUNCTION eoRxA506xx(tp%,da$,oda$,xx%,su,ill1,ill2,rs%,lrn%,temp,sv,tav%,enav%)
   rs%=db0% and 1
  ELSE
   ' unknown
-  eoRxA506xx=-1
+  eoRxA506xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA506xx=0
@@ -782,7 +782,7 @@ FUNCTION eoRxA507xx(tp%,da$,oda$,xx%,su,lrn%,pirs%,sva%,ill)
   pirs%=(db0% AND 128)/128
  ELSE
   ' unknown
-  eoRxA507xx=-1
+  eoRxA507xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA507xx=0
@@ -823,7 +823,7 @@ FUNCTION eoRxA508xx(tp%,da$,oda$,xx%,su,ill,temp,lrn%,pirs%,occ%)
   temp=(80/255)*db1%-30
  ELSE
   ' unknown
-  eoRxA508xx=-1
+  eoRxA508xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA508xx=0
@@ -939,7 +939,7 @@ FUNCTION eoRxA509xx(tp%,da$,oda$,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm
   sva%=db0% AND 1
  ELSE
   ' unknown
-  eoRxA509xx=-1
+  eoRxA509xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA509xx=0
