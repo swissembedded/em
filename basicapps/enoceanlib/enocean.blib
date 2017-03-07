@@ -57,7 +57,10 @@ FUNCTION eoReceive()
     end select
    n%=CALL("eoRxRadio",tp%,da$,oda$,rorg%,id%)
    eoLog(tp%,da$,oda$,"eoRxRadio")
-  ENDIF 
+  ELSE
+   eoLog(tp%,da$,oda$,"eo non radio rx ")
+   EXIT DO
+  ENDIF
  LOOP
  eoReceive=num%
 END FUNCTION
