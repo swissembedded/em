@@ -1097,10 +1097,167 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
   ENDIF
  ELSE
   ' unknown
-  eoRxA510xx=-1
+  eoRxA510xx=-2
   EXIT FUNCTION
  ENDIF 
  eoRxA510xx=0
+END FUNCTION
+
+' Callback eoRx4BS helper function for Controller Status
+' A5-11-01 Light Controller 0..510 lux
+' A5-11-02 Temperature Controller Output
+' A5-11-03 Blind Status 0..180°
+' A5-11-04 Extending Lighting Status
+' A5-11-05 Dual-Channel Switch Actuator (BI-DIR)
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01,02,..,05
+' ill	 illumination 
+' isp%   illumination set point
+' dim%   dimming output level
+' rep%   repeater 1= enabled, 0= disabled
+' prt%   power relay timer 1= enabled, 0= disabled
+' dhv%   dylight harvesting 1= enabled, 0= disabled
+' edim%  dimmimg 1= dimming load, 0= switching load
+' cvar   control variable
+' fan%   actual value of fan       0= Stage 0 Manual,      1= Stage 1 Manual,	      2= Stage 2 Manual
+'	    3= Stage 3 Manual,     16= Stage 0 Automatic,  17= Stage 1 Automatic,     18= Stage 2 Automatic, 
+'	    19= Stage 3 Automatic, 255= Not Available
+' asp    actual set point 0 to 51.2 degree c
+' alr%   alarm 1= alarm, 0= no alarm
+' ctm%   actual state of controller 1= heating, 2= cooling, 3= off
+' cst%   controller state 1= override, 0= automatic
+' bsp%   blind/shutter pos. 
+' as%    angle sign 1= negative sign, 0= positive sign
+' an     angle
+' pvf%   position value flag 1= position value available, 0= no Position value available
+' avf%   angle value flag 1= angle value available, 0= no Angle value available
+' es%    error state 0= no error present, 1= end-positions are not configured, 2= internal failure, 3= not used
+' ep%    end-position 0= no end-position available, 1= no end-position reached, 2= blind fully open, 3= blind fully closed
+' st%    status 0: No Status available 1= blind is stopped, 2= blind opens, 3= blind closes
+' sm%    service mode 1= service mode is activated (for example for maintenance), 0= normal mode
+' motp%  mode of the position  1= inverse mode: 100% blind fully open/0% blind fully close, 0= Normal mode: 0% blind fully open/100% blind fully close,1
+' p1%    parameter 1: Mode 0= Dimm-Value (0..255), Mode 1= R-Red (0..255), Mode 2= energy metering value (MSB 15..8), Mode 3= not used
+' p2%    parameter 2: Mode 0= lamp operating hours (MSB 15..8), Mode 1= G-Green (0..255), Mode 2= energy metering value (7..0 LSB), Mode 3= not used
+' p3%    parameter 3: Mode 0: Lamp operating hours (7..0 LSB)
+'           Mode 1: B-Blue (0..255)
+'	    Mode 2: Unit for energy values: 0= mW, 1= W, 2= kW, 3= MW, 4= Wh, 5 = kWh, 6= MWh, 7= GWh, 8= mA, 9= 1/10 A, 10= mV, 11= 1/10 V, 12..15 not used
+'           Mode 3= not used
+' ohf%   operation hours flag 1= lamp operating hours available, 0= no lamp operating hours available
+' wm%    working mode of current actuator 0b001= mode 1, 0b010= mode 2, 0b011= mode 3, 0b100= mode 4
+' lrn%   learn button 1=teach-in telegram, 0=data telegram
+' mgc%   magnet contact 1= closed, 0= opened
+' occ%   occupancy 1= occupied, 0= inoccupied
+' pwr%   Power relay 1= on, 0= off
+' erh%   energy hold-off 1= energy hold-off/dew point, 0= normal
+' ro%    room occupancy 0= occupied, 1= unoccupied, 2= standBy, 3= frost
+' pm%    parameter mode 0= 8-bit dimmer value and lamp operating hours, 1= RGB Value, 2= energy metering value, 3= not used
+' dir%   dirction 1= gateway request telegram; from gateway to actuator, 2 = actuator status report; from actuator to gateway
+' rs%    relay status 0b00: CH1 off, CH2 off, 0b01= CH1 on, CH2 off, 0b10= CH1 off, CH2 on, 0b11= CH1 on, CH2 on
+' mt%    message type 0= request (direction 1), 1= status report (direction 2) 
+FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan%,asp,alr%,ctm%,cst%,bsp%,as%,an,pvf%,avf%,es%,ep%,st%,sm%,motp%,p1%,p2%,p3%,ohf%,wm%,lrn%,mgc%,occ%,pwr%,erh%,ro%,pm%,dir%,mt%,rs%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA511xx=-1
+  EXIT FUNCTION
+ ENDIF
+ ill=-1
+ isp%=-1
+ dim%=-1
+ rep%=-1
+ prt%=-1
+ dhv%=-1
+ edim%=-1
+ cvar=-1
+ fan%=-1
+ asp=-1
+ alr%=-1
+ ctm%=-1
+ cst%=-1
+ bsp%=-1
+ as%=-1
+ an=-1
+ pvf%=-1
+ avf%=-1
+ es%=-1
+ ep%=-1
+ st%=-1
+ sm%=-1
+ motp%=-1
+ p1%=-1
+ p2%=-1
+ p3%=-1
+ ohf%=-1
+ wm%=-1
+ lrn%=(db0% AND 8)/8
+ mgc%=-1
+ occ%=-1
+ pwr%=-1 
+ erh%=-1
+ ro%=-1
+ pm%=-1
+ dir%=-1
+ mt%=-1
+ rs%=-1
+ IF xx%=&H01 THEN
+  ill=(510.0/255.0)*db3%
+  isp%=db2%
+  dim%=db1%
+  rep%=(db0% AND 128)/128
+  prt%=(db0% AND 64)/64
+  dhv%=(db0% AND 32)/32
+  edim%=(db0% AND 16)/16
+  mgc%=(db0% AND 4)/4
+  occ%=(db0% AND 2)/2
+  per%=db0% AND 1
+ ELSEIF xx%=&H02 THEN
+  cvar=(100.0/255.0)*db3%
+  fan%=db2%
+  asp=(51.2/255.0)*db1%
+  alr%=(db0% AND 128)/128
+  ctm%=(db0% AND 96)/32
+  cst%=(db0% AND 16)/16
+  erh%=(db0% AND 4)/4
+  ro%=db0% AND 3
+ ELSEIF xx%=&H03 THEN
+  bsp%=db3%
+  as%=(db2% AND 128)/128
+  an=(180.0/90.0)*(db2% AND 128)
+  pvf%=(db1% AND 128)/128
+  avf%=(db1% AND 64)/64
+  es%=(db1% AND 48)/16
+  ep%=(db1% AND 12)/4
+  st%=db1% AND 3
+  sm%=(db0% AND 128)/128
+  motp%=(db0% AND 64)/64
+ ELSEIF xx%=&H04 THEN
+  p1%=db3%
+  p2%=db2%
+  p3%=db1%
+  sm%=(db0% AND 128)/128
+  ohf%=(db0% AND 64)/64
+  es%=(db0% AND 48)/16
+  pm%=(db0% AND 6)/2
+  st%=db0% AND 1
+ ELSEIF xx%=&H05 THEN
+  IF dir%=1 THEN mt%=db0% AND 1
+  ELSEIF dir%=2 THEN
+   wm%=(db0% AND 112)/16
+   rs%=(db0% AND 6)/2
+   mt%=db0% AND 1
+  ELSE
+   ' unknown
+   eoRxA511xx=-2
+   EXIT FUNCTION
+  ENDIF
+ ELSE
+  ' unknown
+  eoRxA511xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA511xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
