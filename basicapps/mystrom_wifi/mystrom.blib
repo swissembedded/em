@@ -20,6 +20,17 @@
 'err%=msSwitch(server$, relay%)
 'goto start
 
+'@lib_init
+FUNCTION __mystrom_init()
+ print "init mystrom"
+ LOAD LIBRARY "http"
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __mystrom_destroy()
+  print "deinit mystrom"
+END FUNCTION
+
 
 ' Get MyStrom current state
 ' server$ mystrom device ip
