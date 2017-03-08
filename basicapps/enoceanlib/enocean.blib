@@ -34,29 +34,31 @@ END FUNCTION
 ' it tries to call the following callbacks
 ' Radio telegram: eoRxRadio(tp%, da$, oda$, rorg%, id%)
 FUNCTION eoReceive()
- print "called"
  LOCAL n%,tp%,da$,oda$,rorg%,id%
  DO
   id%=-1
   ' Process all telegram from stack
   n%=EnoceanReceive(tp%,da$,oda$,0)
-  IF n%>0 and tp%=1 THEN
-   select case rorg%
-    case &hf6
-     id%=conv("bbe/u32",mid$(da$,3,4))    
-    case &hd5
-     id%=conv("bbe/u32",mid$(da$,3,4))
-    case &ha5
-     id%=conv("bbe/u32",mid$(da$,6,4))    
-    case &hd2
-     id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
-    case else
-     eoLog(tp%,da$,oda$,"eo unknown rx ")
+  IF NOT n% THEN
+   IF tp%=1 THEN
+    rorg%=asc(left$(da$,1))
+    select case rorg%
+     case &hf6
+      id%=conv("bbe/u32",mid$(da$,3,4))    
+     case &hd5
+      id%=conv("bbe/u32",mid$(da$,3,4))
+     case &ha5
+      id%=conv("bbe/u32",mid$(da$,6,4))    
+     case &hd2
+      id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
+     case else
+      eoLog(tp%,da$,oda$,"eoRxRadio")
     end select
-   n%=CALL("eoRxRadio",tp%,da$,oda$,rorg%,id%)
-   eoLog(tp%,da$,oda$,"eoRxRadio")
+    n%=CALL("eoRxRadio",tp%,da$,oda$,rorg%,id%)    
+   ELSE
+    eoLog(tp%,da$,oda$,"eoRxPacket")
+   ENDIF
   ELSE
-   eoLog(tp%,da$,oda$,"eo non radio rx ")
    EXIT DO
   ENDIF
  LOOP
@@ -648,7 +650,7 @@ FUNCTION eoRxA504xx(tp%,da$,oda$,xx%,hum,tmp,lrn%,ts%,ttp%)
    ' unknown
    eoRxA504xx=-2
    EXIT FUNCTION
- ENDSELECT
+ END SELECT
  eoRxA504xx=0
 END FUNCTION
 
@@ -719,21 +721,21 @@ FUNCTION eoRxA506xx(tp%,da$,oda$,xx%,su,ill1,ill2,rs%,lrn%,temp,sv,tav%,enav%)
   ill2=(29700/255)*db2%+300
   su=(5.1/250)*db3%
   rs%=db0% and 1
- ElSEIF xx%=&H02 THEN
+ ElSE IF xx%=&H02 THEN
   ill1=(1020/255)*db1%
   ill2=(510/255)*db2%
   su=(100/250)*db3%
   rs%=db0% and 1
- ElSEIF xx%=&H03 THEN
+ ElSE IF xx%=&H03 THEN
   ill1=db2%+((db1% AND 3)*256)
   su=(100/250)*db3%
- ElSEIF xx%=&H04 THEN
+ ElSE IF xx%=&H04 THEN
   ill1=db1%+(db2%*256)
   temp=(80/255)*db3%-20
   sv=(100/15)*(db0% AND 240)
   tav%=(db0% AND 2)/2
   enav%=db0% AND 1
- ElSEIF xx%=&H05 THEN
+ ElSE IF xx%=&H05 THEN
   ill1=(10200/255)*db1%
   ill2=(5100/255)*db2%
   su=(5.1/250)*db3%
@@ -818,7 +820,7 @@ FUNCTION eoRxA508xx(tp%,da$,oda$,xx%,su,ill,temp,lrn%,pirs%,occ%)
  IF xx%=&H01 OR xx%=&H02 THEN
   ill=(510*xx%/255)*db2%
   temp=(51/255)*db1%
- ELSEIF xx%=&H03 THEN
+ ELSE IF xx%=&H03 THEN
   ill=(1530/255)*db2%
   temp=(80/255)*db1%-30
  ELSE
@@ -901,37 +903,37 @@ FUNCTION eoRxA509xx(tp%,da$,oda$,xx%,su,conc,temp,hum,vocID%,act%,pm10%,pm25%,pm
   conc=(1020.0/255.0)*db2%
   temp=(51.0/255.0)*db1%
   ts%=(db0% AND 2)/2
- ELSEIF xx%=&H04 THEN
+ ELSE IF xx%=&H04 THEN
   hum=(1.0/2.0)*db3%
   conc=10.0*db2%
   temp=(51.0/255.0)*db1%
   ts%=(db0% AND 2)/2
   hs%=(db0% AND 4)/4
- ELSEIF xx%=&H05 THEN
+ ELSE IF xx%=&H05 THEN
   conc=(db3%*256)+db2%
   vocID%=db1%
   scm%=(db0% AND 3)/3
- ELSEIF xx%=&H06 THEN
+ ELSE IF xx%=&H06 THEN
   act%=(db3%*4)+((db2% AND 192)/64)
- ELSEIF xx%=&H07 THEN
+ ELSE IF xx%=&H07 THEN
   pm10%=(db3%*2)+((db2% AND 128)/128)
   pm25%=((db2% AND 127)*4)+((db1% AND 192)/64)
   pm1%=((db1% AND 63)*8)+((db0% AND 224)/32)
   pm10a%=(db0% AND 4)/4
   pm25a%=(db0% AND 2)/2
   pm1a%=db0% AND 1
- ELSEIF xx%=&H08 THEN
+ ELSE IF xx%=&H08 THEN
   conc=(2000.0/255.0)*db1%
- ELSEIF xx%=&H09 THEN
+ ELSE IF xx%=&H09 THEN
   conc=(2000.0/255.0)*db1%
   pfd%=(db0% AND 4)/4
- ELSEIF xx%=&H0A THEN
+ ELSE IF xx%=&H0A THEN
   conc=(db3%*256)+db2%
   temp=(80.0/255.0)*db1%-20.0
   su=(3.0/15.0)*((db0% AND 240)/16)+2.0
   tsa%=(db0% AND 2)/2
   sva%=db0% AND 1
- ELSEIF xx%=&H0B THEN
+ ELSE IF xx%=&H0B THEN
   su=(3.0/15.0)*((db3% AND 240)/16)+2.0
   ract%=(6553.0/65535.0)*(db2%+db1%)
   scm%=(db0% AND 240)/16
@@ -1037,28 +1039,39 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
   IF xx%=&H01 OR xx%=&H02 OR xx%=&H04 OR (xx%>=&H07 AND xx%<=&H09) THEN fan%=db3%
   IF (xx%>=&H01 AND xx%<=&H06) OR xx%=&H0A THEN sp%=db2%
   IF xx%=&H01 OR xx%=&H02 OR xx%=&H05 OR xx%=&H06 OR (xx%>=&H08 AND xx%<=&H0B) THEN sw%=db0% AND 1
- ELSEIF xx%>=&H10 AND xx%<=&H14 THEN
+ ELSE IF xx%>=&H10 AND xx%<=&H14 THEN
   temp=(40.0/250.0)*db1%
   hum=(100.0/250.0)*db2%
   IF xx%>=&H10 OR xx%<=&H12 THEN
    sp%=db3%
-  ELSEIF xx%=&H13 THEN
+  ELSE IF xx%=&H13 THEN
    sw%=db0% AND 1
   ENDIF
- ELSEIF xx%>=&H15 AND xx%<=&H17 THEN
+ ELSE IF xx%>=&H15 AND xx%<=&H17 THEN
   temp=(51.2/1023.0)*(1023-(((db2% AND 3)*256)+db1%))-10.0
-  IF xx%=&H15 OR xx%=&H16 THEN sp%=(db2% AND 252)/4
+  IF xx%=&H15 OR xx%=&H16 THEN 
+   sp%=(db2% AND 252)/4
+  ENDIF 
   IF xx%=&H16 OR xx%=&H17 THEN
    sw%=db0% AND 1
+  ENDIF 
  ELSEIF xx%>=&H18 AND xx%<=&H1E THEN
   temp=(40.0/250.0)*(250-db1%)
   fan%=(db0% AND 112)/16
   oed%=(db0% AND 2)/2
   ob%=db0% AND 1
-  IF xx%>=&H18 AND xx%<=&H1A THEN tempsp=(40.0/250.0)*(250-db2%)
-  IF xx%=&H18 OR xx%=&H1B OR xx%=&H1E THEN ill=4*db3%
-  IF xx%=&H19 THEN hum=(100.0/250.0)*db3%
-  IF xx%=&H1A OR xx%=&H1B OR xx%=&H1E THEN su=(5.0/250.0)*db3%
+  IF xx%>=&H18 AND xx%<=&H1A THEN 
+   tempsp=(40.0/250.0)*(250-db2%)
+  ENDIF 
+  IF xx%=&H18 OR xx%=&H1B OR xx%=&H1E THEN 
+   ill=4*db3%
+  ENDIF 
+  IF xx%=&H19 THEN 
+   hum=(100.0/250.0)*db3%
+  ENDIF
+  IF xx%=&H1A OR xx%=&H1B OR xx%=&H1E THEN 
+   su=(5.0/250.0)*db3%
+  ENDIF 
   IF xx%=&H1C THEN
    ill=1000.0/250.0*db3%
    illsp=1000.0/250.0*db2%
