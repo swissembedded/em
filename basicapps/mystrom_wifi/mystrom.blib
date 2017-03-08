@@ -13,11 +13,11 @@
 'LIBRARY LOAD "http"
 'server$="192.168.0.50"
 'start:
-'err%=MyStromState(server$, power, relay%)
+'err%=msState(server$, power, relay%)
 'print err% power relay%
 'pause 10000
 'relay%=relay% XOR 1
-'err%=MyStromSwitch(server$, relay%)
+'err%=msSwitch(server$, relay%)
 'goto start
 
 
@@ -26,13 +26,13 @@
 ' power current power in kW
 ' relay% relay state
 ' return error code if negative value
-FUNCTION MyStromState(server$, power, relay%)
+FUNCTION msState(server$, power, relay%)
     LOCAL err%, n%, con%, rp$(3), rs$(3),pw$,st$
 	err%=HTTPRequest(server$, 80, con%, "GET","/report", "", "" , 5000)
 	IF err% <0 THEN
      print "open failed"
 	 IF con% >=0 THEN n%=HTTPClose(con%)
-	 MyStromState=err%
+	 msState=err%
 	 EXIT FUNCTION
 	ENDIF	
 	' Parse stream from device with power and state
@@ -60,20 +60,20 @@ FUNCTION MyStromState(server$, power, relay%)
      err%=-1
     ENDIF
 	n%=HTTPClose(con%)    
-    MyStromState=err%
+    msState=err%
 END FUNCTION
 
 ' Set MyStrom relay state
 ' server$ mystrom device url 
 ' relay%  new relay state
-FUNCTION MyStromSwitch(server$, relay%)
+FUNCTION msSwitch(server$, relay%)
     LOCAL err%, con%, y$
     y$="/relay?state="+str$(relay%)
 	err%=HTTPRequest(server$, 80, con%, "GET",y$, "", "" , 5000)
 	IF err% <0 THEN
-	 MyStromSwitch=err%
+	 msSwitch=err%
 	 EXIT FUNCTION
 	ENDIF
 	err%=HTTPClose(con%)
-    MyStromSwitch=err%	
+    msSwitch=err%	
 END FUNCTION
