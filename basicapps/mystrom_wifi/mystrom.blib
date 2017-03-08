@@ -23,7 +23,7 @@
 '@lib_init
 FUNCTION __mystrom_init()
  print "init mystrom"
- LOAD LIBRARY "http"
+ LIBRARY LOAD "http"
 END FUNCTION
  
 '@lib_destroy
