@@ -1,0 +1,25 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2016-2017 swissEmbedded GmbH, All rights reserved.
+' EMDO dash library, helper functions for dash board visualisation
+
+' Convert a float value into a dash numerical display
+' err% error state from sensor
+' sts$ dash state string (on or off)
+' vls$ dash value string
+' st%  sensor status (0=off, all other on)
+' vl   sensor value
+' unt$ sensor unit
+SUB ds_num(err%,sts$,vls$,st%,vl,unt$)
+ IF err% >= 0 THEN
+  IF st% THEN 
+   sts$="on"
+  ELSE
+   sts$="off"
+  ENDIF
+  vls$=str$(cint(vl))+" "+unt$
+ ELSE
+  sts$="off"
+  vls$="error"
+ ENDIF
+END SUB

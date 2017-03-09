@@ -54,6 +54,7 @@
  
 '@lib_init
 FUNCTION __planning_init()
+ print "init planning"
  pgSize%=20
  pgMeterC$="pgMC"
  pgProdC$="pgPC"
@@ -81,6 +82,7 @@ END FUNCTION
  
 '@lib_destroy
 FUNCTION __planning_destroy()
+ print "deinit planning"
  LOCAL sc%
  'sc%=CrontabRemove(pgCronDesc%)
 END FUNCTION
