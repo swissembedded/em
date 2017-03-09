@@ -86,7 +86,7 @@ END FUNCTION
 ' teU$ unit Celsius, Kelvin, Fahrenheit
 ' pr value in hPa 
 ' hum value in %
-' cl$(cnt%)
+' cl(cnt%)
 ' clN$(cnt%) clouds texttual description
 
 FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
