@@ -30,7 +30,7 @@ FUNCTION __openweather_init()
  LIBRARY LOAD "http"
  IF owkey$<>"" AND owpos$<>"" AND owlng$<>"" AND owunit$<>"" and owcb$<>"" THEN
   'every 3 hours
-  owcrondesc%=CrontabAdd("* */3 * * *")
+  owcrondesc%=CrontabAdd("0 */3 * * *")
   IF owcrondesc% < 0 THEN 
    ERROR "Failed to add CRON entry"
   ELSE 
