@@ -112,9 +112,9 @@ FUNCTION HTTPReadToken(con%, token$, state%)
  LOCAL rsp%
  ' Read until timeout or closed
  rsp%=SocketRead(con%)
- IF rsp% <0 THEN
- ' end of stream
- state%=-1
+ IF rsp%<0 THEN
+  ' end of stream
+  state%=-1
  ELSE IF state%=0 AND chr$(rsp%)=mid$(token$, state%+1,1) THEN 
    state%=state%+1   
    IF state%=len(token$) THEN
