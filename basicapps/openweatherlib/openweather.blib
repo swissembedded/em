@@ -10,7 +10,6 @@
 ' Some examples on usage 
 'Loading Http library, make sure it is installed on EMDO
 'LIBRARY LOAD "http"
-
 'Adjust server IP and username to your bridge setting (see developers url below for details)
 'key$="21254ca4c403151ea2540fa0f1545e6d"
 'pos$="q=Baden+CH" ' Nearby town + country code
@@ -23,6 +22,40 @@
 ' PAUSE 10000
 'GOTO start
 
+
+'@lib_init
+FUNCTION __openweather_init()
+ LOCAL err%
+ print "init openweather"
+ LIBRARY LOAD "http"
+ IF owkey$<>"" AND owpos$<>"" AND owlng$<>"" AND owunit$<>"" and owcb$<>"" THEN
+  'every 3 hours
+  owcrondesc%=CrontabAdd("* */3 * * *")
+  IF owcrondesc% < 0 THEN 
+   ERROR "Failed to add CRON entry"
+  ELSE 
+   ON CRON owcrondesc% owCron
+  ENDIF
+  err%=owCron(owcrondesc%,-1)
+ ENDIF
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __openweather_destroy()
+  print "deinit openweather"
+  LOCAL sc%
+  sc%=CrontabRemove(owCronDesc%)
+  LIBRARY UNLOAD "http"
+END FUNCTION
+
+' Openweather cron job every 3 hours
+FUNCTION owCron(id%,elapsed%)
+ LOCAL err%
+ PRINT "owCron id=" id% " el=" elapsed% " date=" Date$()
+ err%=OWForecastWeather( owkey$, owpos$, owlng$, owunit$, owcnt%, owcb$)
+ owCron=err%
+END FUNCTION
+
 ' Read weather forecast of the next 5 days
 ' API documentation available at https://openweathermap.org/forecast5
 ' key$ open weather key
@@ -34,8 +67,7 @@
 ' return error code if negative value
 ' Attn:
 ' This callback sub must be defined by user:
- 'OWCallback(sunRise$,sunSet$,tiFr$,tiTo$,sym%,symN$,symV$,pre$,preU$,preT$,wiDi,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)	
-	
+' OWCallback(sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
 ' sunRise$ sun rise
 ' sunSet$ sun set
 ' tiFr$, tiTo$ unix time utc of forecast (from,to)
@@ -194,7 +226,7 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
   ' Call this function for further analysis of the raw data
   'print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
   IF Exists(cb$) >= 0 THEN
-   CALL(cb$, sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
+   err%=CALL(cb$,sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
   ENDIF
  NEXT idx%
 

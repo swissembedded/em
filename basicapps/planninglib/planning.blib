@@ -84,7 +84,8 @@ END FUNCTION
 FUNCTION __planning_destroy()
  print "deinit planning"
  LOCAL sc%
- 'sc%=CrontabRemove(pgCronDesc%)
+ sc%=CrontabRemove(pgCronDesc%)
+ sc%=KillTimer(pgTimerDesc%)
 END FUNCTION
 
 ' Load planning recalculate every minute (cron based)
