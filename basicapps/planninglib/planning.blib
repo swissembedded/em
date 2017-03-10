@@ -111,7 +111,7 @@ END FUNCTION
 ' pP power production
 ' pS power storage
 FUNCTION pgCron(id%,elapsed%)  
- PRINT "pgCron id=" id% " el=" elapsed% " date=" Date$()
+ 'PRINT "pgCron id=" id% " el=" elapsed% " date=" Date$()
  LOCAL it%,nm$,lpc$,ltc$,st%,rtm%,pL
  ' Read all load current consumption
  FOR it%= 0 TO (pgSize%-1)
@@ -241,7 +241,7 @@ END FUNCTION
 ' id% cron identifier
 ' elapsed% time in ms elapsed since last schedule
 FUNCTION pgTimer(id%,elapsed%)  
- PRINT "pgTimer id=" id% " el=" elapsed% " date=" Date$()
+ 'PRINT "pgTimer id=" id% " el=" elapsed% " date=" Date$()
  pgTimer=0
 END FUNCTION
 
