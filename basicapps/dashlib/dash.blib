@@ -26,7 +26,7 @@ END SUB
 
 ' Return special UTF coding characters
 ' sym$ C for celsius
-'      F for celsius
+'      F for fahrenheit
 '      * for chr$(10)
 FUNCTION ds_special$(sym$)
  LOCAL rt$,i,c$
