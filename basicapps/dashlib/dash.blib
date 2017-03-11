@@ -3,19 +3,19 @@
 ' Copyright (c) 2016-2017 swissEmbedded GmbH, All rights reserved.
 ' EMDO dash library, helper functions for dash board visualisation
 
-' Convert a float value into a dash numerical display
+' Convert a state and float value into a dash numerical display
 ' err% error state from sensor
-' sts$ dash state string (on or off)
+' sts% dash state string (on or off)
 ' vls$ dash value string
 ' st%  sensor status (0=off, all other on)
 ' vl   sensor value
 ' unt$ sensor unit
-SUB ds_num(err%,sts$,vls$,st%,vl,unt$)
+SUB ds_num(err%,sts%,vls$,st%,vl,unt$)
  IF err% >= 0 THEN
   IF st% THEN 
-   sts$="on"
+   sts%=1
   ELSE
-   sts$="off"
+   sts%=0
   ENDIF
   vls$=str$(cint(vl))+" "+unt$
  ELSE
@@ -23,3 +23,22 @@ SUB ds_num(err%,sts$,vls$,st%,vl,unt$)
   vls$="error"
  ENDIF
 END SUB
+
+' Return special UTF coding characters
+' sym$ C for celsius
+'      F for celsius
+'      * for chr$(10)
+FUNCTION ds_special$(sym$)
+ LOCAL rt$,i,c$
+ rt$=""
+ for i=1 TO len(sym$)
+  c$=mid$(sym$,i,1)
+  IF c$="C"
+   rt$=rt$+chr$(&HE2)+chr$(&H84)+chr$(&H83)
+  ELSE IF c$="F" THEN
+   rt$=rt$+chr$(&HE2)+chr$(&H84)+chr$(&H89)
+  ELSE IF c$="*" THEN
+   rt$=rt$+chr$(10)
+  ENDIF
+ ds_special$=rt$
+END FUNCTION

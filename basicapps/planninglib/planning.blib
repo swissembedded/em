@@ -56,8 +56,6 @@
 FUNCTION __planning_init()
  print "init planning"
  pgSize%=20
- pgMeterC$="pgMC"
- pgProdC$="pgPC"
  dim pgArrnm$(pgSize%) LENGTH 21
  dim pgArrlpc$(pgSize%) LENGTH 11
  dim pgArrltc$(pgSize%) LENGTH 11
@@ -71,12 +69,14 @@ FUNCTION __planning_init()
   ERROR "Failed to add CRON entry"
  ELSE 
   ON CRON pgCronDesc% pgCron
+  print "pgCron " pgCronDesc%
  ENDIF
  pgTimerDesc%=SetTimer(10000)
  IF pgTimerDesc% < 0 THEN 
   ERROR "Failed to add Timer entry"
  ELSE 
   ON TIMER pgTimerDesc% pgTimer
+  print "pgTimer " pgTimerDesc%
  ENDIF
 END FUNCTION
  
@@ -111,17 +111,20 @@ END FUNCTION
 ' pP power production
 ' pS power storage
 FUNCTION pgCron(id%,elapsed%)  
- 'PRINT "pgCron id=" id% " el=" elapsed% " date=" Date$()
+ PRINT "pgCron id=" id% " el=" elapsed% " date=" Date$()
  LOCAL it%,nm$,lpc$,ltc$,st%,rtm%,pL
  ' Read all load current consumption
  FOR it%= 0 TO (pgSize%-1)
-  IF pgGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 and ltc$<>"" THEN
-   n%=CALL(ltc$,it%,nm$,st%,rtm%,pL)
+  ltc$=""
+  IF pgGetLoad(it%,nm$,lpc$,ltc$,st%,rnt%,rntm%,pL)=0 THEN
+   IF ltc$<>"" THEN
+    n%=CALL(ltc$,it%,nm$,st%,rtm%,pL)
+   ENDIF
   ENDIF
  NEXT it%
  
  ' Read the power of the grid
- n%=CALL(pgMeterC$,pE,pI,pP,pS) 
+ n%=CALL("pgMC",pE,pI,pP,pS) 
  IF n% < 0 THEN
   pgCron=-1
   print pgMeterC$ " can't be called!"
@@ -347,8 +350,8 @@ FUNCTION pgOptimize(fn%,id%,wd%,strt%,crt%)
    ' calculate the time point for calculation
    ft%=(tn%+t%+prntm%-prnt%) mod 86400
    ' Calculate estimated production, if estimator callback exist, we take it, otherwise we take average from past
-   IF exists(pgProdC$)>0 THEN
-    n%=CALL(pgProdC$,ft%,pP)
+   IF exists("pgPC")>0 THEN
+    n%=CALL("pgPC",ft%,pP)
    ELSE
     err%=pgRetrieve(fn%,"prod",ft%,86400,60,pP)
    ENDIF
