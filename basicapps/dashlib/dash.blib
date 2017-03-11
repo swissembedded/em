@@ -71,6 +71,11 @@ FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
  'Self-consumption
  IF ePd<>0.0 THEN
   sc=(ePd-eEd)/ePd
+  IF sc < 0.0 THEN
+   sc=0.0
+  ELSE IF sc > 1.0 THEN
+   sc = 1.0
+  ENDIF
  ELSE
   sc=0.0
   ds_quote=-1
@@ -78,6 +83,11 @@ FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
  'Self-Sufficiency
  IF eC<>0.0 THEN
   ss=(ePd-eEd)/eC
+  IF ss < 0.0 THEN
+   ss=0.0
+  ELSE IF ss > 1.0 THEN 
+   ss=1.0  
+  ENDIF
  ELSE
   ss=0.0
   ds_quote=-2
