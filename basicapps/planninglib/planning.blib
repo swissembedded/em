@@ -274,7 +274,7 @@ FUNCTION pgRecord(fn%,nm$,rnt%,rntm%,ts%, vl,vlt,wt)
  vlo=conv("ble/f32",s$)
  vln=vlo*(1.0-wt)+vl*wt
  ' Check if update is needed
- IF abs(vln-vlo) > vlt then
+ IF abs(vln-vlo) > vlt THEN
   seek # fn%, ps%, 0
   s$=conv("f32/ble",vlo)
   sc%=WriteFile(# fn%, s$)  

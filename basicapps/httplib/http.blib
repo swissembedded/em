@@ -43,7 +43,9 @@ FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%, auth$)
  ENDIF
  ' accept string
  IF cmd$="GET" THEN
-  IF acc$="" THEN acc$="text/html,application/xml"
+  IF acc$="" THEN 
+   acc$="text/html,application/xml"
+  ENDIF
   acc$="Accept: "+acc$
  ELSE IF cmd$="POST" OR cmd$="PUT" THEN
   acc$="Content-Length: "+acc$

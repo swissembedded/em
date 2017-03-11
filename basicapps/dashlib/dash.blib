@@ -33,12 +33,13 @@ FUNCTION ds_special$(sym$)
  rt$=""
  for i=1 TO len(sym$)
   c$=mid$(sym$,i,1)
-  IF c$="C"
+  IF c$="C" THEN
    rt$=rt$+chr$(&HE2)+chr$(&H84)+chr$(&H83)
   ELSE IF c$="F" THEN
    rt$=rt$+chr$(&HE2)+chr$(&H84)+chr$(&H89)
   ELSE IF c$="*" THEN
    rt$=rt$+chr$(10)
   ENDIF
+ next i
  ds_special$=rt$
 END FUNCTION
