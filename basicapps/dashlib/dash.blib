@@ -3,26 +3,33 @@
 ' Copyright (c) 2016-2017 swissEmbedded GmbH, All rights reserved.
 ' EMDO dash library, helper functions for dash board visualisation
 
-' Convert a state and float value into a dash numerical display
+' Convert float value into a dash numerical display
 ' err% error state from sensor
-' sts% dash state string (on or off)
-' vls$ dash value string
-' st%  sensor status (0=off, all other on)
 ' vl   sensor value
+' fmt$ format command string, e.g. %.3f with 3 digits after the decimal point
 ' unt$ sensor unit
-SUB ds_num(err%,sts%,vls$,st%,vl,unt$)
+FUNCTION ds_num$(err%,vl,fmt$,unt$)
+ IF err% >= 0 THEN
+  ds_num$=format$(vl,fmt$)+" "+unt$
+ ENDIF
+END FUNCTION
+
+
+' Convert a state into dash display
+' err% error state from sensor
+' st%  sensor status (0=off, all other on)
+' returns dash state value
+FUNCTION ds_state(err%,st%)
  IF err% >= 0 THEN
   IF st% THEN 
-   sts%=1
+   ds_state=1
   ELSE
-   sts%=0
+   ds_state%=0
   ENDIF
-  vls$=str$(cint(vl))+" "+unt$
- ELSE
-  sts$="off"
-  vls$="error"
  ENDIF
-END SUB
+END FUNCTION
+
+
 
 ' Return special UTF coding characters
 ' sym$ C for celsius
@@ -43,3 +50,38 @@ FUNCTION ds_special$(sym$)
  next i
  ds_special$=rt$
 END FUNCTION
+
+' Calculate some quotes about energy production and consumption
+' eI imported energy
+' eE exported energy
+' eP producted energy
+' eS stored energy
+' eIo, eEo, ePo, Eso old values (e.g. since midnight)
+' ss self sufficiency coefficient
+' sc self consumption coefficient
+' eCd consumption delta (e.g. since midnight)
+FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
+ ds_quote=0
+ LOCAL eId,eEd,ePd,eSd,eC
+ eId=eI-eIo
+ eEd=eE-eEo
+ ePd=eP-ePo
+ eSd=eS-eSo
+ eC=eId+(ePd-eEd)
+ 'Self-consumption
+ IF ePd<>0.0 THEN
+  sc=(ePd-eEd)/ePd
+ ELSE
+  sc=0.0
+  ds_quote=-1
+ ENDIF
+ 'Self-Sufficiency
+ IF eC<>0.0 THEN
+  ss=(ePd-eEd)/eC
+ ELSE
+  ss=0.0
+  ds_quote=-2
+ ENDIF
+
+END FUNCTION
+

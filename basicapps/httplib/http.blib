@@ -113,9 +113,9 @@ END FUNCTION
 FUNCTION HTTPReadToken(con%, token$, state%)
  LOCAL rsp%
  ' Read until timeout or closed
- print "con " con%
+ 'print "con " con%
  rsp%=SocketRead(con%)
- print "con " con% "rsp " rsp%
+ 'print "con " con% "rsp " rsp%
  IF rsp%<0 THEN
   ' end of stream
   state%=-1
