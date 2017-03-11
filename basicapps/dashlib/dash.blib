@@ -19,12 +19,12 @@ END FUNCTION
 ' err% error state from sensor
 ' st%  sensor status (0=off, all other on)
 ' returns dash state value
-FUNCTION ds_state(err%,st%)
+FUNCTION ds_status(err%,st%)
  IF err% >= 0 THEN
   IF st% THEN 
-   ds_state=1
+   ds_status=1
   ELSE
-   ds_state%=0
+   ds_status=0
   ENDIF
  ENDIF
 END FUNCTION
