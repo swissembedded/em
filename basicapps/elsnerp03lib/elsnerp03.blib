@@ -42,7 +42,7 @@ END FUNCTION
 ' Lgt% light 0...999lux
 ' Wind wind m/s
 ' Rain% 1=raining 0=no rain
-FUNCTION ElsnerWeatherstation(itf$, slv%, Tout, SunS%, SunW%, SunE%, Lgt%, Wind, Rain%, GPS%, day%, month%, year%, hour%, min% sec%, azi, ele, lon lat)
+FUNCTION ElsnerWeatherstation(itf$, slv%, Tout, SunS%, SunW%, SunE%, Lgt%, Wind, Rain%, GPS%, day%, month%, year%, hour%, min%, sec%, azi, ele, lon, lat)
  LOCAL err%,rD$
  ' Page 12 german documentation
  err%= mbFunc(itf$,slv%,4,0,&H11,rD$,500)

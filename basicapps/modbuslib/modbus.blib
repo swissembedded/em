@@ -120,7 +120,7 @@ END FUNCTION
 ' return Error code 0 = ok, negative value = error
 FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
 
- LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$, n%, con%, err%, trans%
+ LOCAL interf$, ln$, msg$, num$, prot$, req$, rsp$, tn$, n%, con%, err%, trans%,nm%
 
  ' rpl and py not checked for validity
  IF rpl% < 0 OR py% < 0 OR py% > rpl% THEN
@@ -132,7 +132,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
  prot$=split$(0,itf$,":")
  interf$=split$(1,itf$,":")
  num$=split$(2,itf$,":")
- 
+ nm%=val(num$)
  ' add framing
  IF prot$ = "RTU" THEN
   msg$=CHR$(slv%)+rq$
@@ -145,14 +145,22 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
  ENDIF
  
  IF interf$="RS485" THEN
-  ' Send it over rs485  
-  pause(1000.0*3.5*12.0/SYS.Get("rs485", "baud")+1)
-  DO WHILE RS485Read(1,0) >=0
+  ' Send it over rs485 
+  IF nm%=1 THEN  
+   pause(1000.0*3.5*12.0/SYS.Get("rs485", "baud")+1)
+  ELSE
+   pause(1000.0*3.5*12.0/SYS.Get("rs485-2", "baud")+1)
+  ENDIF
+  DO WHILE RS485Read(nm%) >=0
   LOOP
-  n%=RS485Write(req$)
-  pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
-  rsp$=RS485Read$(rpl%+3,tmo%)
-  mbLog(interf$,req$,rsp$,"RS485")
+  n%=RS485Write(nm%,req$)
+  IF nm%=1 THEN
+   pause(1000.0*3.5*12/SYS.Get("rs485", "baud")+1)
+  ELSE
+   pause(1000.0*3.5*12/SYS.Get("rs485-2", "baud")+1)
+  ENDIF
+  rsp$=RS485Read$(nm%,rpl%+3,tmo%)
+  mbLog(interf$+"-"+num$,req$,rsp$,prot$)
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
@@ -161,7 +169,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    n%=SocketWrite( con%, req$ )    
    rsp$=SocketRead$(con%,rpl%+7)
    n%=SocketClose( con% )
-   mbLog(interf$,req$,rsp$,"ETH")   
+   mbLog(interf$,req$,rsp$,prot$)   
   ELSE
    mbCom=-20
    EXIT FUNCTION
