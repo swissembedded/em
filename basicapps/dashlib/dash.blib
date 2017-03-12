@@ -52,22 +52,23 @@ FUNCTION ds_special$(sym$)
 END FUNCTION
 
 ' Calculate some quotes about energy production and consumption
-' eI imported energy
 ' eE exported energy
+' eI imported energy
 ' eP producted energy
 ' eS stored energy
-' eIo, eEo, ePo, Eso old values (e.g. since midnight)
+' eEo, eIo, ePo, Eso old values (e.g. since midnight)
 ' ss self sufficiency coefficient
 ' sc self consumption coefficient
 ' eCd consumption delta (e.g. since midnight)
-FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
+FUNCTION ds_quote(eE,eI,eP,eS,eEo,eIo,ePo,eSo,ss,sc,eCd)
  ds_quote=0
- LOCAL eId,eEd,ePd,eSd,eC
+ LOCAL eId,eEd,ePd,eSd
  eId=eI-eIo
  eEd=eE-eEo
  ePd=eP-ePo
  eSd=eS-eSo
- eC=eId+(ePd-eEd)
+ eCd=eId+(ePd-eEd)
+ print "quote " eId eEd ePd eSd eCd
  'Self-consumption
  IF ePd<>0.0 THEN
   sc=(ePd-eEd)/ePd
@@ -81,8 +82,8 @@ FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
   ds_quote=-1
  ENDIF
  'Self-Sufficiency
- IF eC<>0.0 THEN
-  ss=(ePd-eEd)/eC
+ IF eCd<>0.0 THEN
+  ss=(ePd-eEd)/eCd
   IF ss < 0.0 THEN
    ss=0.0
   ELSE IF ss > 1.0 THEN 
@@ -92,6 +93,5 @@ FUNCTION ds_quote(eI,eE,eP,eS,eIo,eEo,ePo,eSo,ss,sc,eCd)
   ss=0.0
   ds_quote=-2
  ENDIF
-
 END FUNCTION
 
