@@ -18,6 +18,17 @@
 ' pause 30000
 ' goto start
 
+'@lib_init
+FUNCTION __egosmartheater_init()
+ LIBRARY LOAD "modbus"
+ print "init egosmartheater" 
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __egosmartheater_destroy()
+  LIBRARY UNLOAD "modbus"
+  print "deinit egosmartheater"
+END FUNCTION
 ' Ego smart heater controller
 ' This function must be called at least every 60 seconds,
 ' otherwise the ego smart heater will switch off

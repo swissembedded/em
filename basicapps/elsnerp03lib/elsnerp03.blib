@@ -1,6 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2015-2017 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO Elsner P03/3 Modbus Weatherstation
 ' @VERSION 1.0
 ' Documentation http://www.elsner-elektronik.de/shop/de/produkte-shop/gebaeudetechnik-konventionell/modbus-sensoren/p03-3-modbus-398.html
@@ -18,6 +18,19 @@
 ' print "Elsner " err% Tout SunS% SunW% SunE% Lgt% Wind Rain%
 ' pause 30000
 ' goto start
+
+'@lib_init
+FUNCTION __elsnerp03_init()
+ LIBRARY LOAD "modbus"
+ print "init elsnerp03" 
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __elsnerp03_destroy()
+  LIBRARY UNLOAD "modbus"
+  print "deinit elsnerp03"
+END FUNCTION
+
 
 ' Elsner weather station P03/3
 ' itf$ modbus interface (see EMDO modbus library for details)
