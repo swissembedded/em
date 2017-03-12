@@ -63,12 +63,12 @@ END FUNCTION
 FUNCTION ds_quote(eE,eI,eP,eS,eEo,eIo,ePo,eSo,ss,sc,eCd)
  ds_quote=0
  LOCAL eId,eEd,ePd,eSd
- eId=eI-eIo
  eEd=eE-eEo
+ eId=eI-eIo
  ePd=eP-ePo
  eSd=eS-eSo
  eCd=eId+(ePd-eEd)
- print "quote " eId eEd ePd eSd eCd
+ print "quote " eEd eId ePd eSd eCd
  'Self-consumption
  IF ePd<>0.0 THEN
   sc=(ePd-eEd)/ePd
