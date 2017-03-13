@@ -58,7 +58,7 @@ FUNCTION VEDirectTxt(itf$, lbl$, vl$)
  toks$=""
  m%=-1
  IF interf$="RS485" THEN
-  m%=StreamSearch(RS485Read(val(num$),5000),"toka$", 10000)
+  m%=StreamSearch(RS485Read(val(num$)),"toka$", 10000)
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
