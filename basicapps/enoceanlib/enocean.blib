@@ -1273,6 +1273,100 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan
  eoRxA511xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Automated Meter Reading (AMR)
+' A5-12-00 Counter
+' A5-12-01 Electricity
+' A5-12-02 Gas
+' A5-12-03 Water
+' A5-12-04 Temperature and Load Sensor -40..+40 degree Celcius
+' A5-12-05 Temperature and Container Sensor -40..+40 degree Celcius
+' A5-12-10 Current meter 16 channels
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 00,01,..,05,10
+' mr     meter reading (scale is according to div%, unit is according to dt%)
+' temp   temperature -40..+40 degree Celcius
+' ps0%   position sensor 0
+' ps1%   position sensor 1
+' ps2%   position sensor 2
+' ps3%   position sensor 3
+' ps4%   position sensor 4
+' ps5%   position sensor 5
+' ps6%   position sensor 6
+' ps7%   position sensor 7
+' ps8%   position sensor 8
+' ps9%   position sensor 9
+' lrn%   learn button 1=teach-in telegram, 0=data telegram
+' div%   divisor for value (used to set the scale of rm) 
+'          0: x/1=>0...16777215 
+'		   1: x/10=>0...1677721.5
+'		   2: x/100=>0...167772.15
+'		   3: x/1000=>0...16777.215
+' dt%    data type 0: Cumulative value, 1: Current value
+'          0: 1,   1: 1/s (A5-12-00)
+'          0: kWh, 1: W (A5-12-01)
+'          0: m3,  1: liter/s (A5-12-02 & A5-12-03)
+'		   0: A.h. 1: mA (A5-12-10)
+' ch%    measurement channel (A5-12-00 & A5-12-10 only)
+' ti%    tariff info (A5-12-01 & A5-12-02 & A5-12-03)
+' bl%    battery level 0: 100-75%, 1: 75-50%, 2: 50-25%, 3: 25-0% (A5-12-04 & A5-12-05 only)
+FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,ps7%,ps8%,ps9%,lrn%,div%,dt%,ti%,ch%,bl%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA512xx=-1
+  EXIT FUNCTION
+ END IF
+ mr=-1
+ temp=-1
+ ps0%=-1
+ ps1%=-1
+ ps2%=-1
+ ps3%=-1
+ ps4%=-1
+ ps5%=-1
+ ps6%=-1
+ ps7%=-1
+ ps8%=-1
+ ps9%=-1 
+ lrn%=(db0% AND 8)/8
+ div%=-1
+ dt%=-1
+ ch%=-1
+ ti%=-1
+ bl%=-1
+ IF xx%>=&H00 AND xx%<=&H03 OR xx%=&H10 THEN
+  div%=db0% AND 3
+  mr=((16777215.0/(10.0^div%))/16777215.0)*((db3%*65536)+(db2%*256)+db1%)
+  dt%=(db0% AND 4)/4
+  IF xx%=&H00 OR xx%=&H10 THEN ch%=(db0% AND 240)/16
+  ELSE ti%=(db0% AND 240)/16
+  END IF
+ ELSEIF xx%=&H04 OR xx%=&H05 THEN
+  temp=(80.0/255.0)*db1%-40.0
+  bl%=db0% AND 3
+  IF xx%=&H04 THEN mr=(db3%*64)+((db2% AND 252)/4)
+  ELSE
+   ps0%=(db3% AND 128)/128
+   ps1%=(db3% AND 64)/64
+   ps2%=(db3% AND 32)/32
+   ps3%=(db3% AND 16)/16
+   ps4%=(db3% AND 8)/8
+   ps5%=(db3% AND 4)/4
+   ps6%=(db3% AND 2)/2
+   ps7%=db3% AND 1
+   ps8%=(db2% AND 128)/128
+   ps9%=(db2% AND 64)/64
+  END IF
+ ELSE
+  ' unknown
+  eoRxA512xx=-2
+  EXIT FUNCTION
+ END IF 
+ eoRxA512xx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
