@@ -394,23 +394,23 @@ END FUNCTION
 
 ' Write energy meter values to flash (e.g. midnight)
 ' fn% filenumber to use
+' uxt% unix time stamp
 ' eE exported energy
 ' eI imported energy
 ' eP produced energy
 ' eS stored energy
-FUNCTION pgSaveEnergy(fn%,eE,eI,eP,eS)
+FUNCTION pgSaveEnergy(fn%,uxt%,eE,eI,eP,eS)
  pgSaveEnergy=0
  open "output/energy.dat" for output as # fn%
- IF WriteFile(# fn%, conv("f32/ble",eE)) <> 4 THEN
+ IF WriteFile(# fn%, conv("u32/ble",uxt%)) <> 4 THEN
   pgSaveEnergy=-1
- ENDIF
- IF WriteFile(# fn%, conv("f32/ble",eI)) <> 4 THEN
+ ELSE IF WriteFile(# fn%, conv("f32/ble",eE)) <> 4 THEN
+  pgSaveEnergy=-1 
+ ELSE IF WriteFile(# fn%, conv("f32/ble",eI)) <> 4 THEN
   pgSaveEnergy=-1
- ENDIF
- IF WriteFile(# fn%, conv("f32/ble",eP)) <> 4 THEN
+ ELSE IF WriteFile(# fn%, conv("f32/ble",eP)) <> 4 THEN
   pgSaveEnergy=-1
- ENDIF
- IF WriteFile(# fn%, conv("f32/ble",eS)) <> 4 THEN
+ ELSE IF WriteFile(# fn%, conv("f32/ble",eS)) <> 4 THEN
   pgSaveEnergy=-1
  ENDIF
  close # fn%
@@ -419,11 +419,12 @@ END FUNCTION
 
 ' Read energy meter values from midnight
 ' fn% filenumber to use
+' uxt% unixtime
 ' eE exported energy
 ' eI imported energy
 ' eP produced energy
 ' eS stored energy
-FUNCTION pgLoadEnergy(fn%,eE,eI,eP,eS)
+FUNCTION pgLoadEnergy(fn%,uxt%, eE,eI,eP,eS)
  LOCAL s$
  pgLoadEnergy=0
  open "output/energy.dat" for random as # fn%
@@ -433,7 +434,15 @@ FUNCTION pgLoadEnergy(fn%,eE,eI,eP,eS)
   pgLoadEnergy=-1
   EXIT FUNCTION
  ENDIF
+ uxt%=conv("ble/u32",s$)
+ s$=ReadFile(# fn%, 4)
+ IF len(s$)<>4 THEN 
+  close # fn%
+  pgLoadEnergy=-1
+  EXIT FUNCTION
+ ENDIF
  eE=conv("ble/f32",s$)
+
  s$=ReadFile(# fn%, 4)
  IF len(s$)<>4 THEN 
   close # fn%
