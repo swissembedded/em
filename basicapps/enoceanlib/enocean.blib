@@ -1055,7 +1055,7 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
   IF xx%=&H16 OR xx%=&H17 THEN
    sw%=db0% AND 1
   ENDIF 
- ELSEIF xx%>=&H18 AND xx%<=&H1E THEN
+ ELSE IF xx%>=&H18 AND xx%<=&H1E THEN
   temp=(40.0/250.0)*(250-db1%)
   fan%=(db0% AND 112)/16
   oed%=(db0% AND 2)/2
@@ -1079,7 +1079,7 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
    hum=100.0/250.0*db3%
    humsp=100.0/250.0*db2%
   ENDIF
- ELSEIF xx%=&H1F THEN
+ ELSE IF xx%=&H1F THEN
   fan=db3%
   sp=db2%
   temp=(40.0/255.0)*(255-db1%)
@@ -1088,22 +1088,22 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
   fanf%=(db0% AND 16)/16
   unocc%=(db0% AND 2)/2
   sw%=db0% AND 1
- ELSEIF xx%>=&H20 AND xx%<=&H23 THEN
+ ELSE IF xx%>=&H20 AND xx%<=&H23 THEN
   sp%=db3%
   temp=(40.0/250.0)*db1%
   IF xx%=&H20 THEN
    spm%=(db0% AND 96)/32
    batt%=(db0% AND 32)/32
    act%=db0% AND 1
-  ELSEIF xx%=&H21 THEN
+  ELSE IF xx%=&H21 THEN
    spm%=(db0% AND 96)/32
    hum=(100.0/250.0)*db2%
    batt%=(db0% AND 32)/32
    act%=db0% AND 1
-  ELSEIF xx%=&H22 THEN
+  ELSE IF xx%=&H22 THEN
    hum=(100.0/250.0)*db2%
    fan%=(db0% AND 224)/32
-  ELSEIF xx%=&H23 THEN
+  ELSE IF xx%=&H23 THEN
    hum=(100.0/250.0)*db2%
    fan%=(db0% AND 224)/32
    occ%=db%0 AND 1
@@ -1225,7 +1225,7 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan
   mgc%=(db0% AND 4)/4
   occ%=(db0% AND 2)/2
   per%=db0% AND 1
- ELSEIF xx%=&H02 THEN
+ ELSE IF xx%=&H02 THEN
   cvar=(100.0/255.0)*db3%
   fan%=db2%
   asp=(51.2/255.0)*db1%
@@ -1234,7 +1234,7 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan
   cst%=(db0% AND 16)/16
   erh%=(db0% AND 4)/4
   ro%=db0% AND 3
- ELSEIF xx%=&H03 THEN
+ ELSE IF xx%=&H03 THEN
   bsp%=db3%
   as%=(db2% AND 128)/128
   an=(180.0/90.0)*(db2% AND 128)
@@ -1245,7 +1245,7 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan
   st%=db1% AND 3
   sm%=(db0% AND 128)/128
   motp%=(db0% AND 64)/64
- ELSEIF xx%=&H04 THEN
+ ELSE IF xx%=&H04 THEN
   p1%=db3%
   p2%=db2%
   p3%=db1%
@@ -1254,7 +1254,7 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,ill,isp%,dim%,rep%,prt%,dhv%,edim%,cvar,fan
   es%=(db0% AND 48)/16
   pm%=(db0% AND 6)/2
   st%=db0% AND 1
- ELSEIF xx%=&H05 THEN
+ ELSE IF xx%=&H05 THEN
   IF dir%=1 THEN mt%=db0% AND 1
   ELSEIF dir%=2 THEN
    wm%=(db0% AND 112)/16
@@ -1299,19 +1299,19 @@ END FUNCTION
 ' ps9%   position sensor 9
 ' lrn%   learn button 1=teach-in telegram, 0=data telegram
 ' div%   divisor for value (used to set the scale of rm) 
-'          0: x/1=>0...16777215 
-'		   1: x/10=>0...1677721.5
-'		   2: x/100=>0...167772.15
-'		   3: x/1000=>0...16777.215
+'          0: x/1    => 0..16777215 
+'          1: x/10   => 0..1677721.5
+'	   2: x/100  => 0..167772.15
+'	   3: x/1000 => 0..16777.215
 ' dt%    data type 0: Cumulative value, 1: Current value
-'          0: 1,   1: 1/s (A5-12-00)
-'          0: kWh, 1: W (A5-12-01)
-'          0: m3,  1: liter/s (A5-12-02 & A5-12-03)
-'		   0: A.h. 1: mA (A5-12-10)
+'          0: 1,    1: 1/s      (A5-12-00)
+'          0: kWh,  1: W        (A5-12-01)
+'          0: m3,   1: liter/s  (A5-12-02 & A5-12-03)
+'	   0: A.h.  1: mA       (A5-12-10)
 ' ch%    measurement channel (A5-12-00 & A5-12-10 only)
 ' ti%    tariff info (A5-12-01 & A5-12-02 & A5-12-03)
 ' bl%    battery level 0: 100-75%, 1: 75-50%, 2: 50-25%, 3: 25-0% (A5-12-04 & A5-12-05 only)
-FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,ps7%,ps8%,ps9%,lrn%,div%,dt%,ti%,ch%,bl%)
+FUNCTION eoRxA512xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,ps7%,ps8%,ps9%,lrn%,div%,dt%,ti%,ch%,bl%)
  LOCAL n%,id%
  n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
  IF n% < 0 THEN
@@ -1342,9 +1342,9 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,
   dt%=(db0% AND 4)/4
   IF xx%=&H00 OR xx%=&H10 THEN ch%=(db0% AND 240)/16
   ELSE ti%=(db0% AND 240)/16
-  END IF
- ELSEIF xx%=&H04 OR xx%=&H05 THEN
-  temp=(80.0/255.0)*db1%-40.0
+  ENDIF
+ ELSE IF xx%=&H04 OR xx%=&H05 THEN
+  temp=((80.0/255.0)*db1%)-40.0
   bl%=db0% AND 3
   IF xx%=&H04 THEN mr=(db3%*64)+((db2% AND 252)/4)
   ELSE
@@ -1358,13 +1358,173 @@ FUNCTION eoRxA511xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,
    ps7%=db3% AND 1
    ps8%=(db2% AND 128)/128
    ps9%=(db2% AND 64)/64
-  END IF
+  ENDIF
  ELSE
   ' unknown
   eoRxA512xx=-2
   EXIT FUNCTION
- END IF 
+ ENDIF 
  eoRxA512xx=0
+END FUNCTION
+
+' Callback eoRx4BS helper function for Environmental Applications
+' A5-13-01 Weather Station 0..999 lx, -40..+80 degree celcius, 0..70 m/s
+' A5-13-02 Sun Intenity 0..150 klx
+' A5-13-03 Data Exchange
+' A5-13-04 Time and Day Exchange
+' A5-13-05 Direction Exchange 
+' A5-13-06 Geographic Position Exchange
+' A5-13-07 Wind Sensor
+' A5-13-08 Rain Sensor
+' A5-13-10 Sun Position and Radiation
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 00,01,..,05,10
+' dws    dawn sensor 
+' temp   temperature
+' wnd    wind speed
+' id%    identifier
+' snw    sun-west
+' sns    sun-south
+' sne    sun-east
+' dy%    day (1..31)
+' mth%   month (1..12)
+' yr%    year (2000..2099)
+' wdy%   weekday 1: Monday, 2: Tuesday, 3: Wednesday, 4: Thursday, 5: Friday, 6: Saturday, 7: Sunday
+' hr%    hours (0..23)
+' min%   minutes (0..59)
+' sec%   seconds (0..59)
+' elv%   elevation -90..+90 degree
+' azm%   azimuth 0..359 degree
+' latm   latitude MSB -90..+90 degree
+' lotm   longitude MSB -180..+180
+' latl   latitude LSB -90..+90 degree
+' lotl   longitude LSB -180..+180
+' wd%    wind direction 0: NNE 1: NE, 2: ENE, 3: E, 4: ESE, 5: SE, 6: SSE, 7: S, 
+'          8: SSW, 9: SW, 10: WSW, 11: W, 12: WNW, 13: NW, 4: NNW, 15: N
+' aws    average wind speed 1 to 199.9 mph
+' mws    maximum wind speed 1 to 199.9 mph
+' ras%   rainfall adjust sign 0: negative, 1: positive
+' rfa%   rainfall adjust 0 to 39: 0 to 3.9 %, 40 to 63: reserved
+' rfc%   rainfall count 0..65535
+' snelv% sun elevation 0..90 degree
+' sna%   sun azimuth -90..+90 degree
+' sram%  solar radiation MSB 0..2000 W/m2
+' lrn%   learn button 1=teach-in telegram, 0=data telegram
+' dn%    day/night 0: day, 1: night
+' ran%   rain indicator 0: no rain, 1: rain
+' hem%   hemisphere 0:north, 1: south
+' src%   source 0: Real Time Clock, 1: GPS or equivalent (e.g. DCF77, WWV)
+' tmf%   time format 0: 24-hour, 1: 12-hour
+' apm%   AM/PM 0: AM, 1: PM
+' bs%    battery status 0: battery OK, 1: battery low
+' sral%  solar radiation LSB 0..2000 W/m2
+FUNCTION eoRxA513xx(tp%,da$,oda$,xx%,dws,temp,wnd%,id%,snw,sns,sne,dy%,mth%,yr%,wdy%,hr%,min%,sec%,elv%,azm%,latm,lotm,latl,lotl,wd%,aws,mws,ras%,rfa%,rfc%,snelv%,sna%,sram%,lrn%,dn%,ran%,hem%,src%,tmf%,apm%,bs%,sral%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA513xx=-1
+  EXIT FUNCTION
+ ENDIF
+ dws=-1
+ temp=-1
+ wnd=-1
+ id%=-1
+ snw=-1
+ sns=-1
+ sne=-1
+ dy%=-1
+ mth%=-1
+ yr%=-1
+ wdy%=-1
+ hr%=-1
+ min%=-1
+ sec%=-1
+ elv%=-1
+ azm%=-1
+ latm=-1
+ lotm=-1
+ latl=-1
+ lotl=-1
+ wd%=-1
+ aws=-1
+ mws=-1
+ ras%=-1
+ rfa%=-1
+ rfc%=-1
+ snelv%=-1
+ sna%=-1
+ sram%=-1
+ lrn%=(db0% AND 8)/8
+ dn%=-1
+ ran%=-1
+ hem%=-1
+ src%=-1
+ tmf%=-1
+ apm%=-1
+ bs%=-1
+ sral%=-1
+ IF xx%>=&H01 AND xx%<=&H06 OR xx%=&H10 THEN
+  id%=(db0% AND 240)/16
+  IF xx%=&H01 THEN
+   dws=(999.0/255.0)*db3%
+   temp=(120.0/255)*db2%-40
+   wnd=(70.0/255.0)*db1%
+   dn%=(db0% AND 4)/4
+   ran%=(db0% AND 2)/2
+  ELSE IF xx%=&H02 THEN
+   snw=(150.0/255.0)*db3%
+   sns=(150.0/255.0)*db2%
+   sne=(150.0/255.0)*db1%
+   hem%=(db0% AND 4)/4
+  ELSE IF xx%=&H03 THEN
+   dy%=db3% AND 31
+   mth%=db2% AND 15
+   yr%=db1% And 127
+   src%=db0% AND 1
+  ELSE IF xx%=&H04 THEN
+   wdy%=(db3% AND 224)/32
+   hr%=db3% AND 31
+   min%=db2% AND 31
+   sec%=db1% AND 31
+   tmf%=(db0% AND 4)/4
+   apm%=(db0% AND 2)/2
+   src=db0% AND 1
+  ELSE IF xx%=&H05 THEN
+   elv%=db3%-90
+   azm%=((db2% AND 1)*256)+db1%
+  ELSE IF xx%=&H06 THEN
+   latm=((180.0/4095.0)*(db3% AND 240)/16)-90
+   lotm=((360.0/4095.0)*(db3% AND 15))-180
+   latl=((180.0/4095.0)*db2%)-90
+   lotl=((360.0/4095.0)*db1%)-180
+  ELSE IF xx%=&H10 THEN
+   snelv%=(db3% AND 255)/2
+   dn%=db3% AND 1
+   sna%=db2%-90
+   sram%=db1%
+   sral%=db0% AND 7
+ Else
+   ' unknown
+   eoRxA513xx=-2
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H07 THEN
+  wd%=db3% AND 15
+  aws=(198.9/255)*db2%+1
+  mws=(198.9/255)*db1%+1
+  bs%=db0% AND 1
+ ELSE IF xx%=&H08 THEN
+  ras%=(db3% AND 64)/64
+  rfa%=db3% AND 63
+  rfc%=(db2%*256)+db1%
+ ELSE
+  ' unknown
+  eoRxA513xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA513xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
