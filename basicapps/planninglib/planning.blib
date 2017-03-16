@@ -401,21 +401,22 @@ END FUNCTION
 ' eS stored energy
 FUNCTION pgSaveEnergy(fn%,uxt%,eE,eI,eP,eS)
  pgSaveEnergy=0
- open "output/energy.dat" for output as # fn%
- IF WriteFile(# fn%, conv("u32/ble",uxt%)) <> 4 THEN
-  pgSaveEnergy=-1
- ELSE IF WriteFile(# fn%, conv("f32/ble",eE)) <> 4 THEN
-  pgSaveEnergy=-1 
- ELSE IF WriteFile(# fn%, conv("f32/ble",eI)) <> 4 THEN
-  pgSaveEnergy=-1
- ELSE IF WriteFile(# fn%, conv("f32/ble",eP)) <> 4 THEN
-  pgSaveEnergy=-1
- ELSE IF WriteFile(# fn%, conv("f32/ble",eS)) <> 4 THEN
-  pgSaveEnergy=-1
+ IF pgSaveVarsI(fn%,0,uxt%) < 0 THEN
+   pgSaveEnergy=-1
  ENDIF
- close # fn%
+ IF pgSaveVarsF(fn%,1,eE) < 0 THEN
+   pgSaveEnergy=-1
+ ENDIF
+ IF pgSaveVarsF(fn%,2,eI) < 0 THEN
+   pgSaveEnergy=-1
+ ENDIF
+ IF pgSaveVarsF(fn%,3,eP) < 0 THEN
+   pgSaveEnergy=-1
+ ENDIF
+ IF pgSaveVarsF(fn%,4,eS) < 0 THEN
+   pgSaveEnergy=-1
+ ENDIF
 END FUNCTION
-
 
 ' Read energy meter values from midnight
 ' fn% filenumber to use
@@ -425,45 +426,84 @@ END FUNCTION
 ' eP produced energy
 ' eS stored energy
 FUNCTION pgLoadEnergy(fn%,uxt%, eE,eI,eP,eS)
- LOCAL s$
  pgLoadEnergy=0
- open "output/energy.dat" for random as # fn%
- s$=ReadFile(# fn%, 4)
- IF len(s$)<>4 THEN 
-  close # fn%
-  pgLoadEnergy=-1
-  EXIT FUNCTION
+ IF pgLoadVarsI(fn%,0,uxt%) < 0 THEN
+   pgLoadEnergy=-1
  ENDIF
- uxt%=conv("ble/u32",s$)
- s$=ReadFile(# fn%, 4)
- IF len(s$)<>4 THEN 
-  close # fn%
-  pgLoadEnergy=-1
-  EXIT FUNCTION
+ IF pgLoadVarsF(fn%,1,eE) < 0 THEN
+   pgLoadEnergy=-1
  ENDIF
- eE=conv("ble/f32",s$)
+ IF pgLoadVarsF(fn%,2,eI) < 0 THEN
+   pgLoadEnergy=-1
+ ENDIF
+ IF pgLoadVarsF(fn%,3,eP) < 0 THEN
+   pgLoadEnergy=-1
+ ENDIF
+ IF pgLoadVarsF(fn%,4,eS) < 0 THEN
+   pgLoadEnergy=-1
+ ENDIF
+END FUNCTION
 
+' Load a variable (float)
+' fn% filenumber to use
+' ps% position in the file
+' vl  value loaded from file
+FUNCTION pgLoadVarsF(fn%,ps%,vl)
+ LOCAL s$
+ pgLoadVarsF=0
+ open "output/energy.dat" for random as # fn%
+ seek # fn%, (ps%*4)+1, 0
  s$=ReadFile(# fn%, 4)
  IF len(s$)<>4 THEN 
-  close # fn%
-  pgLoadEnergy=-1
-  EXIT FUNCTION
+  pgLoadVarsF=-1
+ ELSE
+  vl=conv("ble/f32",s$)
  ENDIF
- eI=conv("ble/f32",s$)
- s$=ReadFile(# fn%, 4)
- IF len(s$)<>4 THEN 
-  close # fn%
-  pgLoadEnergy=-1
-  EXIT FUNCTION
- ENDIF
- eP=conv("ble/f32",s$)
- s$=ReadFile(# fn%, 4)
- IF len(s$)<>4 THEN 
-  close # fn%
-  pgLoadEnergy=-1
-  EXIT FUNCTION
- ENDIF
- eS=conv("ble/f32",s$)
  close # fn%
 END FUNCTION
 
+' Load a variable (integer)
+' fn% filenumber to use
+' ps% position in the file
+' vl%  value loaded from file
+FUNCTION pgLoadVarsI(fn%,ps%,vl%)
+ LOCAL s$
+ pgLoadVarsI=0
+ open "output/energy.dat" for random as # fn%
+ seek # fn%, (ps%*4)+1, 0
+ s$=ReadFile(# fn%, 4)
+ IF len(s$)<>4 THEN 
+  pgLoadVarsI=-1
+ ELSE
+  vl=conv("ble/u32",s$)
+ ENDIF
+ close # fn%
+END FUNCTION
+
+' Save a variable (float)
+' fn% filenumber to use
+' ps% position in the file
+' vl  value loaded from file
+FUNCTION pgSaveVarsF(fn%,ps%,vl)
+ pgSaveVarsF=0
+ open "output/energy.dat" for output as # fn%
+ seek # fn%, (ps%*4)+1, 0
+ IF WriteFile(# fn%, conv("f32/ble",vl))<>4 THEN
+  pgSaveVarsF=-1
+ ENDIF
+ close # fn%
+END FUNCTION
+
+' Save a variable (integer)
+' fn% filenumber to use
+' ps% position in the file
+' vl%  value loaded from file
+FUNCTION pgSaveVarsI(fn%,ps%,vl%)
+ pgSaveVarsI=0
+ open "output/energy.dat" for output as # fn%
+ seek # fn%, (ps%*4)+1, 0
+ IF WriteFile(# fn%, conv("u32/ble",vl%))<>4 THEN
+  pgSaveVarsI=-1
+ ENDIF
+ close # fn%
+END FUNCTION
