@@ -475,7 +475,7 @@ FUNCTION pgLoadVarsI(fn%,ps%,vl%)
  IF len(s$)<>4 THEN 
   pgLoadVarsI=-1
  ELSE
-  vl=conv("ble/u32",s$)
+  vl%=conv("ble/u32",s$)
  ENDIF
  close # fn%
 END FUNCTION
