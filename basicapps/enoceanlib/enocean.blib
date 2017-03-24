@@ -1527,6 +1527,45 @@ FUNCTION eoRxA513xx(tp%,da$,oda$,xx%,dws,temp,wnd%,id%,snw,sns,sne,dy%,mth%,yr%,
  eoRxA513xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Multi-Func Sensors
+' A5-14-01 Single Input Contact (Window/Door), Supply voltage monitor
+' A5-14-02 Single Input Contact (Window/Door), Supply voltage monitor and Illumination (0..1000 lx)
+' A5-14-03 Single Input Contact (Window/Door), Supply voltage monitor and Vibration
+' A5-14-04 Single Input Contact (Window/Door), Supply voltage monitor, Vibration and Illumination (0..1000 lx)
+' A5-14-05 Vibration/Tilt, Supply voltage monitor
+' A5-14-06 Vibration/Tilt, Illumination and Supply voltage monitor (0..1000 lx)
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01,02,..,06
+' svc    supply voltage 0 to 0.5 volts
+' ll     illumination
+' lrn%   learn button 1=teach-in telegram, 0=data telegram
+' ct%    contact 0b0: Contact closed, 0b1: Contact open
+' vib%   vibration 0b0: No vibration detected, 0b1: Vibration detected
+FUNCTION eoRxA514xx(tp%,da$,oda$,xx%,svc,ill,lrn%,ct%,vib%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA514xx=-1
+  EXIT FUNCTION
+ ENDIF
+ svc=(5.0/250.0)*db3%
+ ill=-1
+ lrn%=(db0% AND 8)/8
+ ct%=-1
+ vib%=-1
+ IF xx%>=&H01 AND XX%<=&H04 THEN ct%=db0% AND 1
+ IF xx%=&H02 OR xx%=&H04 OR xx%=&H05 THEN ill=(1000.0/250.0)*db2%
+ IF xx%>=&H03 AND xx%<=&H06 THEN vib%=(db0% AND 2)/2
+ ELSE
+  ' unknown
+  eoRxA514xx=-2
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA514xx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
