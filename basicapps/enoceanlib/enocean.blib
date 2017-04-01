@@ -1109,7 +1109,7 @@ FUNCTION eoRxA510xx(tp%,da$,oda$,xx%,fan%,sp%,temp,hum,ill,tempsp,su,illsp,tempf
    occ%=db%0 AND 1
   ENDIF
  ELSE
-  ' unknown
+  ' unknown type
   eoRxA510xx=-2
   EXIT FUNCTION
  ENDIF 
@@ -1360,7 +1360,7 @@ FUNCTION eoRxA512xx(tp%,da$,oda$,xx%,mr,temp,ps0%,ps1%,ps2%,ps3%,ps4%,ps5%,ps6%,
    ps9%=(db2% AND 64)/64
   ENDIF
  ELSE
-  ' unknown
+  ' unknown type
   eoRxA512xx=-2
   EXIT FUNCTION
  ENDIF 
@@ -1505,11 +1505,6 @@ FUNCTION eoRxA513xx(tp%,da$,oda$,xx%,dws,temp,wnd%,id%,snw,sns,sne,dy%,mth%,yr%,
    sna%=db2%-90
    sram%=db1%
    sral%=db0% AND 7
- Else
-   ' unknown
-   eoRxA513xx=-2
-   EXIT FUNCTION
-  ENDIF
  ELSE IF xx%=&H07 THEN
   wd%=db3% AND 15
   aws=(198.9/255)*db2%+1
@@ -1520,7 +1515,7 @@ FUNCTION eoRxA513xx(tp%,da$,oda$,xx%,dws,temp,wnd%,id%,snw,sns,sne,dy%,mth%,yr%,
   rfa%=db3% AND 63
   rfc%=(db2%*256)+db1%
  ELSE
-  ' unknown
+  ' unknown type
   eoRxA513xx=-3
   EXIT FUNCTION
  ENDIF 
@@ -1559,7 +1554,7 @@ FUNCTION eoRxA514xx(tp%,da$,oda$,xx%,svc,ill,lrn%,ct%,vib%)
  IF xx%=&H02 OR xx%=&H04 OR xx%=&H05 THEN ill=(1000.0/250.0)*db2%
  IF xx%>=&H03 AND xx%<=&H06 THEN vib%=(db0% AND 2)/2
  ELSE
-  ' unknown
+  ' unknown type
   eoRxA514xx=-2
   EXIT FUNCTION
  ENDIF 
@@ -1672,7 +1667,7 @@ END FUNCTION
 ' wc%    window constact 0: windows opened, 1: windows closed
 ' as%    alarm state 0: OK, 1: error
 ' erh%   energy hold-off/dew point 0: Normal, 1: Energy hold-off/ Dew point
-FUNCTION eoRxA514xx(tp%,da$,oda$,xx%,dir%,cv%,so%,enie%,es%,bcap%,cco%,fts%,dwo%,aco%,temp,sp,rin%,lfs%,vo%,vc%,sb%,sps%,spn%,rcu%,av,spi%,vps%,ats%,tmprc,cp%,ftts%,tmpfc%,mst%,str%,pos%,tsp%,mc%,wuc%,dso%,md%,vps%,fansp%,cvar%,exds%,err%,res%,od%,wcd%,kcd%,ed%,cvo,spsh,fanor%,ctm%,cst%,lrn%,bls%,ts%,fl%,blc%,ser%,ro%,oi%,rdc%,wc%,as%,erh%)
+FUNCTION eoRxA520xx(tp%,da$,oda$,xx%,dir%,cv%,so%,enie%,es%,bcap%,cco%,fts%,dwo%,aco%,temp,sp,rin%,lfs%,vo%,vc%,sb%,sps%,spn%,rcu%,av,spi%,vps%,ats%,tmprc,cp%,ftts%,tmpfc%,mst%,str%,pos%,tsp%,mc%,wuc%,dso%,md%,vps%,fansp%,cvar%,exds%,err%,res%,od%,wcd%,kcd%,ed%,cvo,spsh,fanor%,ctm%,cst%,lrn%,bls%,ts%,fl%,blc%,ser%,ro%,oi%,rdc%,wc%,as%,erh%)
  LOCAL n%,id%
  n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
  IF n% < 0 THEN
