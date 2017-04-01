@@ -1566,6 +1566,340 @@ FUNCTION eoRxA514xx(tp%,da$,oda$,xx%,svc,ill,lrn%,ct%,vib%)
  eoRxA514xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for HVAC Components
+' A5-20-01 Battery Powered Actuator (BI-DIR) DIR:2-0..+40 degree C Temperature Setpoint
+' A5-20-02 Basic Actuator (BI-DIR) 
+' A5-20-03 Line powered Actuator (BI-DIR) 0..+40 degree C Temperature/Temperature Setpoint
+' A5-20-04 Heating Radiator Valve Actuating Drive with Feed and Room Temperature Measurement, Local Set Point Control and Display (BI-DIR) 
+'            DIR-1: +20..+80 degree C Temperature/ +10..+30 degree C Temperature Setpoint
+'            DIR-2: +10..+30 degree C Temperature Setpoint
+' A5-20-10 Generic HVAC Interface (BI-DIR)
+' A5-20-11 Generic HVAC Interface – Error Control (BI-DIR) DIR-2: 0..65535 error code
+' A5-20-12 Temperature Controller Input Setpoint Shift: -10..+10 degree K
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01,02,..,04,10,11,12
+' dir%   direction DIR-1 = Transmit mode: Message from the actuator to the controller
+'           DIR-2 = Receive mode: Commands from the controller to the actuator; max. reponse time 1 sec.
+' cv%    current value
+' so%    service 1: on
+' enie%  energy input 1: true (enabled)
+' es%    energy storage 1: true (suffeciently charged)
+' bcap%  battery capacity 0: true
+' cco%   constant, cover open 1: true
+' fts%   failure temperature sensor 1: true (out of range)
+' dwo%   detection 1: true (window open)
+' aco%   acuator 1: true (obstracted)
+' temp   temperature 0..+40 degree C (A5-20-01, A%-20-03)
+' sp     valve position 0..100% OR temperature setpoint 0..+40 degree C (depending on sps%)          
+' rin%   run init sequence 1: true (end position (valve zero point) has been reached)
+' lfs%   lift set 1: true (initialization = the valve is completelyopened and closed)
+' vo%    valve open/maintenance 1: true (After receiving an operation command, the actuator moves the valve in direction open or close. 
+'           when reaching the end position, an automatic switch-off procedure is started. In service mode the valve can be set to open or closed always.)
+' vc%    valve closed 1: true (valve is closed)
+' sb%    summer bit 1: true (reduction of energy consumption)
+' sps%   set point select 0: Valve position (0-100%). Unit respond to controller 1: Temperature set point 0...40°C Unit respond to room sensor and use internal PI loop
+' spn%   set point inverse 1: true (inverted valve set point) (A5-20-01)
+' rcu%   selection function 0: RCU (Room controller-unit), 1: service on
+' av     actual value
+' spi%   set point inverse 1: true (inverted set point. Default state to be define as per product manufacturer)
+' vsp%   valve set point
+' ats%   actuator/temperature setpoint 0..100% actuator setpoint OR 0..+40 degree C temperature setpoint (depending on sps%)
+' tmprc  temperature actual from RCU 0..+40 degree C
+' cp%    current position
+' ftts   feed temperature/temperature setpoint +20..+80 degree C (feed temperature) OR +10..+30 degree C (temperature setpoint)
+' tmpfc  room temperature/failure code +10..+30 degree C (room temperature) 
+'           OR	0..16: Reserved,                17: Measurement error, 18: Battery empty,    19: Reserved, 
+'		20: Frost protection,           21..32: Reserved,      33: Blocked valve,    34..35: Reserved, 
+'		36: End point detection error,  37..39: Reserved,      40: No valve,         41..48: Reserved, 
+' 		49: Not taught in,              50..52: Reserved,      53: No response from controller, 
+'               54: Teach-in error,             55..255: Reserved (depending on fl%)
+' mst%   measurement status 0: feed temperature or room temperature is active, 1: feed temperature or room temperature is active
+' str%   status request 0: no change, 1: status requested
+' pos%   valve position
+' tsp    temperature setpoint +10..+30 degree C
+' mc%    measurement control 0: enabled, 1: disabled
+' wuc%   wake-up cycle 
+'           0: 10 sec,        1: 60 sec,            2: 90 sec,         3: 120 sec,            4: 150 sec,     5: 180 sec,           
+' 	    6: 210 sec        7: 240 sec,           8: 270 sec,        9: 300 sec (5 min),    10: 330 sec,    11: 360 sec,    
+'           12: 390 sec,      13: 420 sec,          14: 450 sec,       15: 480 sec,           16: 510 sec,    17: 540 sec,   
+'	    18: 570 sec,      19: 600 sec (10 min), 20: 630 sec,       21: 660 sec,           22: 690 sec,    23: 720 sec,
+'           24: 750 sec,      25: 780 sec,          26: 810 sec,       27: 840 sec,           28: 870 sec,    29: 900 sec (15 min)
+'	    30: 930 sec,      31: 960 sec,          32: 990 sec,       33: 1020 sec,          34: 1050 sec,   35: 1080 sec
+'  	    36: 1110 sec,     37: 1140 sec,         38: 1170 sec,      39: 1200 sec (20 min), 40: 1230 sec,   41: 1260 sec, 
+'           42: 1290 sec,     43: 1320 sec,         44: 1350 sec,      45: 1380 sec,          46: 1410 sec,   47: 1440 sec, 
+'           48: 1470 sec,     49: 1500 sec (25 min),50: 3 hrs,         51: 6 hrs,             52: 9 hrs,      53: 12 hrs, 
+'           54: 15 hrs,       55: 18 hrs,           56: 21 hrs,        57: 24 hrs,            58: 27 hrs,     59: 30 hrs, 
+'	    60: 33 hrs,       61: 36 hrs,           62: 39 hrs,        63: 42 hrs (max)
+' dso%   display orientation 0: 0°, 1: 90°, 2: 180°, 3: 270°
+' md%    mode 0: Auto,          1: Heat,                2: Morning Warmup,         3: Cool,           4: Night Purge,      5: Precool,     
+'           6: Off,             7: Test,                8: Emergency Heat,         9: Fan only,       10: Free cool,       11: Ice,                  
+'           12: Max heat,       13: Economic heat/cool, 14: Dehumidification (dry),15: Calibration,   16: Emergency cool,  17: Emergency steam,
+'	    18: max cool,       19: Hvc load,           20: no load,               21..30: reserved,  31: Auto Heat,       32: Auto Cool,
+'           33..254: reserved,  255: N/A
+' vps%   vane position 
+'	    0: Auto,         1: Horizontal,        2: Pos2,            3: Pos3,              4: Pos4,           5: Vertical,
+'           6: Swing,        7..10: Reserved,      11: Vertical swing, 12: Horizontal swing, 13: Horizontal and vertical swing, 
+'           14: Stop swing,  15: N/A
+' fansp% fan speed 0: Auto, 1..14: Up to 14 fan speeds being 1 the lowest, 15: N/A
+' cvar%  control variable 0..100%
+' exds%  external disablement 0: not disabled, 1: disabled
+' err%   error code 
+' res%   reserved (0b0000)
+' od%    other disablement 0: not disabled, 1: disabled
+' wcd%   window contact disablement 0: not disabled, 1: disabled
+' kcd%   key card disablement 0: not disabled, 1: disabled
+' ed%    external disablement 0: not disabled, 1: disabled
+' cvo    control variable override 0..100%
+' spsh   setpoint shift -10..+10 degree K
+' fanor% fan override 0: Automatic, 1: Override Fan DB2
+' ctm%   controller mode 0: Auto mode, 1: Heating, 2: Cooling, 3: Off
+' cst%   controller state 0: Automatic, 1: Override control variable DB3
+' lrn%   learn button 1: teach-in telegram, 0: data telegram
+' bls%   button lock status 0: buttons unlocked, 1: buttons locked
+' ts%    temperature selection 0: Feed temperature, 1: Temperature set point
+' fl%    failure detection 0: no failure (temperature transmitted), 1: failure (failure code transmitted)
+' blc%   button lock control 0: unlocked, 1: locked
+' ser%   service command 0: No change, 1: Open valve, 2: Run initialisation, 3: Close valve
+' ro%    room occupancy 
+'	    A5-20-10: 0: Occupied,                      1: StandBy (waiting to perform action), 
+'                     2: Unoccupied (action performed), 3: Off (no occupancy and no action)
+'           A5-20-12: 0: Occupied,                      1: Unoccupied,
+'                     2: StandBy,                       3: Frost
+' oi%    on/off 0: off (the unit is not running), 1: on
+' rdc%   disable remote controller 0: Enable Remote, controller, 1: Disable Remote controller
+' wc%    window constact 0: windows opened, 1: windows closed
+' as%    alarm state 0: OK, 1: error
+' erh%   energy hold-off/dew point 0: Normal, 1: Energy hold-off/ Dew point
+FUNCTION eoRxA514xx(tp%,da$,oda$,xx%,dir%,cv%,so%,enie%,es%,bcap%,cco%,fts%,dwo%,aco%,temp,sp,rin%,lfs%,vo%,vc%,sb%,sps%,spn%,rcu%,av,spi%,vps%,ats%,tmprc,cp%,ftts%,tmpfc%,mst%,str%,pos%,tsp%,mc%,wuc%,dso%,md%,vps%,fansp%,cvar%,exds%,err%,res%,od%,wcd%,kcd%,ed%,cvo,spsh,fanor%,ctm%,cst%,lrn%,bls%,ts%,fl%,blc%,ser%,ro%,oi%,rdc%,wc%,as%,erh%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA520xx=-1
+  EXIT FUNCTION
+ ENDIF
+ cv%=-1
+ so%=-1
+ enie%=-1
+ es%=-1
+ bcap%=-1
+ cco%=-1
+ fts%=-1
+ dwo%=-1
+ aco%=-1
+ temp=-1
+ sp=-1
+ rin%=-1
+ lfs%=-1
+ vo%=-1
+ vc%=-1
+ sb%=-1
+ sps%=-1
+ spn%=-1
+ rcu%=-1
+ av=-1
+ spi%=-1
+ vps%=-1
+ ats%=-1
+ tmprc=-1
+ cp%=-1
+ ftts%=-1
+ tmpfc%=-1
+ mst%=-1
+ str%=-1
+ pos%=-1
+ tsp%=-1
+ mc%=-1
+ wuc%=-1
+ dso%=-1
+ md%=-1
+ vps%=-1
+ fansp%=-1
+ cvar%=-1
+ exds%=-1
+ err%=-1
+ res%=-1
+ od%=-1
+ wcd%=-1
+ kcd%=-1
+ ed%=-1
+ cvo=-1
+ spsh=-1
+ fanor%=-1
+ ctm%=-1
+ cst%=-1
+ lrn%=(db0% AND 8)/8
+ bls%=-1
+ ts%=-1
+ fl%=-1
+ blc%=-1
+ ser%=-1
+ ro%=-1
+ oi%=-1
+ rdc%=-1
+ wc%=-1
+ as%=-1
+ erh%=-1
+ IF xx%=&H01 THEN
+  temp=(40.0/255.0)*db1%
+  IF dir%=1 THEN
+   cv%=db3%
+   so%=(db2% AND 128)/128
+   enie%=(db2% AND 64)/64
+   es%=(db2% AND 32)/32
+   bcap%=(db2% AND 16)/16
+   cco%=(db2% AND 8)/8
+   fts%=(db2% AND 4)/4
+   dwo%=(db2% AND 2)/2
+   aco%=db2% AND 1
+  ELSE IF dir%=2 THEN
+   rin%=(db1% AND 128)/128
+   lfs%=(db1% AND 64)/64
+   vo%=(db1% AND 32)/32
+   vc%=(db1% AND 16)/16
+   sb%=(db1% AND 8)/8
+   sps%=(db1% AND 4)/4
+   spn%=(db1% AND 2)/2
+   rcu%=db1% AND 1
+   IF sps%=0 THEN sp=db3%
+   ELSE IF sps%=1 THEN sp=(40.0/255.0)*db3%
+   ELSE
+    ' unknown selector
+    eoRxA520xx=-2
+    EXIT FUNCTION
+   ENDIF 
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-3
+   EXIT FUNCTION
+  ENDIF 
+ ELSE IF xx%=&H02 THEN
+  IF dir%=1 THEN
+   av%=db3%
+   spi%=(db1% AND 2)/2
+  ELSE IF dir%=2 THEN 
+   vsp%=db3%
+   spi%=db1% AND 1
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-4
+   EXIT FUNCTION
+  ENDIF 
+ ELSE IF xx%=&H03 THEN
+  IF dir%=1 THEN
+   av%=db3%
+   temp=(40.0/255.0)*db1%
+  ELSE IF dir%=2 THEN
+   tmprc=(40.0/255.0)*db2%
+   sps%=(db1% AND 4)/4
+   spi%=(db1% AND 2)/2
+   IF sps%=0 THEN ats=db3%
+   ELSE IF sps%=1 THEN ats=(40.0/255.0)*db3%
+   ELSE
+    ' unknown set point selector
+    eoRxA520xx=-5
+    EXIT FUNCTION
+   ENDIF
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-6
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H04 THEN
+  IF dir%=1 THEN
+   cp%=db3%
+   mst%=(db0% AND 128)/128
+   str%=(db0% AND 64)/64
+   bls%=(db0% AND 4)/4
+   ts%=(db0% AND 2)/2
+   fl%=db0% AND 1
+   IF ts%=0 THEN ftts=(60.0/255.0)*db2%+20
+   ELSE IF ts%=1 THEN ftts=(20.0/255.0)*db2%+10   
+   ELSE
+    ' unknown temperature selsctor
+    eoRxA520xx=-6
+    EXIT FUNCTION
+   ENDIF
+   IF fl%=0 THEN tmpfc=(20.0/255.0)*db1%+10
+   ELSE IF fl%=1 THEN tmpfc=db1%   
+   ELSE
+    ' unknown failure detector
+    eoRxA520xx=-7
+    EXIT FUNCTION
+   ENDIF
+  ELSE IF dir%=2 THEN
+   pos%=db3%
+   tsp=(20.0/255.0)*db2%+10
+   mc%=(db1% AND 64)/64
+   wuc%=db1% AND 63
+   dso%=(db0% AND 48)/16
+   blc%=(db0% AND 4)/4
+   ser%=db0% AND 3
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-8
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H10 OR dir%=2 THEN
+  IF dir%=1 THEN
+   md%=db3%
+   vps%=(db2% AND 240)/16
+   fansp%=db2% AND 5
+   cvar%=db1%
+   ro%=(db0% AND 6)/2
+   oi%=db0% AND 1
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-9
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H11 THEN
+  IF dir%=1 THEN
+   
+  ELSE IF dir%=2 THEN
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-10
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H11 THEN
+  IF dir%=1 THEN
+   exds%=db1% AND 1
+   drc%=(db0% AND 4)/4
+   wc%=(db0% AND 2)/2
+  ELSE IF dir%=2 THEN
+   err%=(db3%*256)+db2%
+   res%=(db1% AND 240)/16
+   od%=(db1% AND 8)/8
+   wcd%=(db1% AND 4)/4
+   kcd%=(db1% AND 2)/2
+   ed%=db1% AND 1
+   rcd%=(db0% AND 4)4
+   wc%=(db0% AND 2)/2
+   as%=db0% AND 1
+  ELSE
+   ' unknown direction
+   eoRxA520xx=-11
+   EXIT FUNCTION
+  ENDIF
+ ELSE IF xx%=&H12 THEN
+  cvo=(100.0/255.0)*db3%
+  fansor%=db2%
+  spsh=(20.0/255.0)*db1%+10
+  fanor%=(db0% AND 128)/128
+  ctm%=(db0% AND 96)/32
+  cst%=(db0% AND 16)/16
+  erh%=(db0% AND 4)4
+  ro%=db0% AND 3
+ ELSE
+  ' unknown type
+  eoRxA520xx=-12
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA520xx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
