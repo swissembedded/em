@@ -1895,6 +1895,80 @@ FUNCTION eoRxA520xx(tp%,da$,oda$,xx%,dir%,cv%,so%,enie%,es%,bcap%,cco%,fts%,dwo%
  eoRxA520xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Digital Input
+' A5-30-01 Single Input Contact, Battery Monitor
+' A5-30-02 Single Input Contact
+' A5-30-03 Four-Digital Inputs, Wake and Temperature 0..+40 degree C
+' A5-30-04 Tree-Digital Inputs, 1 Digital Input 8 Bits
+' A5-30-05 Single Input Contact, Retransmission, Battery Monitor
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01,02,..,05
+' scv%   supply voltage 0..120: Battery LOW, 121..255: Battery OK
+' ips%   input state 
+'           A5-30-01: 0..195: Contact closed, 196..255: Contact open
+'           A5-30-02: 0: Contact closed, 1: Contact open
+' temp   temperature 0..+40 degree C
+' wa0%    status of wake signal 0: Low, 1: High
+' di3%   digital input 3 0: Low, 1: High
+' di2%   digital input 2 0: Low, 1: High
+' di1%   digital input 1 0: Low, 1: High
+' di0%   digital input 0 0: Low, 1: High
+' dv0%   digital value-input 0..255
+' vdd    supply voltage 0-3.3 volts
+' st%    signal type 0: Normal signal, 1: Heart beat signal
+' ios%   index of signals 0...127: Increment a counter by new telegram
+' lrn%   learn button 1: teach-in telegram, 0: data telegram
+FUNCTION eoRxA530xx(tp%,da$,oda$,xx%,scv%,ips%,temp,wa0%,di3%,di2%,di1%,di0%,dv0%,vdd,st%,ios%,lrn%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA530xx=-1
+  EXIT FUNCTION
+ ENDIF
+ scv%=-1
+ ips%=-1
+ temp=-1
+ wa0%=-1
+ di3%=-1
+ di2%=-1
+ di1%=-1
+ di0%=-1
+ dv0%=-1
+ vdd=-1
+ st%=-1
+ ios%=-1
+ lrn%=(db0% AND 8)/8
+ IF xx%=&H01 OR xx%=&H02 THEN
+  svc%=db2%
+  IF xx%=&H01 THEN ips%=db1%
+  ELSE IF xx%=&H02 THEN ips%=db0% AND 1
+  ENDIF
+ ELSE IF xx%=&H03 THEN
+  temp=(40.0/255.0)*db2%
+  wa0%=(db1% AND 16)/16
+  di3%=(db1% AND 8)/8
+  di2%=(db1% AND 4)/4
+  di1%=(db1% AND 2)/2
+  di0%=db1% AND 1
+ ELSE IF xx%=&H04 THEN
+  dv0%=db1%
+  di2%=(db0% AND 4)/4
+  di1%=(db0% AND 2)/2
+  di0%=db0% AND 1
+ ELSE IF xx%=&H05 THEN
+  vdd=(3.3/255.0)*db2%
+  st%=(db2% AND 128)/128
+  ios%=db1% AND 127
+ ELSE
+  ' unknown type
+  eoRxA530xx=-2
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA530xx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
