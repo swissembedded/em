@@ -1969,6 +1969,49 @@ FUNCTION eoRxA530xx(tp%,da$,oda$,xx%,scv%,ips%,temp,wa0%,di3%,di2%,di1%,di0%,dv0
  eoRxA530xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Energy Management
+' A5-37-01 Demand Response
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01 only
+' tmpd%  temprory default
+' spwru% absolute/relative power usage 
+'           0: Absolute power usage. Interpret DB_2.BIT_6...DB_2.BIT_0 as a percentage of the maximum power use. 
+'           1: Relative power usage. Interpret DB_2.BIT_6...DB_2.BIT_0 as a percentage of the current power use.
+' pwru%  power usage 0% to 100% power usage in 1% increments;
+' tmos   timeout setting 15..3825 minutes
+' drl%   DR level
+' lrn%   learn button 1: teach-in telegram, 0: data telegram
+' rsd%   random start delay 0: false, 1: true
+' red%   randomized end delay 0: false, 1: true
+' mpwru% max/min power usage for default DR state 0: Minimum Power usage, 1: Maximum Power usage
+FUNCTION eoRxA537xx(tp%,da$,oda$,xx%,tmpd%,spwru%,pwru%,tmos,drl%,lrn%,rsd%,red%,mpwru%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA537xx=-1
+  EXIT FUNCTION
+ ENDIF
+ IF xx%=&H01 THEN
+  tmpd%=db3%
+  spwru%=(db2% AND 128)/128
+  pwru%=db2% AND 127
+  tmos=(3810.0/254.0)*(db1%-1)+15
+  drl%=(db0% AND 240)/16
+  lrn%=(db0% AND 8)/8
+  rsd%=(db0% AND 4)/4
+  red%=(db0% AND 2)/2
+  mpwru%=db0% AND 1
+ ELSE
+  ' unknown type
+  eoRxA537xx=-2
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA537xx=0
+END FUNCTION
+
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
