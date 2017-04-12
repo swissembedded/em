@@ -2011,6 +2011,178 @@ FUNCTION eoRxA537xx(tp%,da$,oda$,xx%,tmpd%,spwru%,pwru%,tmos,drl%,lrn%,rsd%,red%
  eoRxA537xx=0
 END FUNCTION
 
+' Callback eoRx4BS helper function for Central Command
+' A5-38-08 Gateway
+' A5-38-09 Extended Lighting-Control
+' tp%    type of the packet (from callback eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01,02,..,04,10,11,12
+' com%   command identifier
+'           01: switching,           02: dimming,          03: setpoint shift,       04: basic setpoint, 
+'           05: control variable,    06: fan stage,        07: blind central command
+' tim    time 0.1-6553.5 sec
+' edim   dimming value 0..100%
+' rmp%   ramping time 0..255 sec
+' sp     setpoint -12.7 to +12.8 K
+' bsp    basic setpoint 0 to +51.2 degree C
+' cvov   control variable override 0..100%
+' cm%    control mode 0: Automatic mode selection, 1: Heating, 2: Cooling, 3: Off
+' cs%    control state 0: automatic, 1: override
+' fo%    fan stage override 0: Stage 0, 1: Stage 1, 2: Stage 2, 3: Stage 3, 255: Auto
+' p1     function defined parameter 1 
+'           A5-38-08 (command 0x07): 
+'		Func. 00 to 03: not used
+'		Func. 04: 0%..100% (e.g.: 0% = Blind fully open / 100% = Blind fully closed)
+'		Func. 05: 0 ... 255 seconds
+'		Func. 06: 0 ... 255 seconds
+'		Func. 07: Runtime value to close the blind 0..255 seconds
+'		Func. 08: Runtime value for the sunblind reversion time (This is the time to revolve the sunblind from one slat angle end position to the other end position: 0.0..25.5 seconds => 0.1s steps)
+'		Func. 09: Set minimal position value 0..100%
+'		Func. 10: Angle at the fully SHUT position Bit7 0 = positive sign, Bit7 1 = negative sign, Bit6..0 0..90, Angle in 2° steps (e.g. 0 = 0°, 90 = 180°)
+'		Func. 11: Position logic 0 = Highest position = 0% / Lowest position = 100%, 1 = Highest position = 100% /Lowest position = 0%
+' 	    A5-38-09: 
+' 		Func. 00 to 05, 08, 11: not used
+'		Func. 06: Dimm-Value (0..255)
+' 		Func. 07: R - Red (0..255)
+'		Func. 09: Dimm-Value (0..255)
+'		Func. 10: Lamp operating hours (MSB 15..8)
+'		Func. 12: Energy metering value (MSB 15..8)
+' p2%    function defined parameter 2
+'           A5-38-08 (command 0x07):
+'               Func. 00 to 03, 08, 11: not used
+'               Func. 04: Angel (see remark 1) Bit7 0 = positive sign, Bit7 1 = negative sign, Bit6..0 0..90, Angle in 2° steps
+'               Func. 05: 0.0 to 25.5 seconds
+'               Func. 06: 0.0 to 25.5 seconds
+'               Func. 07: Runtime value to open the blind 0..255 seconds
+'               Func. 09: Set maximal position value 0..100%
+'               Func. 10: Angle at the fully OPEN position Bit7 0 = positive sign, Bit7 1 = negative sign, Bit6..0 0..90 Angle in 2° steps (e.g. 0 = 0°, 90 = 180°)
+'	    A5-38-09:
+'		Func. 00 to 02, 05, 08, 11: not used
+'		Func. 03: Ramping time (MSB 15..8)
+'		Func. 04: Ramping time (MSB 15..8) (65535 s)
+' 		Func. 06: Ramping time (MSB 15..8) (65535 s)
+' 		Func. 07: G - Green (0..255)
+' 		Func. 09: Dimm-Value (0..255)
+' 		Func. 10: Lamp operating hours (7..0 LSB)
+' 		Func. 12: Energy metering value (7..0 LSB)
+' p3%    function defined parameter 3
+'	    A5-38-09: 
+'		Func. 00 to 02, 05, 09, 10: -- not used --
+' 		Func. 03: Ramping time (7..0 LSB) (65535 s)
+' 		Func. 04: Ramping time (7..0 LSB) (65535 s)
+'		Func. 06: Ramping time (7..0 LSB) (65535 s)
+' 		Func. 07: B - Blue(0..255)
+' 		Func. 08: Bit7: 0 = Drive to scene-value, Bit7: 1 = Stores actual value in the scene, Bit3..0: Scene number 0 ... 15
+' 		Func. 11: Blocks the local operations: 0 = Unlock local operations, 1 = Locking switch on commands, 2 = Locking switch off commands, 3 = Locking local operations. 
+' 		Func. 12: Unit of energy metering value: 0 = mW, 1 = W, 2 = kW, 3 = MW, 4 = Wh, 5 = kWh, 6 = MWh, 7 = GWh, 8 = mA, 9 = 1/10 A, 10 = mV, 11 = 1/10 V, 12..15 Not used
+' func%  function:  
+'           A5-38-08 (command 0x07):
+'		0: Do nothing (status request),       1: Blind stops,      2: Blind opens,       3: Blind closes, 
+'           	4: Blind drives to position with angle value (see remark 2, page 106),           5: Blind opens for time (position value) and angle (angle value)
+'           	6: Blind closes for time (position value)and angle (angle value),                7: Set Runtime parameters (see remark 3, page 106),
+'           	8: Set angle configuration (see remark 3, page 106),                             9: Set Min, Max values (see remark 4, page 106),
+'           	10: Set slat angle for SHUT and OPEN position (see remark 5, page 107),          11: Set position logic (see remark 6)
+'	    A5-38-09: 
+'		0: Do nothing, status request,          1: Switched off,                             2: Switched on (Memory value)
+'		3: Dimming up with ramping time,        4: Dimming down with ramping time,           5: Dimming stops
+'		6: Set dimmer-value and ramping time,   7: Set RGB values (see remark 1, page 109),  8: Scene function (see remark 2, page 109)
+'		9: Set minimal and maximal dimmer-value (see remark 3, page 109 & 110),              10: Set the operating hours of the lamp (see remark 4, page 110)
+'		11: Locking local operations (see remark 5. page 110),                               12: Set a new value for the energy metering (overwrite the actual value with the selected unit)
+' lrn%   learn button 0: data telegram, 1: teach-in telegram
+' lck%   lock/unlock 0: unlock, 1: lock
+' del%   delay/duration 0: delay, 1: duration
+' sw%    switching command 0: off, 1: on 
+' edimr% dimming range 0: absolute value, 1: relative value
+' stv%   storage final value 0: no, 1: yes
+' enho%  energy hold off 0: Normal, 1: Energy holdoff/ Dew point
+' rmocc% room occupancy 0: Occupied, 1: Unoccupied, 2: Standby
+' ssf%   send status flag 0: Send new status of device, 1: Send no status (e.g. Global central commands)
+' paf%   position and angle flag 0: No Angle and position value available, 1: Angle and position value available
+' smf%   service mode flag 0: Normal operation, 1: Service mode: The module disables all senders, except this sender, which has set the service mode. (For example for maintenance)
+FUNCTION eoRxA538xx(tp%,da$,oda$,xx%,com%,tim,edim,rmp%,sp,bsp,cvov,cm%,cs%,fo%,p1%,p2%,p3%,func%,lrn%,lck%,del%,sw%,edimr%,stv%,enho%,rmocc%,ssf%,paf%,smf%)
+ LOCAL n%,id%
+ n%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n% < 0 THEN
+  eoRxA538xx=-1
+  EXIT FUNCTION
+ ENDIF
+ tim=1-
+ edim=-1
+ rmp%=-1
+ sp=-1
+ bsp=-1
+ cvov=-1
+ cm%=-1
+ cs%=-1
+ fo%=-1
+ p1%=-1
+ p2%=-1
+ p3%=-1
+ func%=-1
+ lrn%=(db0% AND 8)/8
+ lck%=-1
+ del%=-1
+ sw%=-1
+ edimr%=-1
+ stv%=-1
+ enho%=-1
+ rmocc%=-1
+ ssf%=-1
+ paf%=-1
+ smf%=-1 
+ IF xx%=&H08 THEN
+  com%=db3%  
+  IF com%=&H01 THEN
+   tim=(6553.4/65534.0)*(((db2%*256)+db1%)-1.0)+0.1
+   lck%=(db0% AND 4)/4
+   del%=(db0% AND 2)/2 
+   sw%=db0% AND 1
+  ELSE IF com%=&H02 THEN
+   edim=(100.0/255.0)*db2%
+   rmp%=db1% 
+   edimr%=(db0% AND 4)/4
+   stv%=(db0% AND 2)/2
+   sw%=db0% AND 1
+  ELSE IF com%=&H03 THEN
+   sp=(25.5/255.0)*db1%-12.7  
+  ELSE IF com%=&H04 THEN
+   bsp=(51.2/255.0)*db1%
+  ELSE IF com%=&H05 THEN
+   cvov=(100.0/255.0)*db1%
+   cm%=(db0% AND 96)/32
+   cs%+(db0% AND 16)/16
+   enho%=(db0% AND 4)/4
+   rmocc%=db0% AND 3
+  ELSE IF com=&H06 THEN
+   fo%=db1%
+  ELSE IF com=&H07 THEN
+   p1%=db2%
+   p2%=db1%
+   func%=(db0% AND 240)/16
+   ssf%=(db0% AND 4)/4
+   paf%=(db0% AND 2)/2
+   smf%=db0% AND 1
+  ELSE
+   ' unknown command identidier
+   eoRxA538xx=-2
+   EXIT FUNCTION
+  ENDIF 
+ ELSE IF xx%=&H09 THEN
+  p1%=db3%
+  p2%=db2%
+  p3%=db3%
+  func%=(db0% AND 240)/16
+  ssf%=(db0% AND 4)/4
+  sfv%=(db0% AND 2)/2
+  smf%=db0% AND 1
+ ELSE
+  ' unknown type
+  eoRxA538xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA538xx=0
+END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
