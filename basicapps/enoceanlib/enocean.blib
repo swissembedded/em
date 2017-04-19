@@ -2230,8 +2230,8 @@ FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,m
    msgs%=db0% AND 1
    IF msgs%=0 OR msgs%=1 THEN
     ' RLT master or slave
-	mcm%=(db3% AND 240)/16
-	mcl%=(db3% AND 6)/2
+    mcm%=(db3% AND 240)/16
+    mcl%=(db3% AND 6)/2
    ELSE  
     ' unknown message sourse
     eoRxA53Fxx=-2
@@ -2246,11 +2246,11 @@ FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,m
     ' RLT master	
    ELSE IF msgs%=1 THEN
     ' RLT slave
-	stcnt%=(db3% AND 192)/64
-	rslv%=db3% AND 63
-	stcrl%=db2%
-	rldl%=db1%
-	rlq%=(db0% AND 240)/16
+    stcnt%=(db3% AND 192)/64
+    rslv%=db3% AND 63
+    stcrl%=db2%
+    rldl%=db1%
+    rlq%=(db0% AND 240)/16
    ELSE  
     ' unknown message sourse
     eoRxA53Fxx=-3
