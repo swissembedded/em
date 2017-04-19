@@ -2184,6 +2184,89 @@ FUNCTION eoRxA538xx(tp%,da$,oda$,xx%,com%,tim,edim,rmp%,sp,bsp,cvov,cm%,cs%,fo%,
  eoRxA538xx=0
 END FUNCTION
 
+' Callback eoRx1BS & eoRx4BS helper functions for Universal Types
+' A5-3F-00 Radio Link Test (BI-DIR) 1BS master/slave messages, 4BS master/slave messages
+' A5-3F-07 Universal type (defined by the manufacturer)
+' tp%    type of the packet (from callback eoRx1BS/eoRx4BS)
+' da$    data array
+' oda$   optional data array
+' xx%    type 00 only
+' stcnt% sub-telegram counter related to RLT_MasterTest_4BS message received Repeater level 2
+'           0: not supported, 1: 1 sub-telegram, 2: 2 sub-telegram, 3: >= 3 sub-telegram
+' rslv%  RSSI level related to RLT_MasterTest_4BS message received Repeater level 1
+'           0x00: not supported, 0x01: >=31 dBm, 0x02: -32 dBm, 0x3F: <=93 dBm
+' stcrl% sub-telegram counter/RSSI level Related to RLT_MasterTest_4BS message received Repeater level 1 (see rslv%)
+' rldl%  sub-telegram counter/RSSI level Related to RLT_MasterTest_4BS message received direct link (see rslv%)
+' rlq%   RSSI level related to Non-EnOcean signal detection since last RLT_MasterTest message RSSI Level with 6dB quantization steps
+'           0x00: not supported,      0x01: >= -31 dBm,       0x02: -32..-37 dBm,      0x03: -38..-43 dBm, 
+'           0x04: -44..-49 dBm,       0x05: -50..-55 dBm,     0x06: -56..-61 dBm,      0x07: -62..-67 dBm, 
+'           0x08: -68..-73 dBm,       0x09: -74..-79 dBm,     0x0A: -80..-85 dBm,      0x0B: <= -92 dBm
+' mcm%   RLT msg-counter MSB covering all RLT_x_1BS messages 4 bit MSB
+' lrn%   learn button 1: teach-in telegram, 0: data telegram
+' msgid% message ID
+' msgs%  message source 0: RLT-Master, 1: RLT-Slave
+' mcl%   RLT msg-counter LSB covering all RLT_x_1BS messages 2 bit LSB
+' undef% undefined telegram bits (defined by the manufacturer specific application)  
+FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,mcl%,undef%)
+ LOCAL n4bs%,n1bs%,id%
+ n1bs%=eoRxD5(tp%,da$,oda$,db0%,id%,st%)
+ n4bs%=eoRxA5(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+ IF n1bs%<0 AND n4bs%<0 THEN
+  eoRxA53Fxx=-1
+  EXIT FUNCTION
+ ENDIF
+ stcnt%-1
+ rslv%=-1
+ rldl%=-1
+ mcm%=-1
+ lrn%=(db0% AND 8)/8
+ msgid%=-1
+ msgs%=-1
+ mcl%=-1
+ undef%=-1
+ IF xx%=&H00 THEN 
+  IF n1bs%=0 THEN
+   ' this is a 1BS telegram
+   msgs%=db0% AND 1
+   IF msgs%=0 OR msgs%=1 THEN
+    ' RLT master or slave
+	mcm%=(db3% AND 240)/16
+	mcl%=(db3% AND 6)/2
+   ELSE  
+    ' unknown message sourse
+    eoRxA53Fxx=-2
+    EXIT FUNCTION
+   ENDIF
+  ENDIF
+  IF n4bs%=0 THEN
+   ' this is a 4BS telegram 
+   msgid%=(db0% AND 6)/2
+   msgs%=db0% AND 1
+   IF msgs%=0 THEN
+    ' RLT master	
+   ELSE IF msgs%=1 THEN
+    ' RLT slave
+	stcnt%=(db3% AND 192)/64
+	rslv%=db3% AND 63
+	stcrl%=db2%
+	rldl%=db1%
+	rlq%=(db0% AND 240)/16
+   ELSE  
+    ' unknown message sourse
+    eoRxA53Fxx=-3
+    EXIT FUNCTION
+   ENDIF
+  ENDIF
+ ELSE IF xx%=&H7F THEN
+  undef%=(db3%*16777216)+(db2%*65536)+(db1%*256)+(db0% AND 247)
+ ELSE
+  ' unknown type
+  eoRxA53Fxx=-4
+  EXIT FUNCTION
+ ENDIF 
+ eoRxA53Fxx=0
+END FUNCTION
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
