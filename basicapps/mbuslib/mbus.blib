@@ -1,199 +1,35 @@
-' This script is an example of the EMDO101 energy manager
+' This script is an example of the EMDO103 energy manager
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2016-2017 swissEmbedded GmbH, All rights reserved.
-' @DESCRIPTION EMDO m-bus master slave library
-' @VERSION 1.0
+' @DESCRIPTION EMDO m-bus slave library
+' @VERSION 0.1
 ' Protocols are freely available from http://www.m-bus.com/
 
-' (W)MBus Transmit single char
-' return   0 = ok, negative value = error
-FUNCTION msTxSingleChar(itf$)
- MbusWrite(&HE5)
- msTxSingleChar=0
+'@lib_init
+FUNCTION __mbus_init()
+LOCAL sc%
+  CONST mbusFrameType_ACK = 1
+  CONST mbusFrameType_SHORT = 2
+  CONST mbusFrameType_CONTROL = 3
+  CONST mbusFrameType_LONG = 4
+  sc%=MbusStart(0)
+  __mbus_init = 0
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __mbus_destroy()
+LOCAL sc%
+  sc%=MbusEnd(0)
+  __mbus_destroy = 0
 END FUNCTION
 
-' (W)MBus Receive single char
-' return   0 = ok, negative value = error
-FUNCTION msRxSingleChar()
- LOCAL rsp$, sc$
- sc$=chr$(&HE5)	
- rsp$=MbusReadLn$(2000,sc$)
- IF rsp$=sc$ THEN
-  msRxSingleChar=0
- ELSE
-  msRxSingleChar=-1
- END IF
-END FUNCTION 
-
-' (W)MBus transimt Short Frame
-' C%  Control field, function field
-' A%  Address field
-' return   0 = ok, negative value = error
-FUCTION msTxShortFrame(C%,A%)
- ' Address check first
- IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
-  ' Address is out of the range
-  msTxShortFrame=-10
-  EXIT FUNCTION 
- ENDIF
- 
- ' frame fields: start(10h),C, A, checksum, stop(16h)
- LOCAL checksum%=msCalChecksum(C%,A%,0,"")
- MbusWrite(&H10, C%, A%, checksum%,&H16)
- msTxShortFrame=0
-END FUNCTION
-
-
-' (W)MBus recieve Short Frame
-' C%  Control field, function field
-' A%  Address field
-' return   0 = ok, negative value = error
-FUNCTION msRxShortFrame (C%,A%)
- LOCAL msg$ 
- ' start (&H10), c,a,checksum, stop (&H16)
-  msg$=MbusRead$(5,2000)
- 
- IF len(msg$)<> 5 OR left$(msg$,1)<>chr$(&H10) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,2))<>mid$(msg$,4,1) THEN
-  ' something is wrong, 
-  msRxShortFrame=-11
-  EXIT FUNCTION
- ENDIF
- ' Extract C and A
- C%=asc(mid$(msg,2,1)) 
- A%=asc(mid$(msg,3,1))  
- msRxShortFrame=0
-END FUNCTION
-
-
-' (W)MBus transmit Control Frame
-' L%   L Field
-' C%  Control field, function field
-' A%  Address field
-' CI% Control information field
-' return   0 = ok, negative value = error
-FUNCTION msTxControlFrame(C%,A%,CI%)
- ' Check address first
- IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
-  ' Address is out of the range
-  msTxControlFrame=-13
-  EXIT FUNCTION 
- ENDIF
- 
- ' frame fields: firstStart(68h), length(3), length(3), secondStart(68h), C, A, CI, checksum, stop(16h)
- LOCAL checksum%=msCalChecksum(C%,A%,CI%,"") 
- ' transmit frame
- MbusWrite(&H68,3,3,C%,A%,CI%,checksum%,&H16)
- msTxControlFrame=0
-END FUNCTION
-
-
-' (W)MBus recieve Control Frame
-' L%   L Field
-' C%  Control field, function field
-' A%  Address field
-' CI% Control information field
-' return   0 = ok, negative value = error
-FUNCTION msRxControlFrame(C%,A%,CI%)
- LOCAL msg$, hdr$
- ' start (&H68), L (&H03), L (&H03), start (&H68), c, a, ci, checksum, stop (&H16)
- msg$=MbusRead$(9,2000)
- hdr$=chr$(&H68)+chr$(3)+chr$(3)+chr$(&H68)
- IF len(msg$)<> 9 OR left$(msg$,4)<>hdr$ OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,5,2))<>mid$(msg$,8,1) OR mid$(msg,2,1)<>mid$(msg,3,1) THEN
-  ' something is wrong 
-  msRxShortFrame=-12
-  EXIT FUNCTION
- ENDIF
- ' Extract C,A,CI
- C%=asc(mid$(msg,5,1)) 
- A%=asc(mid$(msg,6,1))  
- CI%=asc(mid$(msg,7,1)) 
- msRxShortFrame=0
-END FUNCTION
-
-
-' (W)MBus transmit Long Frame
-' L%    L Field
-' C%    Control field, function field
-' A%    Address field
-' CI%   Control information field
-' UsrData$ User data field
-' return   0 = ok, negative value = error
-FUNCTION msTxLongFrame(C%,A%,CI%,UsrData$)
- ' Check address first
- IF NOT ((A%>=1 AND A%<=250) OR A%=254 OR A%=255) THEN
-  ' Address is out of the range
-  msTxControlFrame=-15
-  EXIT FUNCTION 
- ENDIF
- 
- ' frame fields: firstStart(68h), length, length, secondStart(68h), C, A, CI, User Data, checksum, stop(16h)
- LOCAL length%=LEN(UsrData$)+3
- LOCAL checksum%=msCalChecksum(C%,A%,CI%,UsrData$) 
- 
- ' transmit frame
- MbusWrite(&H68,length%,length%,C%,A%,CI%,UsrData$,checksum%,&H16) 
- msTxControlFrame=0
-END FUNCTION
-
-
-' (W)MBus receive Long Frame
-' L%   L Field
-' C%  Control field, function field
-' A%  Address field
-' CI% Control information field
-' Usr$ User Data
-' return   0 = ok, negative value = error
-FUNCTION msRxLongFrame(itf$,L%,C%,A%,CI%,UsrData$)
- LOCAL hdr$, msg$, length%
- ' frame fields: firstStart(68h), length, length, secondStart(68h), C, A, CI, User Data, checksum, stop(16h)
-
- ' Wait to recieve the header first
- hdr$=MbusRead$(3,2000)
- IF len(hdr$)<> 3 OR left$(hdr$,1)<>chr$(&H68) OR mid$(hdr,2,1)<>right$(hdr$,1) THEN
-  ' something is wrong in the header
-  msRxShortFrame=-16
-  EXIT FUNCTION
- ENDIF
- 
- length%=asc(mid$(hdr,2,1))+3
- ' length must be at least 3+3=6
- IF length% < 6 THEN
-  msRxShortFrame=-17
-  EXIT FUNCTION
- ENDIF 
- 
- ' receive the rest of the frame
- msg$=MbusRead$(length%,2000)
- IF len(msg$)<> length% OR left$(msg$,1)<>chr$(&H68) OR right$(msg$,1)<>chr$(&H16) OR msCalChecksum(0,0,0,mid$(msg$,2,right$(msg$,length%-1) THEN
-  ' something is wrong in the body of the message
-  msRxShortFrame=-18
-  EXIT FUNCTION
- ENDIF
- 
- ' Extract C,A,CI,UsrData
- C%=asc(mid$(msg,2,1)) 
- A%=asc(mid$(msg,3,1))  
- CI%=asc(mid$(msg,4,1)) 
- UsrData$=mid$(msg,5,(length%-3))
- msRxShortFrame=0
-END FUNCTION
-
-
-' (W)MBus calculate frame checksum
-' C%  Control field, function field
-' A%  Address field
-' CI% Control information field
-' Usr$ User Data
-' return calculated checksum or -1 on error
-FUNCTION msCalChecksum (C%,A%,CI%,Usr$)
- LOCAL checksum%, i
- 'The checksum value depends on the frame type
-  checksum%=C%
-  checksum%=checksum%+A%
-  checksum%=checksum%+CI%
-  
-  For i = 1 to Len(Usr$)
-   checksum%=checksum%+asc(mid$(Usr$,i,1))
-  End i
- msCalChecksum=checksum%
-END FUNCTION
+' (W)MBus receive Frame
+' @param[in] to% Timeout to wait for
+' @param[out] type% Type of frame returned
+' @param[out] C% Control field (not valid for mbusFrameType_ACK)
+' @param[out] A% Address field (not valid for mbusFrameType_ACK)
+' @param[out] CI% Control information field (valid only for mbusFrameType_CONTROL & mbusFrameType_LONG)
+' @param[out] UsrData$ User Data
+' @return 0 = ok, negative value = error
+'
+' sc% = MbusRead( to%,type%,C%,A%,CI%,UsrData$ )

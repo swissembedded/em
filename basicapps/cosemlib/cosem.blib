@@ -1,0 +1,101 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' EMDO cosem library, helper functions to convert cosem data
+
+'@lib_init
+FUNCTION __cosem_init()
+ LOCAL err%
+ print "init cosem"
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __cosem_destroy()
+  print "deinit cosem"
+END FUNCTION
+
+' Convert COSEM data item to string
+' type%  COSEM data item type
+' value$ COSEM data item value
+' return converted value$ as human readable string
+FUNCTION CSText( type%, value$ ) AS STRING
+ CSText=""
+ SELECT CASE type%
+  CASE 1
+   ' NULL
+   CSText="NULL"
+  CASE 2
+   ' ARRAY (nothing to print)
+   
+  CASE 3
+  ' STRUCTURE (nothing to print)
+  CASE 4
+   ' BOOL
+   IF ASC(value$) THEN
+    CSText="TRUE"
+   ELSE
+    CSText="FALSE"
+   ENDIF
+ CASE 5
+  ' BIT-STRING
+  CSText=value$
+ CASE 6
+  ' i32
+  CSText=str$(conv("ble/i32",value$))
+ CASE 7
+  ' u32
+  CSText=str$(conv("ble/u32",value$))
+ CASE 8
+  ' OCTET-STRING
+  CSText=value$
+ CASE 9
+  ' VISIBLE-STRING
+  CSText=value$
+ CASE 10
+  ' UTF8-STRING
+  CSText=value$
+ CASE 11
+  ' BCD
+  CSText=str$(conv("bcd/i32",value$))
+ CASE 12
+  ' i8
+  CSText=str$(ASCS(value$))
+ CASE 13
+  ' i16
+  CSText=str$(conv("bbe/i16",value$))
+ CASE 14
+  ' u8
+  CSText=str$(ascs(value$))
+ CASE 15
+  ' u16
+  CSText=str$(conv("bbe/u16",value$))
+ CASE 16
+  ' COMPACT-ARRAY (nothing to print)
+ CASE 17
+  ' i64
+  CSText=str$(conv("bbe/i64",value$))
+ CASE 18
+  ' u64 (we do not support full range)
+  CSText=str$(conv("bbe/i64",value$))
+ CASE 19
+  ' ENUM
+  CSText=str$(asc(value$))
+ CASE 20
+  ' FLOAT-32
+  CSText=str$(conv("bbe/f32",value$))
+ CASE 21
+  ' FLOAT-64
+  CSText=str$(conv("bbe/f64",value$))
+ CASE 22
+  ' DATETIME
+  CSText=value$
+ CASE 23
+  ' DATE
+  CSText=value$
+ CASE 24
+  ' TIME
+  CSText=value$
+ CASE ELSE 
+  ' Unknown
+  END SELECT
+END FUNCTION
