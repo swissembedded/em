@@ -193,7 +193,7 @@
                 "chart-text-color": "#000000",
                 "chart-data": {
                     "Wirkenergie Bezug Tag":"EIDay{1.0}",
-					"Wirkenergie Lieferung Tag":"EEDay{1.0}"
+					"Wirkenergie Lieferung Tag":"EEDay{0.0}"
                 }
             }
         ]

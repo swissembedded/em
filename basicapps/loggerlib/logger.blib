@@ -1,0 +1,82 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' EMDO logger library, writing data for graph visualization (csv format)
+' It is possible to download data under firmware tab -> get data snapshot
+' Data can be processed with Calc / Excel
+' For logging 
+
+'@lib_init
+FUNCTION __logger_init()
+ print "init logger"
+END FUNCTION
+ 
+'@lib_destroy
+FUNCTION __logger_destroy()
+ print "deinit logger"
+END FUNCTION
+
+' Logger get date filename in yyyymmdd format
+' ts% timestamp based on unixtime()
+' returns string of current date e.g. 20170423
+FUNCTION LGGetDate$(ts%)
+ LOCAL dt$
+ ' extract from 2017-04-23T14:21:40Z
+ LGGetDate$=format$(DateYear(ts%),"%04g")+format$(DateMonth(ts%),"%02g")+format$(DateMday(ts%),"%02g")
+END FUNCTION
+
+' Logger get year filename in yyyy format
+' ts% timestamp based on unixtime()
+' returns string of current year e.g. 2017
+FUNCTION LGGetYear$(ts%)
+ LOCAL dt$
+ ' extract from 2017-04-23T14:21:40Z
+ LGGetYear$=format$(DateYear(ts%),"%04g")
+END FUNCTION
+
+' Logger create record with timestamp
+' ts% timestamp
+' returns formatted string
+FUNCTION LGRecStart$(ts%)
+ LGRecStart$=str$(ts%)
+END FUNCTION
+
+' Logger create data item
+' itm data item
+' fmt$ formatting string, e.g. blank will be "%g"
+' returns formatted string
+FUNCTION LGRecItem$(itm,fmt$)
+ IF fmt$="" THEN
+  fmt$="%g"
+ ENDIF
+ LGRecItem$=","+format$(itm, fmt$)
+END FUNCTION
+
+' Write a log entry to files
+' we always write index file (if new data file) and data file at once
+' lr$ log record (e.g. power consumption)
+' stmp$ Current date / year (6 letters goes to graphlogy and 6 letters to graphlogd)
+' hdr$ Log file header.
+SUB LGWriter( lr$, stmp$, hdr$)
+ LOCAL fnm$,inm$
+ fnm$="/output/"+stmp$+".csv"
+ inm$="/output/graphlog"
+ IF len(stmp$)=4 THEN
+  inm$=inm$+"y.csv"
+ ELSE
+  inm$=inm$+"d.csv"
+ ENDIF
+ 
+ Open fnm$ For Random AS #1
+ IF LOF(#1) = 0 Then
+  ' this is a new file, write header to the log 
+  ' and make an entry in the graphlog to plot it in the webinterface
+  PRINT #1, hdr$
+  OPEN inm$ For Random AS #2
+  PRINT #2, stmp$
+  CLOSE #2
+ ENDIF
+ PRINT #1, lr$
+ CLOSE #1
+END SUB
+
