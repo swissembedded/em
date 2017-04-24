@@ -2215,7 +2215,7 @@ FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,m
   eoRxA53Fxx=-1
   EXIT FUNCTION
  ENDIF
- stcnt%-1
+ stcnt%=-1
  rslv%=-1
  rldl%=-1
  mcm%=-1
