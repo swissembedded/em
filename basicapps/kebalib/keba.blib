@@ -86,31 +86,19 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$)
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "report")
- LOCAL ida$(3),proda$(3),sera$(3),firma$(3),coma$(3),coms$, seca$(3), secs$
- ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
- ida$(1)=chr$(34)
- ida$(2)="id$"
+ LOCAL ida$(2),proda$(2),sera$(2),firma$(2),coma$(2),coms$, seca$(2), secs$
+ DIM ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34),chr$(34),"id$")
  id$=""
- proda$(0)=chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34)
- proda$(1)=chr$(34)
- proda$(2)="prod$"
+ DIM proda$(2) LENGTH 20 = (chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34),chr$(34),"prod$")
  prod$=""
- sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
- sera$(1)=chr$(34)
- sera$(2)="ser$"
+ DIM sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34),chr$(34),"ser$")
  ser$=""
- firma$(0)=chr$(34)+"Firmware"+chr$(34)+": "+chr$(34)
- firma$(1)=chr$(34)
- firma$(2)="firm$"
+ DIM firma$(2) LENGTH 20 = (chr$(34)+"Firmware"+chr$(34)+": "+chr$(34),chr$(34),"firm$")
  firm$=""
  ' P30 only
- coma$(0)=chr$(34)+"COM-module"+chr$(34)+": "
- coma$(1)=","
- coma$(2)="coms$"
+ DIM coma$(2) LENGTH 20 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
  coms$="0"
- seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
- seca$(1)="}"
- seca$(2)="secs$"
+ DIM seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
 
  n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$","coma$","seca$",5000)
@@ -158,88 +146,48 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "report 2")
- LOCAL ida$(3),ids$, sta$(3),sts$,erra1$(3),errs1$,erra2$(3),errs2$,pluga$(3),plugs$,ensysa$(3),ensyss$,enusera$(3),enusers$
- ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
- ida$(1)=chr$(34)
- ida$(2)="id$"
+ LOCAL ida$(2),ids$, sta$(2),sts$,erra1$(2),errs1$,erra2$(2),errs2$,pluga$(2),plugs$,ensysa$(2),ensyss$,enusera$(2),enusers$
+ DIM ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
  id$=""
- sta$(0)=chr$(34)+"State"+chr$(34)+": "
- sta$(1)=","
- sta$(2)="sts$"
+ DIM sta$(2) LENGTH 20 = (chr$(34)+"State"+chr$(34)+": ", ",", "sts$")
  sts$="0"
- erra1$(0)=chr$(34)+"Error1"+chr$(34)+": "
- erra1$(1)=","
- erra1$(2)="errs1$"
+ DIM erra1$(2) LENGTH 20 = (chr$(34)+"Error1"+chr$(34)+": ", ",", "errs1$")
  errs1$="0"
- erra2$(0)=chr$(34)+"Error2"+chr$(34)+": "
- erra2$(1)=","
- erra2$(2)="errs2$"
+ DIM erra2$(2) LENGTH 20 = (chr$(34)+"Error2"+chr$(34)+": ", ",", "errs2$")
  errs2$="0"
- pluga$(0)=chr$(34)+"Plug"+chr$(34)+": "
- pluga$(1)=","
- pluga$(2)="plugs$"
+ DIM pluga$(2) LENGTH 20 = (chr$(34)+"Plug"+chr$(34)+": ", ",", "plugs$")
  plugs$="0"
- ensysa$(0)=chr$(34)+"Enable sys"+chr$(34)+": "
- ensysa$(1)=","
- ensysa$(2)="ensyss$"
+ DIM ensysa$(2) LENGTH 20 = (chr$(34)+"Enable sys"+chr$(34)+": ", ",", "ensyss$")
  ensyss$="0"
- enusera$(0)=chr$(34)+"Enable user"+chr$(34)+": "
- enusera$(1)=","
- enusera$(2)="enusers$"
+ DIM enusera$(2) LENGTH 20 = (chr$(34)+"Enable user"+chr$(34)+": ", ",", "enusers$")
  enusers$="0"
- LOCAL maxcura$(3),maxcurs$,maxcurpa$(3),maxcurps$,curhwa$(3),curhws$,curusra$(3),curusrs$,curfsa$(3),curfss$
- maxcura$(0)=chr$(34)+"Max curr"+chr$(34)+": "
- maxcura$(1)=","
- maxcura$(2)="maxcurs$"
+ LOCAL maxcura$(2),maxcurs$,maxcurpa$(2),maxcurps$,curhwa$(2),curhws$,curusra$(2),curusrs$,curfsa$(2),curfss$
+ DIM maxcura$(2) LENGTH 20 = (chr$(34)+"Max curr"+chr$(34)+": ", ",", "maxcurs$")
  maxcurs$="0"
- maxcurpa$(0)=chr$(34)+"Max curr %"+chr$(34)+": "
- maxcurpa$(1)=","
- maxcurpa$(2)="maxcurps$"
+ DIM maxcurpa$(2) LENGTH 20 = (chr$(34)+"Max curr %"+chr$(34)+": ", ",", "maxcurps$")
  maxcurps$="0"
- curhwa$(0)=chr$(34)+"Curr HW"+chr$(34)+": "
- curhwa$(1)=","
- curhwa$(2)="curhws$"
+ DIM curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW"+chr$(34)+": ", ",", "curhws$")
  curhws$="0"
- curusra$(0)=chr$(34)+"Curr user"+chr$(34)+": "
- curusra$(1)=","
- curusra$(2)="curusrs$"
+ DIM curusra$(2) LENGTH 20 = (chr$(34)+"Curr user"+chr$(34)+": ", ",", "curusrs$")
  curusrs$="0"
- curfsa$(0)=chr$(34)+"Curr FS"+chr$(34)+": "
- curfsa$(1)=","
- curfsa$(2)="curfss$"
+ DIM curfsa$(2) LENGTH 20 = (chr$(34)+"Curr FS"+chr$(34)+": ", ",", "curfss$")
  curfss$="0"
- LOCAL tmofsa$(3),tmofss$,curtima$(3),curtims$,tmocta$(3),tmocts$, sea$(3),ses$,outa$(3),outs$,inpa$(3),inps$,sera$(3),sers$, seca$(3), secs$
- tmofsa$(0)=chr$(34)+"Tmo FS"+chr$(34)+": "
- tmofsa$(1)=","
- tmofsa$(2)="tmofss$"
+ LOCAL tmofsa$(2),tmofss$,curtima$(2),curtims$,tmocta$(2),tmocts$, sea$(2),ses$,outa$(2),outs$,inpa$(2),inps$,sera$(2),sers$, seca$(2), secs$
+ DIM tmofsa$(2) LENGTH 20 = (chr$(34)+"Tmo FS"+chr$(34)+": ", ",", "tmofss$")
  tmofss$="0"
- curtima$(0)=chr$(34)+"Curr timer"+chr$(34)+": "
- curtima$(1)=","
- curtima$(2)="curtims$"
+ DIM curtima$(2) LENGTH 20 = (chr$(34)+"Curr timer"+chr$(34)+": ", ",", "curtims$")
  curtims$="0"
- tmocta$(0)=chr$(34)+"Tmo CT"+chr$(34)+": "
- tmocta$(1)=","
- tmocta$(2)="tmocts$"
+ DIM tmocta$(2) LENGTH 20 = (chr$(34)+"Tmo CT"+chr$(34)+": ", ",", "tmocts$")
  tmocts$="0"
- sea$(0)=chr$(34)+"Setenergy"+chr$(34)+": "
- sea$(1)=","
- sea$(2)="ses$"
+ DIM sea$(2) LENGTH 20 = (chr$(34)+"Setenergy"+chr$(34)+": ", ",", "ses$")
  ses$="0"
- outa$(0)=chr$(34)+"Output"+chr$(34)+": "
- outa$(1)=","
- outa$(2)="outs$"
+ DIM outa$(2) LENGTH 20 = (chr$(34)+"Output"+chr$(34)+": ", ",", "outs$")
  outs$="0"
- inpa$(0)=chr$(34)+"Input"+chr$(34)+": "
- inpa$(1)=","
- inpa$(2)="inps$"
+ DIM inpa$(2) LENGTH 20 = (chr$(34)+"Input"+chr$(34)+": ", ",", "inps$")
  inps$="0"
- sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
- sera$(1)=chr$(34)
- sera$(2)="ser$"
+ DIM sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
- seca$(1)="}"
- seca$(2)="secs$"
+ DIM seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
  
  n%=StreamSearch(SocketRead(con%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
@@ -296,61 +244,35 @@ FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, E
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "report 3")
- LOCAL ida$(3), Ua1$(3), Us1$, Ua2$(3), Us2$, Ua3$(3), Us3$
- ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
- ida$(1)=chr$(34)
- ida$(2)="id$"
+ LOCAL ida$(2), Ua1$(2), Us1$, Ua2$(2), Us2$, Ua3$(2), Us3$
+ DIM ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
  id$=""
- Ua1$(0)=chr$(34)+"U1"+chr$(34)+": "
- Ua1$(1)=","
- Ua1$(2)="Ua1$"
+ DIM Ua1$(2) LENGTH 20 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
  Us1$="0"
- Ua2$(0)=chr$(34)+"U2"+chr$(34)+": "
- Ua2$(1)=","
- Ua2$(2)="Ua2$"
+ DIM Ua2$(2) LENGTH 20 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
  Us2$="0"
- Ua3$(0)=chr$(34)+"U3"+chr$(34)+": "
- Ua3$(1)=","
- Ua3$(2)="Ua3$"
+ DIM Ua3$(2) LENGTH 20 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
  Us3$="0"
- LOCAL Ia1$(3), Is1$, Ia2$(3), Is2$, Ia3$(3), Is3$
- Ia1$(0)=chr$(34)+"I1"+chr$(34)+": "
- Ia1$(1)=","
- Ia1$(2)="Ia1$"
+ LOCAL Ia1$(2), Is1$, Ia2$(2), Is2$, Ia3$(2), Is3$
+ DIM Ia1$(2) LENGTH 20 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
  Is1$="0"
- Ia2$(0)=chr$(34)+"I2"+chr$(34)+": "
- Ia2$(1)=","
- Ia2$(2)="Ia2$"
+ DIM Ia2$(2) LENGTH 20 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
  Is2$="0"
- Ia3$(0)=chr$(34)+"I3"+chr$(34)+": "
- Ia3$(1)=","
- Ia3$(2)="Ia3$"
+ DIM Ia3$(2) LENGTH 20 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
  Is3$="0"
- LOCAL Pa$(3), Ps$, PFa$(3), PFs$, Ea$(3),Es$, Etota$(3), Etots$
- Pa$(0)=chr$(34)+"P"+chr$(34)+": "
- Pa$(1)=","
- Pa$(2)="Ps$"
+ LOCAL Pa$(2), Ps$, PFa$(2), PFs$, Ea$(2),Es$, Etota$(2), Etots$
+ DIM Pa$(2) LENGTH 20 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
  Ps$="0"
- PFa$(0)=chr$(34)+"PF"+chr$(34)+": "
- PFa$(1)=","
- PFa$(2)="PFs$"
+ DIM PFa$(2) LENGTH 20 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
  PFs$="0"
- Ea$(0)=chr$(34)+"E pres"+chr$(34)+": "
- Ea$(1)=","
- Ea$(2)="Es$"
+ DIM Ea$(2) LENGTH 20 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
  Es$="0"
- Etota$(0)=chr$(34)+"E total"+chr$(34)+": "
- Etota$(1)=","
- Etota$(2)="Etots$"
+ DIM Etota$(2) LENGTH 20 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
  Etots$="0"
- LOCAL sera$(3), seca$(3), secs$
- sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
- sera$(1)=chr$(34)
- sera$(2)="ser$"
+ LOCAL sera$(2), seca$(2), secs$
+ DIM sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
- seca$(1)="}"
- seca$(2)="secs$"
+ dim seca$(2) length 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
  n%=StreamSearch(SocketRead(con%),"ida$","Ua1$","Ua2$","Ua3$","Ia1$","Ia2$","Ia3$","Pa$","PFa$","Ea$","Etota$","sera$","seca$",5000)
  m%=SocketClose( con% )
@@ -399,57 +321,33 @@ FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, star
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",5000)
  n%=SocketWrite( con%, "report "+str$(100+off%))
- LOCAL ida$(3), sessa$(3), sesss$, curhwa$(3), curhws$, estarta$(3), estarts$, epresa$(3), epress$
- ida$(0)=chr$(34)+"ID"+chr$(34)+": "+chr$(34)
- ida$(1)=chr$(34)
- ida$(2)="id$"
+ LOCAL ida$(2), sessa$(2), sesss$, curhwa$(2), curhws$, estarta$(2), estarts$, epresa$(2), epress$
+ DIM ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
  id$=""
- sessa$(0)=chr$(34)+"Session ID"+chr$(34)+": "
- sessa$(1)="}"
- sessa$(2)="sesss$"
+ DIM sessa$(2) LENGTH 20 = (chr$(34)+"Session ID"+chr$(34)+": ", "}", "sesss$")
  sesss$="0"
- curhwa$(0)=chr$(34)+"Curr HW   "+chr$(34)+": "
- curhwa$(1)=","
- curhwa$(2)="curhws$"
+ DIM curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW   "+chr$(34)+": ", ",", "curhws$")
  curhws$="0"
- estarta$(0)=chr$(34)+"E Start   "+chr$(34)+": "
- estarta$(1)=","
- estarta$(2)="estarts$"
+ DIM estarta$(2) LENGTH 20 = (chr$(34)+"E Start   "+chr$(34)+": ", ",", "estarts$")
  estarts$="0"
- epresa$(0)=chr$(34)+"E Pres    "+chr$(34)+": "
- epresa$(1)=","
- epresa$(2)="epress$"
+ DIM epresa$(2) LENGTH 20 = (chr$(34)+"E Pres    "+chr$(34)+": ", ",", "epress$")
  epress$="0"
- LOCAL starteda$(3), starteds$, endeda$(3), endeds$
- starteda$(0)=chr$(34)+"started[s]"+chr$(34)+": "
- starteda$(1)=","
- starteda$(2)="starteds$"
+ LOCAL starteda$(2), starteds$, endeda$(2), endeds$
+ DIM starteda$(2) LENGTH 20 = (chr$(34)+"started[s]"+chr$(34)+": ", ",", "starteds$")
  starteds$="0"
- endeda$(0)=chr$(34)+"ended[s]  "+chr$(34)+": "
- endeda$(1)=","
- endeda$(2)="endeds$"
+ DIM endeda$(2) LENGTH 20 = (chr$(34)+"ended[s]  "+chr$(34)+": ", ",", "endeds$")
  endeds$="0"
- LOCAL reasona$(3), reasons$, taga$(3), clssa$(3), clsss$
- reasona$(0)=chr$(34)+"reason "+chr$(34)+": "
- reasona$(1)=","
- reasona$(2)="reasons$"
+ LOCAL reasona$(2), reasons$, taga$(2), clssa$(2), clsss$
+ DIM reasona$(2) LENGTH 20 = (chr$(34)+"reason "+chr$(34)+": ", ",", "reasons$")
  reasons$="0"
- taga$(0)=chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34)
- taga$(1)=chr$(34)
- taga$(2)="tag$"
+ DIM taga$(2) LENGTH 20 = (chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34), chr$(34), "tag$")
  tag$=""
- clssa$(0)=chr$(34)+"RFID class"+chr$(34)+": "+chr$(34)
- clssa$(1)=chr$(34)
- clssa$(2)="clss$"
+ DIM clssa$(2) LENGTH 20 = (chr$(34)+"RFID class"+chr$(34)+": "+chr$(34), chr$(34), "clss$")
  clss$=""
- LOCAL sera$(3), seca$(3), secs$
- sera$(0)=chr$(34)+"Serial"+chr$(34)+": "+chr$(34)
- sera$(1)=chr$(34)
- sera$(2)="ser$"
+ LOCAL sera$(2), seca$(2), secs$
+ DIM sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- seca$(0)=chr$(34)+"Sec"+chr$(34)+": "
- seca$(1)="}"
- seca$(2)="secs$"
+ DIM seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
  n%=StreamSearch(SocketRead(con%),"ida$","sessa$","curhwa$", "estarta$", "epresa$", "starteda$","endeda$", "reasona$","taga$","clssa$", "sera$","seca$", 5000)
  m%=SocketClose( con% )
