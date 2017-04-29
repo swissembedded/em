@@ -23,11 +23,19 @@ SYS.Set "rs485-2", "baud=38400 data=8 stop=1 parity=n term=1"
 ts0%=0
 EI0=rrdRead( 0, ts0% )
 EE0=rrdRead( 1, ts0% )
-EEVTot=rrdRead( 2, ts0% )
+EEVTot0=rrdRead( 2, ts0% )
 EEV10=rrdRead( 3, ts0% )
 EEV20=rrdRead( 4, ts0% )
 EEV30=rrdRead( 5, ts0% )
 
+' Init vars
+DIM evm$(3) LENGTH 10 = ("Unplugged","Charging","Ended","Stopped")
+' Phoenix
+EV3Amp%=0
+EV3En%=0
+EV3St$=""
+EV3Prox%=0
+EV3Tch%=0
 ' start cron job for every minute update
 minCronDesc%=CrontabAdd("* * * * *")
 IF minCronDesc% < 0 THEN 
@@ -38,7 +46,22 @@ ELSE
 ENDIF
 
 start:
-Dispatch -1
+
+' Phoenix EV
+err%=PhoenixEVControl("TCP:192.168.10.20:502",180, EV3En%, EV3Amp%, EV3St$, EV3Prox%, EV3Tch%)
+IF err% >=0 THEN
+ IF EV3St$="A" THEN 
+  st$=evm$(0)
+ ELSE IF EV3St$="B" THEN
+  st$=evm$(2)
+ ELSE IF EV3St$="C" OR EV3St$="E" THEN
+  st$=evm$(1)
+ ELSE IF EV3St$="F" THEN
+  st$=evm$(3)
+ ENDIF
+ ev3_status$=st$
+ENDIF
+Dispatch 1000
 GOTO start
 
 ' Log every minute

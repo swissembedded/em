@@ -73,19 +73,23 @@ FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%,st$, prox%, tch%)
  ' Charging time in s
  tch%=conv("bbe/u32",mid$(reG$,5,4))
 
- IF amp% < 6 OR amp% > 80 THEN
+ IF en% AND (amp% < 6 OR amp% > 80) THEN
   PhoenixEVControl=-2
   EXIT FUNCTION
  ENDIF
  
- reG$=conv("u32/bbe",amp)
+ reG$=conv("u16/bbe",amp%)
  err%= mbFunc(itf$,slv%,6,300,1,reG$,500)
  IF err% THEN
   PhoenixEVControl=err%
   EXIT FUNCTION
  ENDIF
- 
- err%= mbFunc(itf$,slv%,5,400,1,str$(en%),500)
+ IF en% THEN
+  reG$=conv("u16/bbe",&HFF)
+ ELSE
+  reG$=conv("u16/bbe",&H00)
+ ENDIF
+ err%= mbFunc(itf$,slv%,5,400,1,reG$,500)
  IF err% THEN
   PhoenixEVControl=err%
   EXIT FUNCTION

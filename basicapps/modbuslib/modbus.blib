@@ -35,12 +35,11 @@
 '      16=Write Multiple Register
 ' addr% Modbus Address
 ' num%  Number of Registers/Bits
-' data$ Data for Read/Write (fnc%=5 data must be &HFF00 or &H0000)
+' dta$ Data for Read/Write (fnc%=5 data must be &HFF00 or &H0000)
 ' tmo%  Timeout in ms
 ' return   0 = ok, negative value = error
 FUNCTION mbFunc(itf$,slv%,fnc%,addr%,num%,dta$,tmo%)
  Local rq$, n%, rpl%, py%, err%
-
  ' Validate call first 
  IF NOT ((addr% >= 0 AND addr%<=&HFFFF)) THEN
   ' Address is out of range
