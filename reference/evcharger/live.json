@@ -6,7 +6,7 @@
                 "id":"ev1",
                 "type": "text",
                 "text-top": "EV Status 1",
-                "text-middle": "ev1_status${starting...}",
+                "text-middle": "ev1_status${}",
                 "text-bottom": "Wallb-e",
                 "grid-x": 0,
                 "grid-y": 0,
@@ -17,7 +17,7 @@
                 "type": "switch",
                 "text-top": "EV 1 Quick",
 				"text-bottom": "Wallb-e",
-                "value": "evquick1_value%{0}",
+                "value": "evquick1_value%{}",
                 "text-middle": "evquick1_status${}",
                 "grid-x": 1,
                 "grid-y": 0
@@ -27,7 +27,7 @@
                 "type": "switch",
                 "text-top": "EV 1 Night",
 				"text-bottom": "Wallb-e",
-                "value": "evnight1_value%{0}",
+                "value": "evnight1_value%{}",
                 "text-middle": "evnight1_status${}",
                 "grid-x": 2,
                 "grid-y": 0
@@ -37,7 +37,7 @@
                 "type": "switch",
                 "text-top": "EV 1 EDnME",
 				"text-bottom": "Wallb-e",
-                "value": "evednme1_value%{1}",
+                "value": "evednme1_value%{}",
                 "text-middle": "evednme1_status${}",
                 "grid-x": 3,
                 "grid-y": 0
@@ -47,7 +47,7 @@
                 "id":"ev2",
                 "type": "text",
                 "text-top": "EV Status 2",
-                "text-middle": "ev2_status${starting...}",
+                "text-middle": "ev2_status${}",
                 "text-bottom": "ABL",
                 "grid-x": 0,
                 "grid-y": 1,
@@ -58,7 +58,7 @@
                 "type": "switch",
                 "text-top": "EV 2 Quick",
 				"text-bottom": "ABL",
-                "value": "evquick2_value%{0}",
+                "value": "evquick2_value%{}",
                 "text-middle": "evquick2_status${}",
                 "grid-x": 1,
                 "grid-y": 1
@@ -68,7 +68,7 @@
                 "type": "switch",
                 "text-top": "EV 2 Night",
 				"text-bottom": "ABL",
-                "value": "evnight2_value%{0}",
+                "value": "evnight2_value%{}",
                 "text-middle": "evnight2_status${}",
                 "grid-x": 2,
                 "grid-y": 1
@@ -78,7 +78,7 @@
                 "type": "switch",
                 "text-top": "EV 2 EDnME",
 				"text-bottom": "ABL",
-                "value": "evednme2_value%{1}",
+                "value": "evednme2_value%{}",
                 "text-middle": "evednme2_status${}",
                 "grid-x": 3,
                 "grid-y": 1
@@ -88,7 +88,7 @@
                 "id":"ev3",
                 "type": "text",
                 "text-top": "EV 3",
-                "text-middle": "ev3_status${starting...}",
+                "text-middle": "ev3_status${}",
                 "text-bottom": "Keba",
                 "grid-x": 0,
                 "grid-y": 2,
@@ -99,7 +99,7 @@
                 "type": "switch",
                 "text-top": "EV 3 Quick",
 				"text-bottom": "Keba",
-                "value": "evquick3_value%{0}",
+                "value": "evquick3_value%{}",
                 "text-middle": "evquick3_status${}",
                 "grid-x": 1,
                 "grid-y": 2
@@ -109,7 +109,7 @@
                 "type": "switch",
                 "text-top": "EV 3 Night",
 				"text-bottom": "Keba",
-                "value": "evnight3_value%{0}",
+                "value": "evnight3_value%{}",
                 "text-middle": "evnight3_status${}",
                 "grid-x": 2,
                 "grid-y": 2
@@ -119,7 +119,7 @@
                 "type": "switch",
                 "text-top": "EV 3 EDnME",
 				"text-bottom": "Keba",
-                "value": "evednme3_value%{1}",
+                "value": "evednme3_value%{}",
                 "text-middle": "evednme3_status${}",
                 "grid-x": 3,
                 "grid-y": 2
@@ -127,20 +127,16 @@
             {
                 "id":"forecast",
                 "type": "text",
-                "text-top": "Forecast",
-                "text-middle": "weather_status${}",
-                "tm-background-color": "#eff6f8",
-                "tm-color": "#000000",
-                "tm-y": "75%",
-                "tm-transform": "translateY(-50%)",
-                "tm-background-image": "weather_img${}",
-                "tm-background-position-y": "top",
-                "tm-background-position-x": "center",
-                "text-bottom": "Estimate",
-				"grid-x": 0,
+                "text-top": "Cloud",
+                "text-middle": "ednme_status${Disconnected}",
+                "tm-font-weight": "bold",
+                "tm-shadow": true,
+                "tm-text-background-color": "rgba(255, 255, 255, 0.5)",
+                "text-bottom": "EDnME",
+                "grid-x": 0,
                 "grid-y": 3
             },
-			{
+            {
                 "id":"meter",
                 "type": "text",
                 "text-top": "Meter",
@@ -149,7 +145,19 @@
                 "tm-shadow": true,
                 "tm-text-background-color": "rgba(255, 255, 255, 0.5)",
                 "text-bottom": "Grid",
-				"grid-x": 1,
+                "grid-x": 1,
+                "grid-y": 3
+            },
+            {
+                "id":"meter",
+                "type": "text",
+                "text-top": "Meter",
+                "text-middle": "charger_status${}",
+                "tm-font-weight": "bold",
+                "tm-shadow": true,
+                "tm-text-background-color": "rgba(255, 255, 255, 0.5)",
+                "text-bottom": "EV Total",
+                "grid-x": 2,
                 "grid-y": 3
             },
             {
@@ -157,7 +165,27 @@
                 "type": "donut",
                 "grid-w": 5.3,
                 "grid-h": 4,
-				"grid-x": 3,
+                "grid-x": 3,
+                "grid-y": 0,
+                "text-top": "House Energy",
+                "tt-font-size": "10px",
+                "tt-color": "#fff",
+                "tt-background-color": "#2c9bc8",
+                "tm-background-color": "#eff6f8",
+                "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
+                "chart-text-color": "#ff0000",
+                "chart-data": {
+                    "EV1 Wallb-e kWh":"EEV1Day{0.0}",
+                    "EV2 ABL kWh":"EEV2Day{0.0}",
+                    "EV3 Keba kWh":"EEV3Day{0.0}"
+                }
+            },
+            {
+                "id":"chart2",
+                "type": "donut",
+                "grid-w": 5.3,
+                "grid-h": 4,
+                "grid-x": 8,
                 "grid-y": 0,
                 "text-top": "EV Energy",
                 "tt-font-size": "10px",
@@ -167,9 +195,8 @@
                 "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
                 "chart-text-color": "#ff0000",
                 "chart-data": {
-                    "EV1 Wallb-e kWh":"kWhDayEV1{0.0}",
-					"EV2 ABL kWh":"kWhDayEV2{0.0}",
-                    "EV3 Keba kWh":"kWhDayEV3{0.0}"
+                    "Energy Import kWh":"EIDay{0.0}",
+                    "Energy Export kWh":"EEDay{0.0}"
                 }
             }
         ]
