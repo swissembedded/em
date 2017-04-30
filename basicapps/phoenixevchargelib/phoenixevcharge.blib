@@ -17,7 +17,7 @@
 'itf$="TCP:192.168.0.114:502"
 'start:
 ' err%=PhoenixEVControl(itf$,slv%, en%, amp%, st$, prox%, tch%)
-' print "Phoenix " err% st$ prox tch%
+' print "Phoenix " err% st$ prox% tch%
 ' pause 30000
 ' goto start
 '@lib_init
@@ -45,12 +45,13 @@ END FUNCTION
 '     A Charger is not connected to car
 '     B Charger is connected to car or charging ended
 '     C Charging without ventilation
-'     E Charging with ventilation
-'     F Missing proximity plug or car stops charging
+'     D Charging with ventilation
+'     E Shutoff, no power
+'     F Error
 '     else unknown status
 ' prox% proximity signal
 ' tch%  charging time [s]
-FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%,st$, prox%, tch%)
+FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%, st$, prox%, tch%)
  LOCAL err%, reG$, reD$, reC$, reR$, dip%
  ' Read EV Status
  err%= mbFunc(itf$,slv%,4,100,8,reG$,500)
@@ -71,7 +72,7 @@ FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%,st$, prox%, tch%)
  ' Proximity charge current in A
  prox%=conv("bbe/u16",mid$(reG$,3,2))
  ' Charging time in s
- tch%=conv("bbe/u32",mid$(reG$,5,4))
+ tch%=conv("bbe/u32",mid$(reG$,7,2)+mid$(reG$,5,2))
 
  IF en% AND (amp% < 6 OR amp% > 80) THEN
   PhoenixEVControl=-2
@@ -85,7 +86,7 @@ FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%,st$, prox%, tch%)
   EXIT FUNCTION
  ENDIF
  IF en% THEN
-  reG$=conv("u16/bbe",&HFF)
+  reG$=conv("u16/bbe",&HFF00)
  ELSE
   reG$=conv("u16/bbe",&H00)
  ENDIF

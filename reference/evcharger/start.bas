@@ -29,8 +29,11 @@ EEV20=rrdRead( 4, ts0% )
 EEV30=rrdRead( 5, ts0% )
 
 ' Init vars
-DIM evm$(3) LENGTH 10 = ("Unplugged","Charging","Ended","Stopped")
-' Phoenix
+DIM evm$(4) LENGTH 10 = ("Unplugged","Ready","Charging","Ended","Error")
+' Phoenix (self consumption, single phase is best for small pv)
+EV3AmpMin%=6
+EV3AmpMax%=16
+EV3Phase%=1
 EV3Amp%=0
 EV3En%=0
 EV3St$=""
@@ -46,22 +49,28 @@ ELSE
 ENDIF
 
 start:
-
+' ABL
+err%=ABLCmd("RS485:2", 0,1, param)
+print "err " err%
 ' Phoenix EV
+EV3En%=1
+EV3Amp%=16
 err%=PhoenixEVControl("TCP:192.168.10.20:502",180, EV3En%, EV3Amp%, EV3St$, EV3Prox%, EV3Tch%)
 IF err% >=0 THEN
  IF EV3St$="A" THEN 
   st$=evm$(0)
  ELSE IF EV3St$="B" THEN
-  st$=evm$(2)
- ELSE IF EV3St$="C" OR EV3St$="E" THEN
   st$=evm$(1)
- ELSE IF EV3St$="F" THEN
+ ELSE IF EV3St$="C" OR EV3St$="D" THEN
+  st$=evm$(2)+" "+str$(EV3Amp%)+"A"+chr$(10)+str$(int(EV3Tch%/60))
+ ELSE IF EV3St$="E" THEN
   st$=evm$(3)
+ ELSE IF EV3St$="F" THEN
+  st$=evm$(4)
  ENDIF
  ev3_status$=st$
 ENDIF
-Dispatch 1000
+Dispatch 2000
 GOTO start
 
 ' Log every minute
@@ -87,15 +96,15 @@ FUNCTION minCron(id%,elapsed%)
  if err% >= 0 THEN
    PEVTot=kW1+kW2+kW3
    charger_status$="Load:"+chr$(10)+ds_num$(err%,PEVTot,"%.3f"," kW")
-   EEVTot=kWhI1+kWhI2+kWhI3+kWhE1+kWhE2+kWhE3
+   EEVTot=kWhI1+kWhI2+kWhI3
+    print EEVTot PEVTot
+
  ENDIF
  ' Calculate daily energy, start logger and update counter
  LOCAL vl,ts%,yd%,yd0%,lr$,min%
  ts%=Unixtime()
  yd0%=DateYearday(ts0%)
  yd%=DateYearday(ts%)
- EI=val(obis_1.8.0$)
- EE=val(obis_2.8.0$)
  EIDay=EI-EI0
  EEDay=EE-EE0
  EEVTotDay=EEVTot-EEVTot0
