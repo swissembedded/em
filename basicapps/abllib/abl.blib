@@ -21,7 +21,7 @@
 
 ' ABL command
 ' itf$ interface
-' addr% address (default 0)
+' addr% address (default 0) 1..8
 ' cmd% command number 
 ' param
 ' 0=Reset
@@ -127,7 +127,7 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
  rq$=rq$+chr$(13)+chr$(10)
  ' tranceive over interface
  rsp$=""
- print "rq$ " rq$
+ 'print "rq$ " rq$
  IF interf$="RS485" THEN
   DO WHILE RS485Read(val(num$)) >=0
   LOOP
@@ -142,7 +142,7 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
    n%=SocketClose( con% )
   ENDIF
  ENDIF
- print "rsp$ " rsp$
+ 'print "rsp$ " rsp$
  'Check response
  IF rsp$="" THEN
   ABLCmd=-2

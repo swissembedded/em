@@ -51,7 +51,10 @@ ENDIF
 start:
 ' ABL
 err%=ABLCmd("RS485:2", 0,1, param)
-print "err " err%
+err%=ABLCmd("RS485:2", 0,2, param)
+err%=ABLCmd("RS485:2", 0,12, 0)
+
+print "err " err% param
 ' Phoenix EV
 EV3En%=1
 EV3Amp%=16
