@@ -132,13 +132,13 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
   DO WHILE RS485Read(val(num$)) >=0
   LOOP
   n%=RS485Write(val(num$),rq$)
-  rsp$=RS485ReadLn$(val(num$),5000,chr$(13)+chr$(10))
+  rsp$=RS485ReadLn$(val(num$),2000,chr$(13)+chr$(10))
  ELSE
   ' Send it over ethernet
   con%=SocketClient( 1, interf$, val(num$) )   
   IF con% >0 THEN
-   n%=SocketOption(con%,"SO_RCVTIMEO",5000)
-   rsp$=SocketReadLn$(con%,5000)
+   n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+   rsp$=SocketReadLn$(con%,chr$(13)+chr$(10),2000)
    n%=SocketClose( con% )
   ENDIF
  ENDIF
