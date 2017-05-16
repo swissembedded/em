@@ -143,17 +143,19 @@ END FUNCTION
 ' db1% data byte 1
 ' db2% data byte 2
 ' db3% data byte 3
+' db4% data byte 4
+' db5% data byte 5
 ' id%  sender id
 ' st%  sender status
 ' crc16 checksum
 ' returns -1 on error (not radio packet)
-FUNCTION eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,id%,st%)
+FUNCTION eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
  LOCAL rorg%
  rorg%=asc(left$(da$,1))
  IF tp%<>1 OR rorg%<>&HD2 THEN
   eoRxD2=-1
  ENDIF
- 'VLD telegram: DB3-DB0 (depending on length), Sender ID, Status, CRC8
+ 'VLD telegram: DB5-DB0 (depending on length), Sender ID, Status, CRC8
  db$=mid$(da$, 2,len(da$)-7)
  id%=conv("bbe/u32",mid$(da$,len(da$)-6,4))
  st%=asc(mid$(da$,len(da$)-1,1))
