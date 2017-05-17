@@ -2269,6 +2269,135 @@ FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,m
  eoRxA53Fxx=0
 END FUNCTION
 
+
+
+' Callback eoRxD2 helper function for Room Control Panel (RCP)
+' D2-00-01 RCP with Temperature Measurement and Display (BI-DIR)
+' tp%    type of the packet (from callback eoRxD2)
+' da$    data array
+' oda$   optional data array
+' xx%    type 01
+' mi%    message ID 01: message A Sensor -> Gateway, 02: message B Gateway -> Sensor
+'            03: message C Sensor -> Gateway, 04: message D Gateway -> Sensor
+'            05: message E Gateway -> Sensor
+' cv%    coniguration valid 00: Configuration data not valid (e.g. never received message of type E), 
+'            01: Configuration data valid
+' kp%    user action 00: not used,    01: Presence,          02: Temperature Set Point “down” or “—“, 
+'            03: not used,            04: not used,          05: Temperature Set Point “up” or “+”, 
+'            06: Fan,                 07..1F:Not Used
+' m%     fan manual 0: Auto, 1: Fan manual
+' f%     fan (message ID: 02)     00: Do not display,       01: Speed Level 0,      02: Speed Level 1, 
+'            03: Speed Level 2,   04: Speed Level 3,        05..07: not used
+'            (message ID: 03)     00: no change,            01: Speed Level 0,      02: Speed Level 1, 
+'            03: Speed Level 2,   04: Speed Level 3,        05: Speed Level Auto,   06..07: not used
+'            (message ID: 05)     00: Fan Speed disabled,   01..07: 1..7
+' md%    more data 00: no more data, 01:more data will follow after T2+
+' pr%    presence 
+'            (message ID: 02) 00: Do not display,    01: Present, 02: Not present, 03: Night time reduction, 04..07: not used
+'            (message ID: 05) 00: Presence disabled, 01..07: 1..7
+' ta%    figure A type 00: Do not display,          01: Room Temperature °C,                  02: Room Temperature °F, 
+'            03: Nominal Temperature °C,            04: Nominal Temperature °F,               05: Delta Temperature Set Point °C, 
+'            06: Delta Temperature Set Point °F,    07: Delta Temperature Set Point(graphic), 08: Time 00:00 to 23:59 [24h], 
+'            09: Time 00:00 to 11:59 [AM],          0A: Time 00:00 to 11:59 [PM],             0B: Date 01.01 to 31.12 [DD.MM], 
+'            0C: Date 01.01 to 12.31 [MM.DD],       0D: Illumination (linear) 0 to 9999 lx,   0E: Percentage 0 to 100 %, 
+'            0F: Parts per Million 0 to 9999 ppm,   10: Relative Humidity 0 to 100 % rH,      11..1F: not used
+' za%    figure A value 01..07: 0..4000 0.01°,      08..0A: Time 0000..2359,       0B..0C: Date 0101..3112, 
+'            0D: 0..9999 lx,                        0E..10: 0 ... 10000 0.01%,     0F: 0..9999 ppm
+' se%    user notification  00: off, 01: on
+' sd%    window 00: closed, 01: opened
+' sc%    dew-point 00: warning, 01: no warning
+' sb%    cooling 00: off, 01: on
+' sa%    heating 00: off, 01: on
+' sta%   set point A type 00: no change, 01..04: not used, 05: Temperature Set Point [°], 06..1F: not used
+' sza    set point value A -12.70 to +12.70 degree C
+' va     channel A value 0 to +40.0 degree C 
+' cta%   channel A type 00: Temperature [°C], 01..0E: not used, 0F: Measurement result not valid
+' spr%   set point range limit 00: Set Point disabled, 01..7F: 0,1°..12,7° [0,1°] 0.1..12.7 °
+' sps%   set pointsteps 00: Set Point disabled, 01..7F: 1..127  1..127
+' tt%    temperature measurement timing 00: temperature measurement disabled, 01..3C: 10..600s [10s]  10..600 s
+' st     significant temperature difference 0.0 to 3.0 degree C
+' ka%    keep alive timing 00: Transmission of measurement result with each Temperature measurement, 01..07: 10..70 measurements [step-size 10]
+FUNCTION eoRxD200xx(tp%,da$,oda$,xx%,mi%,cv%,kp%,m%,f%,md%,pr%,ta%,za%,se%,sd%,sc%,sb%,sa%,sta%,sza,cta%,va,spr%,sps%,tt%,ka%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD200xx=-1
+  EXIT FUNCTION
+ ENDIF
+ cv%=-1
+ kp%=-1
+ m%=-1
+ f%=-1
+ md%=-1
+ pr%=-1
+ ta%=-1
+ za%=-1
+ se%=-1
+ sd%=-1
+ sc%=-1
+ sb%=-1
+ sa%=-1
+ sta%=-1
+ sza=-1
+ cta%=-1
+ va=-1
+ spr%=-1
+ sps%=-1
+ tt%=-1
+ ka%=-1
+ IF xx%=&H01 THEN
+  IF mi%=&H01 THEN
+   mi%=db1% AND 7
+   cv%=(db0 AND 128)/128
+   kp%=db0 AND 31
+  ELSE IF mi%=&H02 THEN
+   m%=(db4 AND 128)/128
+   f%=(db4 AND 112)/16
+   md%=(db4 AND 8)/8
+   mi%=db4% AND 7
+   pr%=(db3% AND 224)/32
+   ta%=db3% AND 31
+   za%=(db2%*256)+db1%
+   se%=(db0% AND 16)/16
+   sd%=(db0% AND 8)/8
+   sc%=(db0% AND 4)/4
+   sb%=(db0% AND 2)/2
+   sa%=db0% AND 1
+  ELSE IF mi%=&H03 THEN
+   f%=(db3% AND 112)/16
+   mi%=db3% AND 7
+   pr%=(db2 AND 224)/32
+   sta%=db2% AND 31
+   IF sta%=&H05 THEN sza=(25.4/2540.0)*(((db1%*256)+db0%)+1250.0)-12.7
+  ELSE IF mi%=&H04 THEN
+   mi%=db2% AND 7
+   cta%=(db0% AND 240)/16
+   IF cta%=&H00 THEN va=(40.0/4000.0)*((db1%*16)+(db0% AND 15))
+  ELSE IF mi%=&H05 THEN
+   md%=(db5% AND 8)/8
+   mi%=db5% AND 7
+   spr%=db4% AND 127
+   sps%=db3% AND 127
+   tt%=((db2% AND 240)/4)+(db1% AND 3)
+   pr%=(db1% AND 224)/32
+   f%=(db1% AND 28)/4
+   st=(3.0/15.0)*(db0% AND 240)/16
+   ka%=db0% AND 7
+  ELSE
+   ' unknown message type
+   eoRxD200xx=-2
+   EXIT FUNCTION
+  ENDIF 
+ ELSE
+  ' unknown type
+  eoRxD200xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxD200xx=0
+END FUNCTION
+
+
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
