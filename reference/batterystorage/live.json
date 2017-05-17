@@ -1,0 +1,87 @@
+{
+    "dashboard1": {
+        "name": "Dashboard",
+        "tiles": [
+            {
+                "id":"bat1",
+                "type": "text",
+                "text-top": "Charger Status",
+                "text-middle": "bat1_status${}",
+                "text-bottom": "Lead Acid",
+                "grid-x": 0,
+                "grid-y": 0
+            },
+            {
+                "id":"bat2",
+                "type": "text",
+                "text-top": "Inverter Status",
+                "text-middle": "bat2_status${}",
+                "text-bottom": "Lead Acid",
+                "grid-x": 0,
+                "grid-y": 1
+            },
+            {
+                "id":"bat3",
+                "type": "text",
+                "text-top": "BMS Status",
+                "text-middle": "bat3_status${}",
+                "text-bottom": "Lead Acid",
+                "grid-x": 0,
+                "grid-y": 2
+            },
+            {
+                "id":"meter",
+                "type": "text",
+                "text-top": "Meter",
+                "text-middle": "meter_status${}",
+                "tm-font-weight": "bold",
+                "tm-shadow": true,
+                "tm-text-background-color": "rgba(255, 255, 255, 0.5)",
+                "text-bottom": "Grid",
+                "grid-x": 0,
+                "grid-y": 3
+            },
+            {
+                "id":"chart1",
+                "type": "donut",
+                "grid-w": 5.3,
+                "grid-h": 4,
+                "grid-x": 4,
+                "grid-y": 0,
+                "text-top": "House Energy",
+                "tt-font-size": "10px",
+                "tt-color": "#fff",
+                "tt-background-color": "#2c9bc8",
+                "tm-background-color": "#eff6f8",
+                "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
+                "chart-text-color": "#ff0000",
+                "chart-data": {
+                    "EV1 ABL kWh":"EEV1Day{0.0}",
+                    "EV2 Keba kWh":"EEV2Day{0.0}",
+                    "EV3 Wallb-e kWh":"EEV3Day{0.0}"
+                }
+            },
+            {
+                "id":"chart2",
+                "type": "donut",
+                "grid-w": 5.3,
+                "grid-h": 4,
+                "grid-x": 9,
+                "grid-y": 0,
+                "text-top": "EV Energy",
+                "tt-font-size": "10px",
+                "tt-color": "#fff",
+                "tt-background-color": "#2c9bc8",
+                "tm-background-color": "#eff6f8",
+                "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
+                "chart-text-color": "#ff0000",
+                "chart-data": {
+                    "Energy Import kWh":"EIDay{0.0}",
+                    "Energy Export kWh":"EEDay{0.0}",
+                    "Energy Battery Charge kWh":"EBatCharge{0.0}",
+                    "Energy Battery Discharge kWh":"EBatDischarge{0.0}"
+					}
+            }
+        ]
+    }
+ }
