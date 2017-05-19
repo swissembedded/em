@@ -67,3 +67,29 @@ FUNCTION EastronEnergyMeter(itf$, slv%, Uac1, Uac2, Uac3, Iac1, Iac2, Iac3, kW1,
  EastronEnergyMeter=0
 END FUNCTION
 
+' Eastron energy meter SDM120
+' itf$ modbus interface (see EMDO modbus library for details)
+' slv% eastron energy meter sdm630 slave address default 1 
+' Uac voltage ac
+' Iac current ac
+' kW phase power with sign, negative = excess power to grid
+' kWhI phase energy import
+' kWhE phase energy export
+' return value error code
+FUNCTION EastronEnergyMeterP1(itf$, slv%, Uac, Iac, kW, kWhI, kWhE)
+ LOCAL err%, rUac$, rIac$, rkW$, rkWhI$, rkWhE$
+ 
+ err%= mbFunc(itf$,slv%,4,0,2,rUac$,500) OR mbFunc(itf$,slv%,4,6,2,rIac$,500) OR mbFunc(itf$,slv%,4,&HC,2,rkW$,500) OR mbFunc(itf$,slv%,4,&H48,2,rkWhI$,500) OR mbFunc(itf$,slv%,4,&H4A,2,rkWhE$,500)
+ IF err% THEN
+  EastronEnergyMeterP1=err%
+  EXIT FUNCTION
+ ENDIF 
+ ' Convert register values to float32
+ Uac=conv("bbe/f32",mid$(rUac$,1,4))
+ Iac=conv("bbe/f32",mid$(rIac$,1,4))
+ kW=conv("bbe/f32",mid$(rkW$,1,4))/1000.0
+ kWhI=conv("bbe/f32",mid$(rkWhI$,1,4))
+ kWhE=conv("bbe/f32",mid$(rkWhE$,1,4))
+ EastronEnergyMeterP1=0
+END FUNCTION
+
