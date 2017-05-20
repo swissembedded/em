@@ -9,7 +9,9 @@
                 "text-middle": "bat1_status${}",
                 "text-bottom": "Lead Acid",
                 "grid-x": 0,
-                "grid-y": 0
+                "grid-y": 0,
+                "grid-w": 2,
+                "grid-h": 1
             },
             {
                 "id":"bat2",
@@ -18,7 +20,9 @@
                 "text-middle": "bat2_status${}",
                 "text-bottom": "Lead Acid",
                 "grid-x": 0,
-                "grid-y": 1
+                "grid-y": 1,
+                "grid-w": 2,
+                "grid-h": 1
             },
             {
                 "id":"bat3",
@@ -27,7 +31,9 @@
                 "text-middle": "bat3_status${}",
                 "text-bottom": "Lead Acid",
                 "grid-x": 0,
-                "grid-y": 2
+                "grid-y": 2,
+                "grid-w": 2,
+                "grid-h": 1
             },
             {
                 "id":"meter",
@@ -39,14 +45,16 @@
                 "tm-text-background-color": "rgba(255, 255, 255, 0.5)",
                 "text-bottom": "Grid",
                 "grid-x": 0,
-                "grid-y": 3
+                "grid-y": 3,
+                "grid-w": 2,
+                "grid-h": 1
             },
             {
                 "id":"chart1",
                 "type": "donut",
                 "grid-w": 5.3,
                 "grid-h": 4,
-                "grid-x": 4,
+                "grid-x": 2,
                 "grid-y": 0,
                 "text-top": "House Energy",
                 "tt-font-size": "10px",
@@ -56,9 +64,10 @@
                 "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
                 "chart-text-color": "#ff0000",
                 "chart-data": {
-                    "EV1 ABL kWh":"EEV1Day{0.0}",
-                    "EV2 Keba kWh":"EEV2Day{0.0}",
-                    "EV3 Wallb-e kWh":"EEV3Day{0.0}"
+					"Energy Import kWh":"EIDay{0.0}",
+                    "Energy Export kWh":"EEDay{0.0}",
+                    "Energy Battery Charge kWh":"EBatCharge{0.0}",
+                    "Energy Battery Discharge kWh":"EBatDischarge{0.0}"
                 }
             },
             {
@@ -66,9 +75,9 @@
                 "type": "donut",
                 "grid-w": 5.3,
                 "grid-h": 4,
-                "grid-x": 9,
+                "grid-x": 7,
                 "grid-y": 0,
-                "text-top": "EV Energy",
+                "text-top": "House Power",
                 "tt-font-size": "10px",
                 "tt-color": "#fff",
                 "tt-background-color": "#2c9bc8",
@@ -76,11 +85,10 @@
                 "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
                 "chart-text-color": "#ff0000",
                 "chart-data": {
-                    "Energy Import kWh":"EIDay{0.0}",
-                    "Energy Export kWh":"EEDay{0.0}",
-                    "Energy Battery Charge kWh":"EBatCharge{0.0}",
-                    "Energy Battery Discharge kWh":"EBatDischarge{0.0}"
-					}
+					"Power Import kW":"PI{0.0}",
+                    "Power Export kW":"PE{0.0}",
+                    "Power Charge kW":"PC{0.0}",
+                    "Power Discharge kW":"PD{0.0}"					}
             }
         ]
     }

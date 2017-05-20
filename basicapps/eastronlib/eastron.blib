@@ -3,7 +3,7 @@
 ' Copyright (c) 2015-2017 swissEmbedded GmbH, All rights reserved.
 ' Eastron SDM630 energy meter EMDO modbus example
 ' Documentation somewhere in the internet
-' @DESCRIPTION EMDO Eastron SDM120, SDM630 energy meter library
+' @DESCRIPTION EMDO Eastron SDM120, SDM220, SDM630 energy meter library
 ' @VERSION 1.0
 
 
@@ -67,7 +67,7 @@ FUNCTION EastronEnergyMeter(itf$, slv%, Uac1, Uac2, Uac3, Iac1, Iac2, Iac3, kW1,
  EastronEnergyMeter=0
 END FUNCTION
 
-' Eastron energy meter SDM120
+' Eastron energy meter SDM120, SDM220
 ' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% eastron energy meter sdm630 slave address default 1 
 ' Uac voltage ac
