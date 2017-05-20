@@ -86,10 +86,10 @@ END FUNCTION
 ' vl% value for data exchange
 ' vls$ value if string
 FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
- LOCAL err%, interf$, num$, n%, m%, toka$(3), toks$, a$, p$, s$, i
+ LOCAL err%, interf$, num%, n%, m%, toka$(3), toks$, a$, p$, s$, i
  ' parse if$ string
  interf$=split$(0,itf$,":")
- num$=split$(1,itf$,":")
+ num%=val(split$(1,itf$,":"))
  ': [command] [data][data][…] [check]\n
  ': [command] [dataHighNibble, dataLowNibble][……] [checkHigh, checkLow]\n
  ' High byte is send last
@@ -131,10 +131,11 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
   p$=string$(8-len(p$),"0")+p$
   VEReverse p$
  ELSE IF cmd$="8" AND tp$="string" THEN
-  for i= 1 TO LEN(vls$)
+  FOR i= 1 TO LEN(vls$)
    s$=hex$(asc(mid$(vls$,i,1)))
    s$=string$(2-len(s$))+s$
    p$=p$+s$
+  NEXT i
  ENDIF
  p$=":"+right$(cmd$,1)+a$+p$
  VESum(p$,m%, s$, 0)
@@ -146,17 +147,21 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
  toks$=""
  m%=-1
  IF interf$="RS485" THEN
-  RS485Write(val(num$), p$)
+  RS485Write(num%, p$)
   ' No reply on restart command
-  IF cmd$<>"6" THEN m%=StreamSearch(RS485Read(num%,5000),"toka$", 5000)
+  IF cmd$<>"6" THEN 
+   m%=StreamSearch(RS485Read(num%,5000),"toka$", 5000)
+  ENDIF 
  ELSE
   ' Send it over ethernet
-  con%=SocketClient( 1, interf$, val(num$) )   
+  con%=SocketClient( 1, interf$, num% )   
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",5000)
    n%=SocketWrite( con%, p$ )
    ' No reply on restart command
-   IF cmd$<>"6" THEN m%=StreamSearch(SocketRead(con%),"toka$", 5000)
+   IF cmd$<>"6" THEN 
+    m%=StreamSearch(SocketRead(con%),"toka$", 5000)
+   ENDIF
    n%=SocketClose( con% )
   ENDIF
  ENDIF
@@ -205,7 +210,9 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
    VEReverse p$
    vls$="&H"+p$
    vl%=val(vls$)   
-   IF vl% < 0 THEN vl%=vl%-65536
+   IF vl% < 0 THEN 
+    vl%=vl%-65536
+   ENDIF
   ELSE IF tp$="un32" THEN
    VEReverse p$
    vls$="&H"+p$
@@ -214,13 +221,15 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
    VEReverse p$
    vls$="&H"+p$
    vl%=val(vls$)   
-   IF vl% < 0 THEN vl%=vl%-4294967296
+   IF vl% < 0 THEN 
+    vl%=vl%-4294967296
+   ENDIF
   ELSE IF tp$="string" THEN
    vls$=""
    vl%=0
-   for i=1 TO LEN(p$) STEP 2
+   FOR i=1 TO LEN(p$) STEP 2
     vls$=vls$+chr$(val("&H"+mid$(p$,i,2)))
-   next i 
+   NEXT i 
   ELSE
    VEDirectHex=-3
    EXIT FUNCTION
@@ -258,7 +267,7 @@ SUB VESum(st$, sum%, sums$, ex%)
   ELSE
    cp$=mid$(st$,i,2)
   ENDIF
-   sum%=sum%+val("&H"+cp$)
+  sum%=sum%+val("&H"+cp$)
  NEXT i
  sum%=(&H55-(sum% AND &HFF)) AND &HFF
  'print sum% " " hex$(sum%)
