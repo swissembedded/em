@@ -2,6 +2,8 @@
 ' Please visit us at www.swissembedded.com
 ' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
 ' Self made battery storage solution
+' Config
+AECIds$=chr$(14)+chr$(24)+chr$(26)
 
 ' init interfaces
 SYS.Set "rs485", "baud=2400 data=8 stop=1 parity=n term=1"
@@ -9,8 +11,11 @@ SYS.Set "rs485-2", "baud=9600 data=8 stop=1 parity=n term=1"
 
 ' Load all required libraries
 LIBRARY LOAD "aesgi"
-s$=AECProbe$("RS485:2")
-print len(s$)
+IF AECIds$="" THEN
+ AECIds$=AECProbe$("RS485:2")
+ENDIF
+'Don't probe, use 14, 24, 26
+
 LIBRARY LOAD "modbus"
 LIBRARY LOAD "eastron"
 LIBRARY LOAD "vedirect"
@@ -42,9 +47,9 @@ start:
   else
    s$="Discharging:"
    PC=0.0
-   PD=PS
+   PD=-PS
   endif
-  meter_status$=meter_status$+s$+chr$(10)+ds_num$(err%,PS,"%.3f"," kW")
+  meter_status$=meter_status$+s$+chr$(10)+ds_num$(err%,PD+PC,"%.3f"," kW")
  ENDIF
 
  ' read battery manager
@@ -70,6 +75,14 @@ start:
  battery_status$=a$
 
  ' Set inverter
- err%=AECSetOutputPowerB("RS485:2",0)
+ aec$="RS485:2"
+ for id%=1 TO len(AECIds$)
+   dev%=asc(mid$(AECIds$,id%,1))
+   err%=AECSetOperationMode(aec$,dev%,2,45.2)   
+   print "OP " id% err%
+   err%=AECSetCurrentLimit(aec$,dev%,0.1)
+   print "CUR " id% err%
+ next id%
+ 
  pause 1000
  goto start

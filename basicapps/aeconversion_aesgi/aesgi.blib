@@ -8,45 +8,14 @@
 ' Depending on firmware version, some commands do not work
 ' SYS.Set "rs485", "baud=9600 data=8 stop=1 parity=n term=1"
 
-'Example about usage
-'id%=14
-'frac%=10
-'start: 
-'ids$=AECProbe$("RS485:1")
-'print "# inverters found " len(ids$)
-'id%=AEGId%(0)
-'err%=AECGetType("RS485:1", id%,st%, tp$)
-'print "AE is INV" tp$ st% 
-'err%=AECGetStatus("RS485:1", id%, st%, Udc, Idc, Pdc, Uac, Iac, Pac, T,Ed)
-'print "AE Status " st% Udc Idc Pdc Uac Iac Pac T Ed
-'err%=AECGetOutputPower("RS485:1", id%, st%, frac% )
-'err%=AECSetOutputPower("RS485:1", id%, frac%) 
-'err%=AECSetOutputPowerBroadcast("RS485:1", frac%) 
-'print "AE Power " st% frac%
-'err%=AECGetAutotest("RS485:1", id%, st%, Ueff, Freq, UMax, TUMax%, UMin, TUMin%, FMin, TFMin%, FMax, TFMax%, Res%)
-'print "AE Test " st% Ueff Freq UMax TUMax% UMin TUMin% FMin TFMin% FMax TFMax% Res%
-'err%=AECGetOffGridParams("RS485:1", id%, st%, Ueff, Freq, UMax, TUMax%, UMin, TUMin%, FMin, TFMin%, FMax, TFMax%)
-'print "AE Off " st% Ueff Freq UMax TUMax% UMin TUMin% FMin TFMin% FMax TFMax%
-'err%=AECGetErrorLog("RS485:1", id%, st%, T%, EC1%, T1%, EC2%, T2%,  EC3%, T3%, EC4%, T4%, EC5%, T5%, EC6%, T6% )
-'print "AE Err " st% T% EC1% T1% EC2% T2% EC3% T3% EC4% T4% EC5% T5% EC6% T6% 
-'err%=AECGetCurrentLimit("RS485:1", id%, st%, Idc) 
-'err%=AECSetCurrentLimit("RS485:1", id%, st%, Idc)  
-'print "AE Current " st% Idc
-'err%=AECGetOperationMode("RS485:1", id%, st%, mode%, Udc)
-'err%=AECSetOperationMode("RS485:1", id%, st%, mode%, Udc)
-'print "AE Mode " st% mode% Udc
-'pause 10000
-'goto start
-
-
 '**
-' Function to probe AEConversion inverter, we take the one with the highest number
+' Function to probe AEConversion inverter
+' This takes quite a while
 ' itf$ interface for communication
-' it returns an string of id% with active devices found
+' it returns a string of id% with active devices found
 FUNCTION AECProbe$(itf$)
- LOCAL err%,rsp$,s$, qy$,id%
+ LOCAL err%,rsp$,s$,qy$,id%
  s$=""
- err%=AECDrop(itf$)
  FOR id% = 1 TO 32
   qy$ = "#"+FORMAT$(id%,"%02g")+"9"  
   err%=AECWrite(itf$,qy$)
@@ -64,28 +33,27 @@ END FUNCTION
 ' Function to get AEConversion inverter type
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% -1 = no response
 ' tp$ inverter type string e.g. 500-90
-FUNCTION AECGetType(itf$,id%,st%,tp$)
+' return -1 on error
+FUNCTION AECGetType(itf$,id%,tp$)
   LOCAL err%,qy$,rsp$
   qy$ = "#"+FORMAT$(id%,"%02g")+"9"  
   err%=AECCom(itf$,qy$,rsp$)
-  IF len(rsp$) = 0 THEN
-   st%=-1
+  IF len(rsp$) < 12 THEN
+   AECGetType=-1
   ELSE
-  st%=0
-  ' *149 500-90 3   
+  AECGetType=0
+  ' *149 500-90 3
   '12345678901234
-   tp$=MID$(rsp$,7,5)
+  tp$=MID$(rsp$,7,5)
   ENDIF 
-  AECGetType=err%
 END FUNCTION
  
 '**
 ' Function to get status from AEConversion inverter 
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
+' st% Status
 ' Udc dc input voltage V
 ' Idc dc input current I
 ' Pdc dc input power Watt
@@ -94,14 +62,15 @@ END FUNCTION
 ' Pac ac output power W
 ' T inverter temperature °C
 ' Ed daily energy Wh
+' return -1 on error
 FUNCTION AECGetStatus(itf$,id%,st%,Udc,Idc,Pdc,Uac,Iac,Pac,T,Ed)
   LOCAL err%,qy$,rsp$
-  qy$ = "#" + FORMAT$(id%,"%02g") + "0"
+  qy$ = "#"+FORMAT$(id%,"%02g")+"0"
   err%=AECCom(itf$,qy$,rsp$)
   ' *140   0  54.2  4.10     0 243.3  0.67   217  50     79
   '123456789012345678901234567890123456789012345678901234567890 
   IF len(rsp$) = 0 THEN
-   st% = -1
+   AECGetStatus=-1
   ELSE
    st%=VAL(MID$(rsp$,7,3))
    Udc=VAL(MID$(rsp$,11,5))
@@ -112,8 +81,8 @@ FUNCTION AECGetStatus(itf$,id%,st%,Udc,Idc,Pdc,Uac,Iac,Pac,T,Ed)
    Pac=VAL(MID$(rsp$,41,5))
    T=VAL(MID$(rsp$,47,3))
    Ed=VAL(MID$(rsp$,51,6))
+   AECGetStatus=0
   ENDIF
-  AECGetStatus=err%
 END FUNCTION
 
 '**
@@ -123,7 +92,7 @@ END FUNCTION
 ' id% inverter id 1-32
 ' frac% fraction of nominal inverter power
 FUNCTION AECSetOutputPower(itf$,id%,frac%)
-  LOCAL err%,qy$,n%
+  LOCAL err%,qy$
   qy$ = "#" + FORMAT$(id%,"%02g") + "L "+ FORMAT$(frac%,"%03g")  
   ' #14L 050
   ' no response send from inverter
@@ -137,7 +106,7 @@ END FUNCTION
 ' itf$ interface for communication
 ' frac% fraction of nominal inverter power
 FUNCTION AECSetOutputPowerB(itf$,frac%)
-  LOCAL err%,qy$,n%
+  LOCAL err%,qy$
   qy$ = "#" + "b018 "+ FORMAT$(frac%,"%03g")  
   ' #b018 050
   ' no response send from inverter
@@ -149,9 +118,9 @@ END FUNCTION
 ' Note: value is reset on device restart (sporadic restart on net spikes)
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' frac% fraction of nominal inverter power
-FUNCTION AECGetOutputPower(itf$, id%, st%, frac%)
+' return -1 on error
+FUNCTION AECGetOutputPower(itf$,id%,frac%)
   LOCAL err%,qy$,rsp$
   qy$ = "#" + FORMAT$(id%,"%02g") + "L"
   ' #14L
@@ -159,12 +128,11 @@ FUNCTION AECGetOutputPower(itf$, id%, st%, frac%)
   ' *14L 050 0
   '12345678901
   IF len(rsp$) = 0 THEN
-   st% = -1   
+   AECGetOutputPower = -1   
   ELSE   
-   st%=0   
    frac%=VAL(MID$(rsp$,7,3))
+   AECGetOutputPower=0
   ENDIF
-  AECGetOutputPower=err%
 END FUNCTION
 
 '**
@@ -172,7 +140,6 @@ END FUNCTION
 ' This is not working with my firmware
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' Ueff effective Voltage AC
 ' Freq Grid frequency
 ' UMax upper  voltage
@@ -184,15 +151,16 @@ END FUNCTION
 ' FMax upper off-grid frequency
 ' TFMax% lower off-grid time
 ' Res% result
-FUNCTION AECGetAutotest(itf$,id%,st%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin,TFMin%,FMax,TFMax%,Res%)
+' return -1 on error
+FUNCTION AECGetAutotest(itf$,id%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin,TFMin%,FMax,TFMax%,Res%)
   LOCAL err%,qy$,rsp$,d
   qy$ = "#" + FORMAT$(id%,"%02g") + "A"
   ' #14A
   err%=AECCom(qy$,rsp$)  
   IF len(rsp$) = 0 THEN
-   st% = -1
+   AECGetAutotest = -1
   ELSE
-   st%=0
+   AECGetAutotest=0
    Ueff=VAL(MID$(rsp$,7,5))
    Freq=VAL(MID$(rsp$,13,4))
    UMax=VAL(MID$(rsp$,18,5))
@@ -215,14 +183,12 @@ FUNCTION AECGetAutotest(itf$,id%,st%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin,TFMi
    TFMax%=VAL(MID$(rsp$,57,4))
    Res%=VAL(MID$(rsp$,62,5))
   ENDIF
-  AECGetAutoset=err%
 END FUNCTION
 
 '**
 ' Function to read off-grid parameter range from AEConversion inverter 
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' Ueff effective Voltage AC
 ' Freq Grid frequency
 ' UMax upper  voltage
@@ -233,14 +199,15 @@ END FUNCTION
 ' TFMin% lower off-grid time
 ' FMax upper off-grid frequency
 ' TFMax% lower off-grid time
-FUNCTION AECGetOffGridParams(itf$,id%,st%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin,TFMin%,FMax,TFMax%)
+' return -1 on error
+FUNCTION AECGetOffGridParams(itf$,id%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin,TFMin%,FMax,TFMax%)
   LOCAL err%,qy$,rsp$,d
-  qy$ = "#" + FORMAT$(id%,"%02g") + "P"
+  qy$="#"+FORMAT$(id%,"%02g")+"P"
   err%=AECCom(qy$,rsp$)  
   IF len(rsp$) = 0 THEN
-   st% = -1   
+   AECGetOffGridParams=-1   
   ELSE
-   st%=0
+   AECGetOffGridParams=0
    ' *14P 230.0 50.0 264.5 0140 184.0 0140 31631 0160 29186 0160 
    '123456789012345678901234567890123456789012345678901234567890 
    Ueff=VAL(MID$(rsp$,7,5))
@@ -264,7 +231,6 @@ FUNCTION AECGetOffGridParams(itf$,id%,st%,Ueff,Freq,UMax,TUMax%,UMin,TUMin%,FMin
    ENDIF   
    TFMax%=VAL(MID$(rsp$,57,4))   
   ENDIF
-  AECGetOffGridParams=err%
 END FUNCTION
 
 '**
@@ -285,16 +251,17 @@ END FUNCTION
 ' EC5% errorcode
 ' T6% time since start
 ' EC6% errorcode
-FUNCTION AECGetErrorLog(itf$,id%,st%,T%,EC1%,T1%,EC2%,T2%,EC3%,T3%,EC4%,T4%,EC5%,T5%,EC6%,T6%)
+' return -1 on error
+FUNCTION AECGetErrorLog(itf$,id%,T%,EC1%,T1%,EC2%,T2%,EC3%,T3%,EC4%,T4%,EC5%,T5%,EC6%,T6%)
   LOCAL err%,qy$,rsp$
-  qy$ = "#" + FORMAT$(id%,"%02g") + "F"
+  qy$="#"+FORMAT$(id%,"%02g")+"F"
   err%=AECCom(itf$, qy$,rsp$)  
   IF len(rsp$) = 0 THEN
-   st% = -1   
+   AECGetErrorLog=-1
   ELSE
    ' *14F 23004 018 11012 018 11017 018 11798 018 11799 018 11801 018 11803  
    '123456789012345678901234567890123456789012345678901234567890123456789012 
-   st%=0
+   AECGetErrorLog=0
    T%=VAL(MID$(rsp$,7,5))
    EC1%=VAL(MID$(rsp$,13,3))
    T1%=VAL(MID$(rsp$,17,5))
@@ -309,56 +276,52 @@ FUNCTION AECGetErrorLog(itf$,id%,st%,T%,EC1%,T1%,EC2%,T2%,EC3%,T3%,EC4%,T4%,EC5%
    EC6%=VAL(MID$(rsp$,63,3))
    T6%=VAL(MID$(rsp$,67,3))
   ENDIF
-  AECGetErrorLog=err%
 END FUNCTION
 
 '**
 ' Function to set current limit from AEConversion inverter 
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' Idc set DC current limit for output 
 ' (see inverter datasheet for range)
-FUNCTION AECSetCurrentLimit(itf$,id%,st%,Idc)
-  LOCAL err%,qy$,rsp$
+' return -1 on error
+FUNCTION AECSetCurrentLimit(itf$,id%,Idc)
+  LOCAL err%,qy$,rsp$,cur$
   cur$=FORMAT$(Idc,"%02.1f")  
   IF len(cur$)=3 THEN 
-   cur$ = "0"+cur$ 
+   cur$ = "0"+cur$
   ENDIF  
   qy$ = "#" + FORMAT$(id%,"%02g") + "S "+ cur$
   err%=AECCom( itf$, qy$,rsp$)  
   IF len(rsp$) = 0 THEN   
-   st% = -1
+   AECSetCurrentLimit=-1
   ELSE   
    ' *14S  0.5
    '1234567890123
-   st%= 0
+   AECSetCurrentLimit=0
    Idc=VAL(MID$(rsp$,7,4))
-   print Idc
   ENDIF
-  AECSetCurrentLimit=err%
 END FUNCTION
 
 '**
 ' Function to get current limit from AEConversion inverter 
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' Idc set DC current limit for output 
 ' (see inverter datasheet for range)
-FUNCTION AECGetCurrentLimit(itf$,id%,st%,Idc)
+' return -1 on error
+FUNCTION AECGetCurrentLimit(itf$,id%,Idc)
   LOCAL err%,qy$,rsp$
   qy$ = "#" + FORMAT$(id%,"%02g") + "S"
   err%=AECCom( itf$,qy$,rsp$)
   ' *14S  0.0
   '123456789012345  
   IF len(rsp$) = 0 THEN
-   st% = -1
+   AECGetCurrentLimit=-1
   ELSE   
-   st%= 0
+   AECGetCurrentLimit=0
    Idc=VAL(MID$(rsp$,7,4))
-  ENDIF
-  AECGetCurrentLimit=err%
+  ENDIF  
 END FUNCTION
 
 '**
@@ -366,28 +329,27 @@ END FUNCTION
 ' Note: value is reset on device restart (sporadic restart on net spikes)
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' mode% 0=mppt mode, 2=voltage mode
 ' Udc min voltage where the inverter stops operating
 ' (see inverter datasheet for range)
-FUNCTION AECSetOperationMode(itf$,id%,st%,mode%,Udc)
-  LOCAL err%,qy$,rsp$
-  volt$=FORMAT$(Idc,"%02.1f")
+' return -1 on error
+FUNCTION AECSetOperationMode(itf$,id%,mode%,Udc)
+  LOCAL err%,qy$,rsp$,volt$
+  volt$=FORMAT$(Udc,"%02.1f")
   IF len(volt$)=3 THEN 
    volt$ = "0"+volt$ 
   endif
   qy$ = "#" + FORMAT$(id%,"%02g") + "B "+ FORMAT$(mode%,"%01g")+" "+volt$
   err%=AECCom(itf$,qy$,rsp$)
   IF len(rsp$) = 0 THEN
-   st% = -1
+   AECSetOperationMode = -1
   ELSE
    ' *14B 0  0.0
    '123456789012345  
-   st%= 0
+   AECSetOperationMode= 0
    mode%=VAL(MID$(rsp$,7,1))
    Udc=VAL(MID$(rsp$,9,4))
   ENDIF
-  AECSetOperationMode=err%
 END FUNCTION
 
 '**
@@ -395,24 +357,23 @@ END FUNCTION
 ' Note: value is reset on device restart (sporadic restart on net spikes)
 ' itf$ interface for communication
 ' id% inverter id 1-32
-' st% inverter status, -1 = no response
 ' mode% 0=mppt mode, 2=voltage mode
 ' Udc min voltage where the inverter stops operating
 ' (see inverter datasheet for range)
-FUNCTION AECGetOperationMode(itf$,id%,st%,mode%,Udc)
+' return -1 on error
+FUNCTION AECGetOperationMode(itf$,id%,mode%,Udc)
   LOCAL err%,qy$,rsp$
   qy$ = "#" + FORMAT$(id%,"%02g") + "B"
   err%=AECCom(itf$,qy$,rsp$)
   IF len(rsp$) = 0 THEN
-   st% = -1
+   AECGetOperationMode=-1
   ELSE
    ' *14B 0  0.0 
    '123456789012345  
-   st%= 0
+   AECGetOperationMode=0
    mode%=VAL(MID$(rsp$,7,1))
    Udc=VAL(MID$(rsp$,9,4))
   ENDIF
-  AECGetOperationMode=err%
 END FUNCTION
 
 '**
@@ -450,7 +411,7 @@ FUNCTION AECRead(itf$,rsp$)
  LOCAL interf$, num%,n%
  interf$=split$(0,itf$,":")
  num%=val(split$(1,itf$,":"))
- rsp$ = RS485ReadLn$(num%,2000,CHR$(13))
+ rsp$ = RS485ReadLn$(num%,3000,CHR$(13))
  n%=len(rsp$)
  IF n%=0 THEN
   AECRead=-1
