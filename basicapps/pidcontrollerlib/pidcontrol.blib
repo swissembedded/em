@@ -1,0 +1,24 @@
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' PID control calculation
+' Documentation https://en.wikipedia.org/wiki/PID_controller
+' @DESCRIPTION PID control loop calculation
+' @VERSION 1.0
+
+' sp setpoint
+' mv measured value
+' dt time step (delta time)
+' pig previous integral from last timestep
+' perr previous error from last timestep
+' kp proportional gain
+' ki integral gain
+' kd derivate gain
+' Return control variable u(t)
+FUNCTION PIDControl(sp,mv,dt,pig,perr,kp,ki,kd)
+  LOCAL err,ig,drv
+  err = sp - mv
+  ig = ig + err*dt
+  drv = (err - perr)/dt
+  PIDControl = kp*err + ki*ig + kd*drv
+  perr = err
+  pig=ig
+END FUNCTION

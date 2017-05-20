@@ -19,7 +19,7 @@ start:
  err2%=EastronEnergyMeterP1("RTU:RS485:1",1, Uac, Iac, kW, kWhI, kWhE)
 
  if err1% >=0 and err2% >=0 THEN
-  P=kW1+kW2+kW3
+  P=Round(kW1+kW2+kW3,3)
   IF P >= 0.0 THEN 
    PE=0.0
    PI=P
@@ -28,7 +28,7 @@ start:
    PI=0.0
   ENDIF
   meter_status$="Import:"+chr$(10)+ds_num$(err%,PI,"%.3f"," kW")+chr$(10)+"Export:"+chr$(10)+ds_num$(err%,PE,"%.3f"," kW")+chr$(10)
-  PS=kW
+  PS=Round(kW,3)
   if PS > 0 THEN
    s$="Charging"
    PD=0.0
