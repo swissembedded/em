@@ -44,16 +44,20 @@
 ' itf$ interface for communication
 ' it returns an string of id% with active devices found
 FUNCTION AECProbe$(itf$)
-  LOCAL err%,y%,st%,tp$,s$
-  s$=""
-  FOR y%=1 TO 32
-   err%=AECGetType(itf$,y%,st%,tp$)
-   IF err%>=0 AND st%>=0 THEN
-    'Print "Found device " y%
-    s$=s$+CHR$(y%)
-   ENDIF
-  NEXT y%
-  AECProbe$=s$
+ LOCAL err%,rsp$,s$, qy$,id%
+ s$=""
+ err%=AECDrop(itf$)
+ FOR id% = 1 TO 32
+  qy$ = "#"+FORMAT$(id%,"%02g")+"9"  
+  err%=AECWrite(itf$,qy$)
+  err%=AECRead(itf$,rsp$)
+  IF len(rsp$) >=4 THEN
+   id%=val(mid$(rsp$,3,2))
+   s$=s$+chr$(id%)
+   print "aegsi found id" id%
+  ENDIF
+ NEXT id% 
+ AECProbe$=s$
 END FUNCTION
 
 '**
@@ -417,13 +421,10 @@ END FUNCTION
 ' qy$ query send to inverter
 ' rsp$ response from the inverter
 FUNCTION AECCom(itf$,qy$,rsp$ )
- LOCAL err%, n%, interf$, num%
- interf$=split$(0,itf$,":")
- num%=val(split$(1,itf$,":"))
- DO WHILE RS485Read( num% ) >=0
- LOOP
- n% = RS485Write(num%,qy$,13)
- rsp$ = RS485ReadLn$(num%,2000,CHR$(13)) 
+ LOCAL err%, n%
+ err%=AECDrop(itf$)
+ err%=AECWrite(itf$,qy$)
+ err%=AECRead(itf$,rsp$)
  IF len(rsp$) <= 3 THEN
   AECCom=-1
  ENDIF
@@ -440,3 +441,34 @@ FUNCTION AECWrite(itf$,qy$)
  num%=val(split$(1,itf$,":"))
  AECWrite = RS485Write(num%,qy$,13)
 END FUNCTION
+
+'**
+' Function to communicate with AEConversion inverter (read only)
+' itf$ interface for communication
+' qy$ query send to inverter
+FUNCTION AECRead(itf$,rsp$)
+ LOCAL interf$, num%,n%
+ interf$=split$(0,itf$,":")
+ num%=val(split$(1,itf$,":"))
+ rsp$ = RS485ReadLn$(num%,2000,CHR$(13))
+ n%=len(rsp$)
+ IF n%=0 THEN
+  AECRead=-1
+ ELSE
+  AECRead=n%
+ ENDIF
+END FUNCTION
+
+'**
+' Function to communicate with AEConversion inverter (read only)
+' itf$ interface for communication
+' rsp$ response from the inverter
+FUNCTION AECDrop(itf$)
+ LOCAL interf$, num%
+ interf$=split$(0,itf$,":")
+ num%=val(split$(1,itf$,":"))
+ DO WHILE RS485Read(num%) >=0
+ LOOP
+ AECDrop=0
+END FUNCTION
+
