@@ -1,0 +1,75 @@
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' Aspiro library to control lead acid battery charger
+' Documentation ask bel power solution
+' Pls use latest firmware with current limit function
+' @DESCRIPTION Aspiro battery charger
+' @VERSION 1.0
+
+'**
+' Subroutine to read aspiro
+FUNCTION ASPGet(dev$,x%,y%,value%)
+' Get SMNP request v2c 1.3.6.1.4.1.5961.5.X.Y.0
+' at the end 05 00 is termination, the octets before the termination are the object identifier, it starts with 06 which is type object identifier, followed by the length of the oi
+' the length might vary depending on the oi, values above 127 are encoded in two bytes
+' oi e.g. 1.3.6.1.4.1.5961.5.2.1.0 which is encoded to  06 0B 2B 06 01 04 01 AE 49 05 02 01 00
+' 2B = 1.3., 06=6, 01=1...AE49=5961 where AE = 128 + 46 and 49 is the remainer 5961-(46*128)
+' request id &H01,&H02,&H03,&H04
+' There is a a good introduction from Rane RaneNote "SNMP: Simple? Network Management Protocol"
+ LOCAL con%, n%, req$, rsp$,num%
+ con% = SocketClient(0, dev$, 161)
+ IF con% < 0 THEN
+  ASPGet=con%
+  EXIT FUNCTION
+ ENDIF 
+ req$=CHR$(&H30)+CHR$(&H2D)+CHR$(&H02)+CHR$(&H01)+CHR$(&H01)+CHR$(&H04)+CHR$(&H07)+CHR$(&H61)+CHR$(&H63)+CHR$(&H63)
+ req$=req$+CHR$(&H72)+CHR$(&H65)+CHR$(&H61)+CHR$(&H64)+CHR$(&HA0)+CHR$(&H1F)+CHR$(&H02)+CHR$(&H04)+CHR$(&H01)+CHR$(&H02)
+ req$=req$+CHR$(&H03)+CHR$(&H04)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H30)+CHR$(&H11)
+ req$=req$+CHR$(&H30)+CHR$(&H0F)+CHR$(&H06)+CHR$(&H0B)+CHR$(&H2B)+CHR$(&H06)+CHR$(&H01)+CHR$(&H04)+CHR$(&H01)+CHR$(&HAE)
+ req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H05)+CHR$(&H00)
+ n%=SocketOption(con%,"SO_RCVTIMEO",500)
+ n%=SocketWrite(con%,req$)
+ rsp$=SocketRead$(con%,255)
+ n%=SocketClose(con%)
+ num%=len(rsp$)
+ IF num%=57 THEN 
+  value%=conv("bbe/u16", MID$(rsp$,56,2))
+ ELSE IF num%=56 THEN 
+  value%=ASC(MID$(rsp$,56,1))
+ ELSE
+  print "Aspiro not responding, pls check config"
+  ASPGet=-1
+  EXIT FUNCTION 
+ ENDIF
+ ASPGet=0
+END FUNCTION
+
+'**
+' Subroutine to write aspiro
+FUNCTION ASPSet(dev$,x%,y%,value%)
+ LOCAL con%, n%, req$, rsp$,num%
+ con% = SocketClient(0, dev$, 161)
+ IF con% < 0 THEN
+  ASPSet=con%
+  EXIT FUNCTION
+ ENDIF 
+ req$=CHR$(&H30)+CHR$(&H2F)+CHR$(&H02)+CHR$(&H01)+CHR$(&H01)+CHR$(&H04)+CHR$(&H07)+CHR$(&H61)+CHR$(&H63)+CHR$(&H63)
+ req$=req$+CHR$(&H77)+CHR$(&H72)+CHR$(&H69)+CHR$(&H74)+CHR$(&HA3)+CHR$(&H21)+CHR$(&H02)+CHR$(&H04)+CHR$(&H01)+CHR$(&H02)
+ req$=req$+CHR$(&H03)+CHR$(&H04)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H30)+CHR$(&H13)
+ req$=req$+CHR$(&H30)+CHR$(&H11)+CHR$(&H06)+CHR$(&H0B)+CHR$(&H2B)+CHR$(&H06)+CHR$(&H01)+CHR$(&H04)+CHR$(&H01)+CHR$(&HAE)
+ req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H02)+CHR$(&H02)+conv("u16/bbe",value%)
+ n%=SocketOption(con%,"SO_RCVTIMEO",500)
+ n%=SocketWrite(con%,req$)
+ rsp$=SocketRead$(con%,255)
+ n%=SocketClose(con%)
+ num%=len(rsp$)
+ IF num%=58 THEN 
+	value=conv("bbe/u16", MID$(rsp$,57,2))
+ ELSEIF num%=57 THEN
+	value=ASC(MID$(rsp$,57,1))
+ ELSE
+  print "Aspiro not responding, pls check config"
+  ASPSet=-1
+  EXIT FUNCTION
+ ENDIF
+ ASPSet=0
+END FUNCTION
