@@ -106,8 +106,8 @@ END FUNCTION
 ' itf$ interface for communication
 ' frac% fraction of nominal inverter power
 FUNCTION AECSetOutputPowerB(itf$,frac%)
-  LOCAL err%,qy$
-  qy$ = "#" + "b018 "+ FORMAT$(frac%,"%03g")  
+  LOCAL qy$
+  qy$ = "#b018 "+ FORMAT$(frac%,"%03g")  
   ' #b018 050
   ' no response send from inverter
   AECSetOutputPowerB=AECWrite(itf$,qy$)
@@ -303,6 +303,7 @@ FUNCTION AECSetCurrentLimit(itf$,id%,Idc)
   ENDIF
 END FUNCTION
 
+
 '**
 ' Function to get current limit from AEConversion inverter 
 ' itf$ interface for communication
@@ -373,6 +374,11 @@ FUNCTION AECGetOperationMode(itf$,id%,mode%,Udc)
    AECGetOperationMode=0
    mode%=VAL(MID$(rsp$,7,1))
    Udc=VAL(MID$(rsp$,9,4))
+   ' device might return wrong mode due to firmware error
+   ' if it returns a voltage it is in voltage mode
+   IF Udc<>0.0 AND mode%=0 THEN
+    mode%=2
+   ENDIF
   ENDIF
 END FUNCTION
 

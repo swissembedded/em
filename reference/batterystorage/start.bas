@@ -3,18 +3,18 @@
 ' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
 ' Self made battery storage solution
 ' Config
-AECIds$=chr$(14)+chr$(24)+chr$(26)
-
+' don't probe, use order the inverters INV500-90 are mounted on the rail
+AECIds$=chr$(26)+chr$(14)+chr$(24)+chr$(4)
+'AECIds$=""
 ' init interfaces
 SYS.Set "rs485", "baud=2400 data=8 stop=1 parity=n term=1"
-SYS.Set "rs485-2", "baud=9600 data=8 stop=1 parity=n term=1"
+SYS.Set "rs485-2", "baud=9600 data=8 stop=1 parity=n term=0"
 
 ' Load all required libraries
 LIBRARY LOAD "aesgi"
 IF AECIds$="" THEN
  AECIds$=AECProbe$("RS485:2")
 ENDIF
-'Don't probe, use 14, 24, 26
 
 LIBRARY LOAD "modbus"
 LIBRARY LOAD "eastron"
@@ -23,8 +23,30 @@ LIBRARY LOAD "pidcontrol"
 LIBRARY LOAD "logger"
 LIBRARY LOAD "dash"
 
+' Config power control loop
+pcTimerDesc%=SetTimer(5000)
+IF pcTimerDesc% < 0 THEN 
+ ERROR "Failed to add Timer entry"
+ELSE 
+ ON TIMER pcTimerDesc% pcTimer
+ print "pcTimer " pcTimerDesc%
+ENDIF
+Dispig=0
+Disperr=0
+Chapig=0
+Chaperr=0
+
+count%=0
 start:
- ' read energy meter for household
+ dispatch 1000
+ goto start
+ 
+ ' Control loop every 5 seconds (timer based)
+' id% cron identifier
+' elapsed% time in ms elapsed since last schedule
+FUNCTION pcTimer(id%)  
+ PRINT "pcTimer id=" id% " date=" Date$()
+  ' read energy meter for household
  'LOCAL Uac1, Uac2, Uac3, Iac1, Iac2, Iac3, kW1, kW2, kW3, kWhI1, kWhI2, kWhI3, kWhE1, kWhE2, kWhE3, P
  err1%=EastronEnergyMeter("TCP:192.168.10.22:502",1, Uac1, Uac2, Uac3, Iac1, Iac2, Iac3, kW1, kW2, kW3, kWhI1, kWhI2, kWhI3, kWhE1, kWhE2, kWhE3) 
  err2%=EastronEnergyMeterP1("RTU:RS485:1",1, Uac, Iac, kW, kWhI, kWhE)
@@ -69,20 +91,49 @@ start:
  err%=VEDirectHex(bat$,"7",&Hed8e,"sn16",vl%, vls$)
  PBat=vl%/1000.0
  a$=a$+ds_num$(err%,PBat,"%.3f","kW")+chr$(10)
- err%=VEDirectHex(bat$,"7",&H0fff,"un16",vl%, vls$)
+ err%=VEDirectHex(bat$,"7",&H0fff,"sn16",vl%, vls$)
  SoCBat=vl%/100.0
  a$=a$+ds_num$(err%,SoCBat,"%.2f","%")+chr$(10)
  battery_status$=a$
-
+ IF PD >= 0.0 THEN
+  ' control variable is inverter ac power
+  PInv=PIDControl(30,(PI-PE+PD-PC)*1000.0,5,Dispig,Disperr,-1.0,0.0,0.0)
+  IInv=PInv/UBat*1.1/len(AECIds$)
+  IF IInv<0.0 THEN
+   IInv=0.0
+  ENDIF
+  IF IInv>11.0 THEN
+   IInv=11.0
+  ENDIF
+  print "PID Inverter PInv " PInv/1000.0 "/IInv " IInv "/pig " Dispig "/err " Disperr
+ENDIF
+ 'IF PI = 0.0 AND PE > 0.0 THEN
+ ' PInv=0.0
+ ' IInv=0.0
+ ' Dispig=0.0
+ ' Disperr=0.0
+ 'ENDIF
  ' Set inverter
  aec$="RS485:2"
  for id%=1 TO len(AECIds$)
    dev%=asc(mid$(AECIds$,id%,1))
-   err%=AECSetOperationMode(aec$,dev%,2,45.2)   
-   print "OP " id% err%
-   err%=AECSetCurrentLimit(aec$,dev%,0.1)
-   print "CUR " id% err%
+   err%=AECGetOperationMode(aec$,dev%,mode%,Udc)
+   if err%<0 then
+    count%=coun%+1
+   endif
+   print "GOP " err% dev% mode% Udc
+   IF err%<0 OR mode%<>2 OR Udc<>45.2 THEN
+    err%=AECSetOperationMode(aec$,dev%,2,45.2)   
+    print "SOP " err% dev%
+   ENDIF 
+   err%=AECSetCurrentLimit(aec$,dev%,IInv)
+   if err%<0 then
+    count%=coun%+1
+   endif
+   print "CUR " err% dev% IInv
+   print "count" count%
  next id%
- 
- pause 1000
- goto start
+ 'err%=AECSetOutputPowerB(aec$,0)
+ 'err%=AECSetOutputPowerB(aec$,100)
+ pcTimer=0
+END FUNCTION
