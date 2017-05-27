@@ -2,6 +2,7 @@
 ' Aspiro library to control lead acid battery charger
 ' Documentation ask bel power solution
 ' Pls use latest firmware with current limit function
+' Register description is available from mib file (snmp)
 ' @DESCRIPTION Aspiro battery charger
 ' @VERSION 1.0
 

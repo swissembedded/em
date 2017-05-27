@@ -22,6 +22,7 @@ LIBRARY LOAD "vedirect"
 LIBRARY LOAD "pidcontrol"
 LIBRARY LOAD "logger"
 LIBRARY LOAD "dash"
+LIBRARY LOAD "aspiro"
 
 ' Config power control loop
 pcTimerDesc%=SetTimer(5000)
@@ -95,6 +96,24 @@ FUNCTION pcTimer(id%)
  SoCBat=vl%/100.0
  a$=a$+ds_num$(err%,SoCBat,"%.2f","%")+chr$(10)
  battery_status$=a$
+ 
+ ' read battery charger
+ asp$="192.168.10.40"
+ err%=ASPGet(asp$,"u16",2,1,dummy%)
+ UCharger=dummy%/100.0
+ a$=ds_num$(err%,UCharger,"%.1f","V")+chr$(10)
+ err%=ASPGet(asp$,"u16",2,5,dummy%)
+ TBat=dummy%
+ a$=a$+ds_num$(err%,TBat,"%g","T")+chr$(10)
+ err%=ASPGet(asp$,"u16",2,3,dummy%)
+ IBat2=dummy%/10.0
+ a$=a$+ds_num$(err%,IBat2,"%.1f","A")+" / "
+ err%=ASPGet(asp$,"u16",2,4, dummy%)
+ ICharger=dummy%/10.0
+ a$=a$+ds_num$(err%,ICharger,"%.1f","A")
+	
+ bat1_status$=a$
+ 
  IF PD >= 0.0 THEN
   ' control variable is inverter ac power
   PInv=PIDControl(30,(PI-PE+PD-PC)*1000.0,5,Dispig,Disperr,-1.0,0.0,0.0)
@@ -115,7 +134,7 @@ ENDIF
  'ENDIF
  ' Set inverter
  aec$="RS485:2"
- 'IInv=0.0
+ IInv=0.0
  for id%=1 TO len(AECIds$)
    dev%=asc(mid$(AECIds$,id%,1))
    err%=AECGetOperationMode(aec$,dev%,mode%,Udc)
