@@ -209,9 +209,9 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
   ELSE IF tp$="sn16" THEN
    VEReverse p$
    vls$="&H"+p$
-   vl%=val(vls$)   
-   IF vl% < 0 THEN 
-    vl%=vl%-65536
+   vl%=val(vls$)
+   IF vl% >= &H8000 THEN 
+    vl%=vl%-&H10000
    ENDIF
   ELSE IF tp$="un32" THEN
    VEReverse p$
@@ -220,9 +220,9 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
   ELSE IF tp$="sn32" THEN
    VEReverse p$
    vls$="&H"+p$
-   vl%=val(vls$)   
-   IF vl% < 0 THEN 
-    vl%=vl%-4294967296
+   vl%=val(vls$)
+   IF vl% >= &H80000000 THEN 
+    vl%=vl%-&H100000000
    ENDIF
   ELSE IF tp$="string" THEN
    vls$=""
