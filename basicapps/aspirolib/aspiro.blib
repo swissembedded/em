@@ -6,8 +6,14 @@
 ' @VERSION 1.0
 
 '**
-' Subroutine to read aspiro
-FUNCTION ASPGet(dev$,x%,y%,value%)
+' Function to read data from aspiro charger
+' dev$ ip address of the aspiro device
+' tp$ data type u8 or u16
+' x% snmp address 1.3.6.1.4.1.5961.5.X.Y.0
+' y% snmp address (see above)
+' value% read value from aspiro
+' return negative value on error
+FUNCTION ASPGet(dev$,tp$,x%,y%,value%)
 ' Get SMNP request v2c 1.3.6.1.4.1.5961.5.X.Y.0
 ' at the end 05 00 is termination, the octets before the termination are the object identifier, it starts with 06 which is type object identifier, followed by the length of the oi
 ' the length might vary depending on the oi, values above 127 are encoded in two bytes
@@ -15,12 +21,21 @@ FUNCTION ASPGet(dev$,x%,y%,value%)
 ' 2B = 1.3., 06=6, 01=1...AE49=5961 where AE = 128 + 46 and 49 is the remainer 5961-(46*128)
 ' request id &H01,&H02,&H03,&H04
 ' There is a a good introduction from Rane RaneNote "SNMP: Simple? Network Management Protocol"
- LOCAL con%, n%, req$, rsp$,num%
+ LOCAL con%,n%,req$,rsp$,xnum%,num%
+ IF tp$="u16" THEN
+  xnum%=57
+ ELSE IF tp$="u8" THEN
+  xnum%=56
+ ELSE
+  ASPGet=-1
+  EXIT FUNCTION
+ ENDIF
  con% = SocketClient(0, dev$, 161)
  IF con% < 0 THEN
   ASPGet=con%
   EXIT FUNCTION
- ENDIF 
+ ENDIF
+ 
  req$=CHR$(&H30)+CHR$(&H2D)+CHR$(&H02)+CHR$(&H01)+CHR$(&H01)+CHR$(&H04)+CHR$(&H07)+CHR$(&H61)+CHR$(&H63)+CHR$(&H63)
  req$=req$+CHR$(&H72)+CHR$(&H65)+CHR$(&H61)+CHR$(&H64)+CHR$(&HA0)+CHR$(&H1F)+CHR$(&H02)+CHR$(&H04)+CHR$(&H01)+CHR$(&H02)
  req$=req$+CHR$(&H03)+CHR$(&H04)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H30)+CHR$(&H11)
@@ -28,16 +43,20 @@ FUNCTION ASPGet(dev$,x%,y%,value%)
  req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H05)+CHR$(&H00)
  n%=SocketOption(con%,"SO_RCVTIMEO",500)
  n%=SocketWrite(con%,req$)
- rsp$=SocketRead$(con%,255)
+ rsp$=SocketRead$(con%,xnum%)
  n%=SocketClose(con%)
  num%=len(rsp$)
+ IF num%<>xnum% THEN
+  ASPGet=-2
+  EXIT FUNCTION
+ ENDIF
+ 
  IF num%=57 THEN 
-  value%=conv("bbe/u16", MID$(rsp$,56,2))
+  value%=conv("bbe/"+tp$, MID$(rsp$,56,2))
  ELSE IF num%=56 THEN 
   value%=ASC(MID$(rsp$,56,1))
  ELSE
-  print "Aspiro not responding, pls check config"
-  ASPGet=-1
+  ASPGet=-3
   EXIT FUNCTION 
  ENDIF
  ASPGet=0
@@ -45,8 +64,24 @@ END FUNCTION
 
 '**
 ' Subroutine to write aspiro
-FUNCTION ASPSet(dev$,x%,y%,value%)
- LOCAL con%, n%, req$, rsp$,num%
+' Function to write data to aspiro charger
+' dev$ ip address of the aspiro device
+' tp$ data type u8 or u16
+' x% snmp address 1.3.6.1.4.1.5961.5.X.Y.0
+' y% snmp address (see above)
+' value% read value from aspiro
+' return negative value on error
+FUNCTION ASPSet(dev$,tp$,x%,y%,value%)
+ LOCAL con%,n%,req$,rsp$,xnum%,num%
+ IF tp$="u16" THEN
+  xnum%=57
+ ELSE IF tp$="u8" THEN
+  xnum%=56
+ ELSE
+  ASPSet=-1
+  EXIT FUNCTION
+ ENDIF
+
  con% = SocketClient(0, dev$, 161)
  IF con% < 0 THEN
   ASPSet=con%
@@ -59,16 +94,20 @@ FUNCTION ASPSet(dev$,x%,y%,value%)
  req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H02)+CHR$(&H02)+conv("u16/bbe",value%)
  n%=SocketOption(con%,"SO_RCVTIMEO",500)
  n%=SocketWrite(con%,req$)
- rsp$=SocketRead$(con%,255)
+ rsp$=SocketRead$(con%,xnum%)
  n%=SocketClose(con%)
  num%=len(rsp$)
+ IF num%<>xnum% THEN
+  ASPSet=-2
+  EXIT FUNCTION
+ ENDIF
+
  IF num%=58 THEN 
-	value=conv("bbe/u16", MID$(rsp$,57,2))
+	value=conv("bbe/"+tp$, MID$(rsp$,57,2))
  ELSEIF num%=57 THEN
 	value=ASC(MID$(rsp$,57,1))
  ELSE
-  print "Aspiro not responding, pls check config"
-  ASPSet=-1
+  ASPSet=-3
   EXIT FUNCTION
  ENDIF
  ASPSet=0

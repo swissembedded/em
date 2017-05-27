@@ -91,7 +91,7 @@ FUNCTION pcTimer(id%)
  err%=VEDirectHex(bat$,"7",&Hed8e,"sn16",vl%, vls$)
  PBat=vl%/1000.0
  a$=a$+ds_num$(err%,PBat,"%.3f","kW")+chr$(10)
- err%=VEDirectHex(bat$,"7",&H0fff,"sn16",vl%, vls$)
+ err%=VEDirectHex(bat$,"7",&H0fff,"un16",vl%, vls$)
  SoCBat=vl%/100.0
  a$=a$+ds_num$(err%,SoCBat,"%.2f","%")+chr$(10)
  battery_status$=a$
@@ -115,6 +115,7 @@ ENDIF
  'ENDIF
  ' Set inverter
  aec$="RS485:2"
+ 'IInv=0.0
  for id%=1 TO len(AECIds$)
    dev%=asc(mid$(AECIds$,id%,1))
    err%=AECGetOperationMode(aec$,dev%,mode%,Udc)
