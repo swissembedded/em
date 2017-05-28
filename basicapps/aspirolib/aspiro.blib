@@ -104,9 +104,9 @@ FUNCTION ASPSet(dev$,tp$,x%,y%,value%)
  ENDIF
 
  IF num%=58 THEN 
-	value=conv("bbe/"+tp$, MID$(rsp$,57,2))
- ELSEIF num%=57 THEN
-	value=ASC(MID$(rsp$,57,1))
+  value%=conv("bbe/"+tp$, MID$(rsp$,57,2))
+ ELSE IF num%=57 THEN
+  value%=ASC(MID$(rsp$,57,1))
  ELSE
   ASPSet=-3
   EXIT FUNCTION

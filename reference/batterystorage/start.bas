@@ -104,56 +104,70 @@ FUNCTION pcTimer(id%)
  a$=ds_num$(err%,UCharger,"%.1f","V")+chr$(10)
  err%=ASPGet(asp$,"u16",2,5,dummy%)
  TBat=dummy%
- a$=a$+ds_num$(err%,TBat,"%g","T")+chr$(10)
+ a$=a$+ds_num$(err%,TBat,"%g",ds_special$("C*"))
  err%=ASPGet(asp$,"u16",2,3,dummy%)
  IBat2=dummy%/10.0
  a$=a$+ds_num$(err%,IBat2,"%.1f","A")+" / "
  err%=ASPGet(asp$,"u16",2,4, dummy%)
  ICharger=dummy%/10.0
  a$=a$+ds_num$(err%,ICharger,"%.1f","A")
-	
  bat1_status$=a$
- 
- IF PD >= 0.0 THEN
-  ' control variable is inverter ac power
-  PInv=PIDControl(30,(PI-PE+PD-PC)*1000.0,5,Dispig,Disperr,-1.0,0.0,0.0)
-  IInv=PInv/UBat*1.1/len(AECIds$)
-  IF IInv<0.0 THEN
-   IInv=0.0
+ ' PE export power, PI import power, PC charging power, PD discharging power
+ ' control variable is inverter ac power or ac charger power
+ PStorage=PIDControl(30,(PI-PE+PD-PC)*1000.0,5,Dispig,Disperr,-1.0,0.0,0.0)
+ ' Limit output power assume 10% loss
+ PInvMax=500*len(AECIds$)/1.1
+ ISetInverter=0.0
+ ISetCharger=0.0
+ IF PStorage >= 0.0 THEN
+  ' Use inverter
+  IF PStorage>PInvMax then
+   PStorage=PInvMax 
   ENDIF
-  IF IInv>11.0 THEN
-   IInv=11.0
+  ' Account 10% loss for inverter
+  ISetInverter=PStorage/UBat*1.1/len(AECIds$)
+ ELSE
+  ' Use charger
+  IF abs(PStorage) < 0.1 THEN
+   ' If charging current is < 100Watt, just set it to 100Watt, such that battery is always slowly charged
+   PStorage = -0.1
   ENDIF
-  print "PID Inverter PInv " PInv/1000.0 "/IInv " IInv "/pig " Dispig "/err " Disperr
-ENDIF
- 'IF PI = 0.0 AND PE > 0.0 THEN
- ' PInv=0.0
- ' IInv=0.0
- ' Dispig=0.0
- ' Disperr=0.0
- 'ENDIF
+  ' Account 5% loss for charger
+  ISetCharger=-PStorage/UBat/1.05
+ ENDIF
+ ' Set Aspiro 
+ IF ISetCharger=0.0 THEN
+  'test operation mode, rectifier disconnected
+  err%=ASPSet(asp$,"u16", 3,1, 2.0 )
+ ELSE IF ISetCharger>50.0 THEN
+  'normal operation mode
+  err%=ASPSet(asp$,"u16",3,1,0) 
+  'no current limit
+  err%=ASPSet(asp$,"u16",3,41,0) 
+ ELSE
+  'normal operation mode
+  err%=ASPSet(asp$,"u16", 3,1, 0) 
+  'set current limit
+  err%=ASPSet(asp$,"u16", 3,42, CInt(ISetCharger*10.0))
+  'current limit enabled
+  err%=ASPSet(asp$,"u16", 3,41, 1) 
+ ENDIF
  ' Set inverter
  aec$="RS485:2"
- IInv=0.0
  for id%=1 TO len(AECIds$)
    dev%=asc(mid$(AECIds$,id%,1))
    err%=AECGetOperationMode(aec$,dev%,mode%,Udc)
    if err%<0 then
     count%=coun%+1
    endif
-   print "GOP " err% dev% mode% Udc
    IF err%<0 OR mode%<>2 OR Udc<>45.2 THEN
     err%=AECSetOperationMode(aec$,dev%,2,45.2)   
     print "SOP " err% dev%
    ENDIF 
-   err%=AECSetCurrentLimit(aec$,dev%,IInv)
+   err%=AECSetCurrentLimit(aec$,dev%,ISetInverter)
    if err%<0 then
     count%=coun%+1
    endif
-   print "CUR " err% dev% IInv
-   print "count" count%
  next id%
- 'err%=AECSetOutputPowerB(aec$,0)
- 'err%=AECSetOutputPowerB(aec$,100)
  pcTimer=0
 END FUNCTION
