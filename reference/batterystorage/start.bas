@@ -154,7 +154,7 @@ FUNCTION pcTimer(id%)
  IF ISetCharger=0.0 AND ISetInverter>0.0 THEN
   'test operation mode, rectifier disconnected
   err%=ASPSet(asp$,"u16", 3,1, 2 )
- ELSE IF ISetCharger < 2.0 OR SoCBat=100.0 OR TBat>40.0 THEN
+ ELSE IF ISetCharger < 2.0 OR SoCBat = 100.0 OR TBat > 40.0 OR UBat < 46.0 OR UCharger < 46.0 THEN
   'normal operation mode (float)
   err%=ASPSet(asp$,"u16",3,1,0) 
   'no current limit
