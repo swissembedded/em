@@ -23,9 +23,9 @@ FUNCTION ASPGet(dev$,tp$,x%,y%,value%)
 ' request id &H01,&H02,&H03,&H04
 ' There is a a good introduction from Rane RaneNote "SNMP: Simple? Network Management Protocol"
  LOCAL con%,n%,req$,rsp$,xnum%,num%
- IF tp$="u16" THEN
+ IF tp$="u16" OR tp$="i16" THEN
   xnum%=57
- ELSE IF tp$="u8" THEN
+ ELSE IF tp$="u8" OR tp$="i8" THEN
   xnum%=56
  ELSE
   ASPGet=-1
@@ -56,6 +56,9 @@ FUNCTION ASPGet(dev$,tp$,x%,y%,value%)
   value%=conv("bbe/"+tp$, MID$(rsp$,56,2))
  ELSE IF num%=56 THEN 
   value%=ASC(MID$(rsp$,56,1))
+  IF tp$="i8" and value% >= &H80 THEN
+   value%=value%-&H100
+  ENDIF
  ELSE
   ASPGet=-3
   EXIT FUNCTION 
@@ -74,10 +77,26 @@ END FUNCTION
 ' return negative value on error
 FUNCTION ASPSet(dev$,tp$,x%,y%,value%)
  LOCAL con%,n%,req$,rsp$,xnum%,num%
- IF tp$="u16" THEN
+
+ req$=CHR$(&H30)+CHR$(&H2F)+CHR$(&H02)+CHR$(&H01)+CHR$(&H01)+CHR$(&H04)+CHR$(&H07)+CHR$(&H61)+CHR$(&H63)+CHR$(&H63)
+ req$=req$+CHR$(&H77)+CHR$(&H72)+CHR$(&H69)+CHR$(&H74)+CHR$(&HA3)+CHR$(&H21)+CHR$(&H02)+CHR$(&H04)+CHR$(&H01)+CHR$(&H02)
+ req$=req$+CHR$(&H03)+CHR$(&H04)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H30)+CHR$(&H13)
+ req$=req$+CHR$(&H30)+CHR$(&H11)+CHR$(&H06)+CHR$(&H0B)+CHR$(&H2B)+CHR$(&H06)+CHR$(&H01)+CHR$(&H04)+CHR$(&H01)+CHR$(&HAE)
+ req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H02)+CHR$(&H02)
+
+ IF tp$="u16" OR tp$="i16" THEN
   xnum%=57
+  req$=req$+conv(tp$+"/bbe",value%)
  ELSE IF tp$="u8" THEN
   xnum%=56
+  req$=req$+chr$(value%)
+ ELSE IF tp$="i8" THEN
+  xnum%=56
+  IF value < 0 THEN
+   req$=req$+chr$(value%+&H100)
+  ELSE
+   req$=req$+chr$(value%)
+  ENDIF
  ELSE
   ASPSet=-1
   EXIT FUNCTION
@@ -88,11 +107,6 @@ FUNCTION ASPSet(dev$,tp$,x%,y%,value%)
   ASPSet=con%
   EXIT FUNCTION
  ENDIF 
- req$=CHR$(&H30)+CHR$(&H2F)+CHR$(&H02)+CHR$(&H01)+CHR$(&H01)+CHR$(&H04)+CHR$(&H07)+CHR$(&H61)+CHR$(&H63)+CHR$(&H63)
- req$=req$+CHR$(&H77)+CHR$(&H72)+CHR$(&H69)+CHR$(&H74)+CHR$(&HA3)+CHR$(&H21)+CHR$(&H02)+CHR$(&H04)+CHR$(&H01)+CHR$(&H02)
- req$=req$+CHR$(&H03)+CHR$(&H04)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H02)+CHR$(&H01)+CHR$(&H00)+CHR$(&H30)+CHR$(&H13)
- req$=req$+CHR$(&H30)+CHR$(&H11)+CHR$(&H06)+CHR$(&H0B)+CHR$(&H2B)+CHR$(&H06)+CHR$(&H01)+CHR$(&H04)+CHR$(&H01)+CHR$(&HAE)
- req$=req$+CHR$(&H49)+CHR$(&H05)+CHR$(x%)+CHR$(y%)+CHR$(&H00)+CHR$(&H02)+CHR$(&H02)+conv("u16/bbe",value%)
  n%=SocketOption(con%,"SO_RCVTIMEO",500)
  n%=SocketWrite(con%,req$)
  rsp$=SocketRead$(con%,xnum%)
@@ -102,11 +116,8 @@ FUNCTION ASPSet(dev$,tp$,x%,y%,value%)
   ASPSet=-2
   EXIT FUNCTION
  ENDIF
-
- IF num%=58 THEN 
-  value%=conv("bbe/"+tp$, MID$(rsp$,57,2))
- ELSE IF num%=57 THEN
-  value%=ASC(MID$(rsp$,57,1))
+ IF num%=58 OR num%=57 THEN 
+  'ok
  ELSE
   ASPSet=-3
   EXIT FUNCTION

@@ -105,12 +105,24 @@ FUNCTION pcTimer(id%)
  err%=ASPGet(asp$,"u16",2,5,dummy%)
  TBat=dummy%
  a$=a$+ds_num$(err%,TBat,"%g",ds_special$("C*"))
- err%=ASPGet(asp$,"u16",2,3,dummy%)
+ err%=ASPGet(asp$,"i16",2,3,dummy%)
  IBat2=dummy%/10.0
  a$=a$+ds_num$(err%,IBat2,"%.1f","A")+" / "
- err%=ASPGet(asp$,"u16",2,4, dummy%)
+ err%=ASPGet(asp$,"i16",2,4, dummy%)
  ICharger=dummy%/10.0
- a$=a$+ds_num$(err%,ICharger,"%.1f","A")
+ a$=a$+ds_num$(err%,ICharger,"%.1f","A")+chr$(10)
+ err%=ASPGet(asp$,"u8",3,1,dummy%) 
+ IF err% < 0 THEN
+  a$=a$+"Error"
+ ELSE IF dummy%=0 THEN
+  a$=a$+"Float"
+ ELSE IF dummy%=1 THEN
+  a$=a$+"Boost"
+ ELSE IF dummy%=2 THEN
+  a$=a$+"Discharge"
+ ELSE
+  a$=a$="Unknown"
+ ENDIF
  bat1_status$=a$
  ' PE export power, PI import power, PC charging power, PD discharging power
  ' control variable is inverter ac power or ac charger power
@@ -128,30 +140,36 @@ FUNCTION pcTimer(id%)
   ISetInverter=PStorage/UBat*1.1/len(AECIds$)
  ELSE
   ' Use charger
-  IF abs(PStorage) < 0.1 THEN
-   ' If charging current is < 100Watt, just set it to 100Watt, such that battery is always slowly charged
+  IF abs(PStorage) < 0.100 THEN
+   ' If charging current small force minimal charge power
    PStorage = -0.1
   ENDIF
   ' Account 5% loss for charger
   ISetCharger=-PStorage/UBat/1.05
+  IF ISetCharger>50.0 THEN 
+   ISetCharger=50.0
+  ENDIF 
  ENDIF
  ' Set Aspiro 
- IF ISetCharger=0.0 THEN
+ IF ISetCharger=0.0 AND ISetInverter>0.0 THEN
   'test operation mode, rectifier disconnected
-  err%=ASPSet(asp$,"u16", 3,1, 2.0 )
- ELSE IF ISetCharger>50.0 THEN
-  'normal operation mode
+  err%=ASPSet(asp$,"u16", 3,1, 2 )
+ ELSE IF ISetCharger < 2.0 OR SoCBat=100.0 OR TBat>40.0 THEN
+  'normal operation mode (float)
   err%=ASPSet(asp$,"u16",3,1,0) 
   'no current limit
-  err%=ASPSet(asp$,"u16",3,41,0) 
+  err%=ASPSet(asp$,"u16",3,41,0)  
+  ISetInverter=0
  ELSE
-  'normal operation mode
-  err%=ASPSet(asp$,"u16", 3,1, 0) 
+  'boost operation mode
+  err%=ASPSet(asp$,"u16", 3,1, 1) 
   'set current limit
   err%=ASPSet(asp$,"u16", 3,42, CInt(ISetCharger*10.0))
   'current limit enabled
   err%=ASPSet(asp$,"u16", 3,41, 1) 
  ENDIF
+ 
+ print "Charger:" ISetCharger " Inverter:" ISetInverter
  ' Set inverter
  aec$="RS485:2"
  for id%=1 TO len(AECIds$)
