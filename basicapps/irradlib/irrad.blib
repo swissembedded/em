@@ -26,11 +26,11 @@
 ' ihr% hour (0..23)
 ' mm% minute (00..59)
 '
-' outputs (daily=1)
+' outputs (daily%=1)
 ' out1 total radiation (MJ/m2)
 ' out2 sunrise (hours lst)
 ' out3 sunset (hours lst)
-' outputs (daily=0)
+' outputs (daily%=0)
 ' out1 instantaneous radiation (W/m2)
 ' out2 sun's zenit angle (degrees)
 ' out3 sun's azimuth angle (degrees)
