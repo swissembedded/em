@@ -10,6 +10,7 @@
 ' Extraterrestrial solar radiation on inclined surface
 ' C. David Whiteman and K. Jerry Allwine
 ' http://home.chpc.utah.edu/~u0453210/homepage/articles/Whiteman1986Environmental%20Software.pdf
+' See irrad.blib
 
 '(sqrt(6.7)*0.08+0.4*sqrt(1-0.56))+0.2
 
@@ -58,5 +59,4 @@ END FUNCTION
 FUNCTION mtEstimatorT(Ix, Tx, Tn, Ha, Hb)
  mtEstimatorT=Ix * Ha * sqr(Tx-Tn) + Hb
 END FUNCTION
-
 

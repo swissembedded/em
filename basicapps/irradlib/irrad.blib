@@ -1,0 +1,156 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO solar irradiation library
+' @VERSION 1.0
+' See the following publication as reference
+' Extraterrestrial solar radiation on inclined surface
+' C. David Whiteman and K. Jerry Allwine
+' http://home.chpc.utah.edu/~u0453210/homepage/articles/Whiteman1986Environmental%20Software.pdf
+
+' Calculate extraterrestrial solar radiation at a requested time
+' of day on a slope of any azimuth and inclination angle given the
+' latitude and longitude, date, and slope azimuth and inclination
+' angles. also integrates instantaneous values to determine
+' the daily total if requested.
+' This function has been ported from Fotran to MM-BASIC
+' Original code written by C.D. Whiteman and K.J. Allwine
+' lon (-180..180 degrees)
+' lat (-90..90 degrees)
+' az slope azimuth angle (0..359 degrees), 
+' inc slope inclination angle (0..90 degrees)
+' sc solar constant (e.g. 1353.0 W/m2),
+' daily% daily total (1) or instantaneous 0
+' mo% month (1..12)
+' ida% day (1..31
+' ihr% hour (0..23)
+' mm% minute (00..59)
+'
+' outputs (daily=1)
+' out1 total radiation (MJ/m2)
+' out2 sunrise (hours lst)
+' out3 sunset (hours lst)
+' outputs (daily=0)
+' out1 instantaneous radiation (W/m2)
+' out2 sun's zenit angle (degrees)
+' out3 sun's azimuth angle (degrees)
+
+FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, out2, out3)
+ LOCAL first%, longcor, longsun, inc, inslo,i
+ ' constants
+ LOCAL acof(3)=(0.00839,-0.05391,-0.00154,-0.00222)
+ LOCAL bcof(3)=(-0.12193,-0.15699,-0.00657,-0.00370)
+ LOCAL nday%(11)=(0,31,59,90,120,151,181,212,243,273,304,334)
+ LOCAL dzero=80,eccent=0.0167,calint=1.0
+ LOCAL rtod=PI()/180.0
+ LOCAL decmax=(23.0+26.0/60.0)*rtod
+ LOCAL omega=2.0*PI()/365.0
+ LOCAL onehr=15.0*rtod
+ ' julian date
+ LOCAL d=ida%+nday%(mo%-1)
+ ' ratio of radius vectors squared
+ LOCAL omd=omega*d
+ LOCAL omdzero=omega*dzero
+ LOCAL rdvecsq=(l.0-eccent*cos(omd))
+ rdvecsq=1.0/(rdvecsq*rdvecsq)
+ ' declination of sun
+ longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
+ LOCAL declin=asin(sin(decmax)*sin(longsun))
+ LOCAL sdec=sin(declin)
+ LOCAL cdec=cos(declin)
+ ' check for polar night or day
+ LOCAL arg=((PI()/2.0)-abs(declin))/rtod,sr
+ IF abs(lat)>arg THEN
+  IF (lat>0.0 and declin<0.0) or (lat<0.0 and declin>0.0) THEN
+   out1=0
+   out2=0
+   out3=0
+   SolarIrrad=-1
+   EXIT FUNCTION
+  ENDIF
+  sr=-PI()
+ ELSE
+  ' sunrise hour angle
+  sr=-abs(acos(-tan(lat*rtod)*tan(declin)))
+ ENDIF
+ ' standard time meridian for site
+ LOCAL stdmrdn=cint(lon/15.0)*15.0
+ longcor=(lon-stdmrdn)/15.0
+ ' compute time correction from equation of time
+ LOCAL b=2.0*PI()*(d-0.4)/365.0
+ LOCAL em=0.0
+ FOR i=1 TO 4
+  em=em+(bcof(i-1)*sin(i*b)+acof(i-1)*cos(i*b))
+ NEXT i
+ ' time of solar noon
+ LOCAL timnoon=12.0 - em - longcor
+ LOCAL azslo=az*rtod
+ LOCAL inslo=inc*rtod
+ LOCAL slat=sin(lat*rtod)
+ LOCAL clat=cos(lat*rtod)
+ LOCAL caz=cos(azslo)
+ LOCAL saz=sin(azslo)
+ LOCAL sinc=sin(inslo)
+ LOCAL cinc=cos(inslo)
+ IF daily% THEN
+  ' compute daily total
+  LOCAL ihr=0
+  mm%=0
+  LOCAL hinc=calint*onehr/60.0
+  LOCAL ik=(2.0*abs(sr)/hinc)+2.0
+  first%=1
+  out1=0.0
+  LOCAL h,cosz,cosbeta,extra,extslo
+  FOR i=1 TO ik
+   h=sr+hinc*(i-l)
+   cosz=slat*sdec+clat*cdec*cos(h)
+   cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
+   extra=sc*rdvecsq*cosz
+   IF extra<0.0 THEN
+    extra=0.0
+   ENDIF
+   extslo=sc*rdvecsq*cosbeta
+   IF extra<0.0 OR extslo<0.0 THEN
+    extslo=0.0
+   ENDIF
+   IF first% AND extslo<0.0 THEN
+    out2=(h-hinc)/onehr+timnoon
+    first%=0
+   ENDIF
+   IF first%=0 AND extslo<0.0 THEN
+    out3=h/onehr+timnoon
+   ENDIF
+   out1=extslo+out1
+  NEXT i
+  out1=out1*calint*60.0/1000000.0
+ ELSE
+  ' compute at one time
+  LOCAL t1=ihr+mm%/60.0
+  LOCAL h=onehr*(t1-timnoon)
+  LOCAL cosz=slat*sdec+clat*cdec*cos(h)
+  LOCAL cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*oos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
+  LOCAL extra=sc*rdvecsq*cosz
+  IF extra<0.0 THEN
+   extra=0.0
+  ENDIF
+  LOCAL extslo=sc*rdvecsq*cosbeta
+  IF extra<0.0 OR extslo<0.0 THEN
+   extslo=0.0
+  ENDIF
+  out1=extslo
+  LOCAL z=acos(cosz)
+  LOCAL cosa=(slat*cosz-sdec)/(clat*sin(z))
+  IF cosa<-l.0 THEN 
+   cosa=-l.0
+  ELSE IF cosa>1.0 THEN
+   cosa=1.0
+  ENDIF
+  LOCAL a=abs(acos(cosa))
+  IF h<0.0 THEN 
+   a=-a
+  ENDIF
+  out3=z/rtod
+  out2=a/rtod+180.0
+ ENDIF
+ SolarIrrad=0
+ END FUNCTION
