@@ -51,9 +51,8 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  ' ratio of radius vectors squared
  LOCAL omd=omega*d
  LOCAL omdzero=omega*dzero
- LOCAL rdvecsqq=(l.0-(eccent*cos(omd)))
- LOCAL rdvecsq=1.0/(rdvecsqq*rdvecsqq)
-
+ LOCAL rdvecsq=(l.0-(eccent*cos(omd)))^(-2.0)
+ print d ; omd ; eccent ; rdvecsq ; cos(omd) ; (l.0-(eccent*cos(omd))) ; (l.0-(eccent*cos(omd)))^(-2.0)
  ' declination of sun
  LOCAL longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
  LOCAL declin=asin(sin(decmax)*sin(longsun))
@@ -140,6 +139,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
    extslo=0.0
   ENDIF
   out1=extslo
+  print sc ; rdvecsq ; cosbeta ; omd ; omdzero
   LOCAL z=acos(cosz)
   LOCAL cosa=(slat*cosz-sdecl)/(clat*sin(z))
   IF cosa<-l.0 THEN 
