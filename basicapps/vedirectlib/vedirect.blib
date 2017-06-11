@@ -260,6 +260,9 @@ END SUB
 SUB VESum(st$, sum%, sums$, ex%)
  LOCAL i, cp$
  sum%=0
+ IF len(st$) < ex% THEN
+  EXIT SUB
+ ENDIF
  'print len(st$) ex%
  ' calculate the sum, two nibbles each, first nibble is with :X, thus only one nibble
  FOR i = 1 TO (Len(st$)-ex%) STEP 2
