@@ -51,8 +51,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  ' ratio of radius vectors squared
  LOCAL omd=omega*d
  LOCAL omdzero=omega*dzero
- LOCAL rdvecsq=(l.0-(eccent*cos(omd)))^(-2.0)
- print d ; omd ; eccent ; rdvecsq ; cos(omd) ; (l.0-(eccent*cos(omd))) ; (l.0-(eccent*cos(omd)))^(-2.0)
+ LOCAL rdvecsq=(1.0-(eccent*cos(omd)))^(-2.0)
  ' declination of sun
  LOCAL longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
  LOCAL declin=asin(sin(decmax)*sin(longsun))
@@ -83,7 +82,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
   em=em+(bcof(i-1)*sin(i*b)+acof(i-1)*cos(i*b))
  NEXT i
  ' time of solar noon
- LOCAL timnoon=12.0-em-longcor
+ LOCAL timnoon=12.0- em -longcor
  LOCAL azslo=az*rtod
  LOCAL inslo=inc*rtod
  LOCAL slat=sin(lat*rtod)
@@ -139,11 +138,10 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
    extslo=0.0
   ENDIF
   out1=extslo
-  print sc ; rdvecsq ; cosbeta ; omd ; omdzero
   LOCAL z=acos(cosz)
   LOCAL cosa=(slat*cosz-sdecl)/(clat*sin(z))
-  IF cosa<-l.0 THEN 
-   cosa=-l.0
+  IF cosa<-1.0 THEN 
+   cosa=-1.0
   ELSE IF cosa>1.0 THEN
    cosa=1.0
   ENDIF
