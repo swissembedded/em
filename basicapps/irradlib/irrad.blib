@@ -36,14 +36,14 @@
 ' out3 sun's azimuth angle (degrees)
 
 FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, out2, out3)
- LOCAL first%, longcor, longsun, inc, inslo,i
+ LOCAL first%, i
  ' constants
  LOCAL acof(3)=(0.00839,-0.05391,-0.00154,-0.00222)
  LOCAL bcof(3)=(-0.12193,-0.15699,-0.00657,-0.00370)
  LOCAL nday%(11)=(0,31,59,90,120,151,181,212,243,273,304,334)
- LOCAL dzero=80,eccent=0.0167,calint=1.0
+ LOCAL dzero=80.0, eccent=0.0167, calint=1.0
  LOCAL rtod=PI()/180.0
- LOCAL decmax=(23.0+26.0/60.0)*rtod
+ LOCAL decmax=(23.0+(26.0/60.0))*rtod
  LOCAL omega=2.0*PI()/365.0
  LOCAL onehr=15.0*rtod
  ' julian date
@@ -51,15 +51,15 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  ' ratio of radius vectors squared
  LOCAL omd=omega*d
  LOCAL omdzero=omega*dzero
- LOCAL rdvecsq=(l.0-eccent*cos(omd))
- rdvecsq=1.0/(rdvecsq*rdvecsq)
+ LOCAL rdvecsqq=(l.0-eccent*cos(omd))
+ LOCAL rdvecsq=1.0/(rdvecsqq*rdvecsqq)
  ' declination of sun
- longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
+ LOCAL longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
  LOCAL declin=asin(sin(decmax)*sin(longsun))
  LOCAL sdec=sin(declin)
  LOCAL cdec=cos(declin)
  ' check for polar night or day
- LOCAL arg=((PI()/2.0)-abs(declin))/rtod,sr
+ LOCAL arg=((PI()/2.0)-abs(declin))/rtod, sr
  IF abs(lat)>arg THEN
   IF (lat>0.0 and declin<0.0) or (lat<0.0 and declin>0.0) THEN
    out1=0
@@ -75,7 +75,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  ENDIF
  ' standard time meridian for site
  LOCAL stdmrdn=cint(lon/15.0)*15.0
- longcor=(lon-stdmrdn)/15.0
+ LOCAL longcor=(lon-stdmrdn)/15.0
  ' compute time correction from equation of time
  LOCAL b=2.0*PI()*(d-0.4)/365.0
  LOCAL em=0.0
@@ -94,7 +94,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  LOCAL cinc=cos(inslo)
  IF daily% THEN
   ' compute daily total
-  LOCAL ihr=0
+  ihr%=0
   mm%=0
   LOCAL hinc=calint*onehr/60.0
   LOCAL ik=(2.0*abs(sr)/hinc)+2.0
@@ -110,14 +110,14 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
     extra=0.0
    ENDIF
    extslo=sc*rdvecsq*cosbeta
-   IF extra<0.0 OR extslo<0.0 THEN
+   IF extra<=0.0 OR extslo<0.0 THEN
     extslo=0.0
    ENDIF
-   IF first% AND extslo<0.0 THEN
+   IF first% AND extslo>0.0 THEN
     out2=(h-hinc)/onehr+timnoon
     first%=0
    ENDIF
-   IF first%=0 AND extslo<0.0 THEN
+   IF first%=0 AND extslo<=0.0 THEN
     out3=h/onehr+timnoon
    ENDIF
    out1=extslo+out1
@@ -125,16 +125,16 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
   out1=out1*calint*60.0/1000000.0
  ELSE
   ' compute at one time
-  LOCAL t1=ihr+mm%/60.0
+  LOCAL t1=ihr%+mm%/60.0
   LOCAL h=onehr*(t1-timnoon)
   LOCAL cosz=slat*sdec+clat*cdec*cos(h)
-  LOCAL cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*oos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
+  LOCAL cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
   LOCAL extra=sc*rdvecsq*cosz
   IF extra<0.0 THEN
    extra=0.0
   ENDIF
   LOCAL extslo=sc*rdvecsq*cosbeta
-  IF extra<0.0 OR extslo<0.0 THEN
+  IF extra<=0.0 OR extslo<0.0 THEN
    extslo=0.0
   ENDIF
   out1=extslo
