@@ -95,6 +95,7 @@ FUNCTION VEDirectHex(itf$, cmd$, adr%, tp$, vl%, vls$)
  ' High byte is send last
  p$=""
  a$=""
+ s$=""
  IF cmd$<>"1" AND cmd$<>"3" AND cmd$<>"4" AND cmd$<>"6" AND cmd$<>"7" AND cmd$<>"8" AND cmd$<>"A" THEN
   VEDirectHex=-1
   EXIT FUNCTION
