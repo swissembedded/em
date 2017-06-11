@@ -51,13 +51,14 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
  ' ratio of radius vectors squared
  LOCAL omd=omega*d
  LOCAL omdzero=omega*dzero
- LOCAL rdvecsqq=(l.0-eccent*cos(omd))
+ LOCAL rdvecsqq=(l.0-(eccent*cos(omd)))
  LOCAL rdvecsq=1.0/(rdvecsqq*rdvecsqq)
+
  ' declination of sun
  LOCAL longsun=omega*(d-dzero)+2.0*eccent*(sin(omd)-sin(omdzero))
  LOCAL declin=asin(sin(decmax)*sin(longsun))
- LOCAL sdec=sin(declin)
- LOCAL cdec=cos(declin)
+ LOCAL sdecl=sin(declin)
+ LOCAL cdecl=cos(declin)
  ' check for polar night or day
  LOCAL arg=((PI()/2.0)-abs(declin))/rtod, sr
  IF abs(lat)>arg THEN
@@ -83,7 +84,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
   em=em+(bcof(i-1)*sin(i*b)+acof(i-1)*cos(i*b))
  NEXT i
  ' time of solar noon
- LOCAL timnoon=12.0 - em - longcor
+ LOCAL timnoon=12.0-em-longcor
  LOCAL azslo=az*rtod
  LOCAL inslo=inc*rtod
  LOCAL slat=sin(lat*rtod)
@@ -103,8 +104,8 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
   LOCAL h,cosz,cosbeta,extra,extslo
   FOR i=1 TO ik
    h=sr+hinc*(i-l)
-   cosz=slat*sdec+clat*cdec*cos(h)
-   cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
+   cosz=slat*sdecl+clat*cdecl*cos(h)
+   cosbeta=cdecl*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdecl*(clat*(caz*sinc)+slat*cinc)
    extra=sc*rdvecsq*cosz
    IF extra<0.0 THEN
     extra=0.0
@@ -113,7 +114,7 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
    IF extra<=0.0 OR extslo<0.0 THEN
     extslo=0.0
    ENDIF
-   IF first% AND extslo>0.0 THEN
+   IF first%=1 AND extslo>0.0 THEN
     out2=(h-hinc)/onehr+timnoon
     first%=0
    ENDIF
@@ -125,21 +126,22 @@ FUNCTION SolarIrrad(lon, lat, az, inc, sc, daily%, mo%, ida%, ihr%, mm%, out1, o
   out1=out1*calint*60.0/1000000.0
  ELSE
   ' compute at one time
-  LOCAL t1=ihr%+mm%/60.0
+  LOCAL t1=ihr%+(mm%/60.0)
   LOCAL h=onehr*(t1-timnoon)
-  LOCAL cosz=slat*sdec+clat*cdec*cos(h)
-  LOCAL cosbeta=cdec*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdec*(clat*(caz*sinc)+slat*cinc)
+  LOCAL cosz=slat*sdecl+clat*cdecl*cos(h)
+  LOCAL cosbeta=cdecl*((slat*cos(h))*(-caz*sinc)-sin(h)*(saz*sinc)+(clat*cos(h))*cinc)+sdecl*(clat*(caz*sinc)+slat*cinc)
   LOCAL extra=sc*rdvecsq*cosz
   IF extra<0.0 THEN
    extra=0.0
   ENDIF
   LOCAL extslo=sc*rdvecsq*cosbeta
+  print sc ; rdvecsq ; cosbeta
   IF extra<=0.0 OR extslo<0.0 THEN
    extslo=0.0
   ENDIF
   out1=extslo
   LOCAL z=acos(cosz)
-  LOCAL cosa=(slat*cosz-sdec)/(clat*sin(z))
+  LOCAL cosa=(slat*cosz-sdecl)/(clat*sin(z))
   IF cosa<-l.0 THEN 
    cosa=-l.0
   ELSE IF cosa>1.0 THEN
