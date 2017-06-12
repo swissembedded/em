@@ -9,6 +9,7 @@
 ' http://home.chpc.utah.edu/~u0453210/homepage/articles/Whiteman1986Environmental%20Software.pdf
 
 ' Convert solar radiation (MJ/m2) per day into kWh accounting module efficiency
+' ir ground radiation solar radiation on inclined surface(MJ/m2)
 ' surf panel surface in m2
 ' temp ambient temperature (take day average)
 ' tcoeff solar module power temperature coeffcient reference temperature (e.g. 20 degree Celsius)
