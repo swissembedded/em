@@ -8,7 +8,7 @@
 ' C. David Whiteman and K. Jerry Allwine
 ' http://home.chpc.utah.edu/~u0453210/homepage/articles/Whiteman1986Environmental%20Software.pdf
 
-' Convert solar radiation (MJ/m2) per day into kWh accounting module efficiency
+' Convert solar radiation (MJ/m2) per day into kWh accounting module and inverter efficiency
 ' ir ground radiation solar radiation on inclined surface(MJ/m2)
 ' surf panel surface in m2
 ' temp ambient temperature (take day average)
@@ -23,6 +23,23 @@ FUNCTION SolarIrrad2kWh(ir,surf,paneff,temp,tcoeff,ptcoeff,ieff, kWh)
   EXIT FUNCTION
  ENDIF
  kWh=ir/3.6*surf*paneff*(100.0+(temp-tcoeff)*ptcoeff/100.0)*(ieff/100.0)
+END FUNCTION
+
+' Convert solar radiation (W/m2) into kW accounting module and inverter efficiency
+' ir ground radiation solar radiation on inclined surface(W/m2)
+' surf panel surface in m2
+' temp ambient temperature (take day average)
+' tcoeff solar module power temperature coeffcient reference temperature (e.g. 20 degree Celsius)
+' ptcoeff solar module power temperature coeffcient (e.g. -0.4%/ degree Celsius)
+' ieff inverter efficiency (e.g. 95%)
+' kW calculated kW
+' return negative on error
+FUNCTION SolarIrrad2kW(ir,surf,paneff,temp,tcoeff,ptcoeff,ieff, kW)
+ IF ir < 0.0 THEN
+  SolarIrrad2kW=-1
+  EXIT FUNCTION
+ ENDIF
+ kW=ir*surf*paneff*(100.0+(temp-tcoeff)*ptcoeff/100.0)*(ieff/100.0)
 END FUNCTION
 
 ' Calculate extraterrestrial solar radiation at a requested time
