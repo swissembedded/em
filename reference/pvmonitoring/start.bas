@@ -5,6 +5,13 @@
 ' S0 In2 consumption
 ' Rel 1 and Rel 2 consumer
 
+' Relais config
+' PMax: consumption power > Limit
+' DayOrange
+' DayRed
+' MonthOrange
+' MonthRed
+
 ' 5 Tariff for electricity on monthly basis
 DIM TkWh(3)=(50.0,150.0,300.0,600.0)
 DIM TC(3)=(19.75,94.64,200.69,475.95)
@@ -62,7 +69,7 @@ start:
 Dispatch -1
 GOTO start
 
-' Log every midnight
+' Cron midnight
 FUNCTION midCron(id%,elapsed%)
   LOCAL lr$
   EPd=EPq
@@ -84,10 +91,15 @@ FUNCTION midCron(id%,elapsed%)
    sc%=rrdWrite( 1, ECd)
    sc%=rrdWrite( 2, EId)
    sc%=rrdWrite( 3, EEd)
+   EPm=EPd
+   ECm=ECd
+   EIm=EId
+   EEm=EEd
+   tsm%=tsd%
   ENDIF
 END FUNCTION
 
-' Log midnight
+' Cron every minute
 FUNCTION minCron(id%,elapsed%)  
   LOCAL ts%,min%,hour%, PD
   ' Read S0 Inputs
@@ -105,7 +117,7 @@ FUNCTION minCron(id%,elapsed%)
 END FUNCTION
 
 
-' Log every 15 minutes
+' Cron every 15 minutes
 FUNCTION quartCron(id%,elapsed%)
   LOCAL min%,hour%,err%
   'get time
