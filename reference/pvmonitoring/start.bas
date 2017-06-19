@@ -11,6 +11,14 @@
 ' DayRed
 ' MonthOrange
 ' MonthRed
+rel1$="DayOrange"
+relp1=0.0
+rel2$="MonthRed,MonthOrange"
+relp2=0.0
+dayo%=0
+dayr%=0
+montho%=0
+monthr%=0
 
 ' 5 Tariff for electricity on monthly basis
 DIM TkWh(3)=(50.0,150.0,300.0,600.0)
@@ -181,6 +189,12 @@ SUB getTariff()
  getTariff=0
 END SUB
 
+' PMax: consumption power > Limit
+' DayOrange
+' DayRed
+' MonthOrange
+' MonthRed
+
 ' Control the loads on mintue base, pls note loads should not switched on off too quickly
 SUB ControlMinLoad()
  IF PE > 0.0 THEN
@@ -188,13 +202,47 @@ SUB ControlMinLoad()
  ELSE IF PI > 0.0 THEN
   ' We are importing energy, increase inverter power or switch loads off
  ENDIF
-END SUB
+ END SUB
 
 ' Control the loads on quaterly base, pls note loads should not switched on off too quickly
 SUB ControlQuartLoad()
+ LOCAL st1%, st2%
  IF PE > 0.0 THEN
   ' We are exporting energy, reduce inverter power or switch loads on 
  ELSE IF PI > 0.0 THEN
   ' We are importing energy, increase inverter power or switch loads off
  ENDIF
+  ' Check relays
+ IF Instr(1,rel1$,"PMax")>0 AND PI>relp1 THEN
+  st1%=0
+ ELSE IF Instr(1,rel1$,"DayOrange")>0 AND (EIq-EId)>dayo THEN
+  st1%=0
+ ELSE IF Instr(1,rel1$,"DayRed")>0 AND (EIq-EId)>dayr THEN
+  st1%=0
+ ELSE IF Instr(1,rel1$,"MonthOrange")>0 AND (EIq-EIm)>montho THEN
+  st1%=0
+ ELSE IF Instr(1,rel1$,"MonthRed")>0 AND (EIq-EIm)>monthr THEN
+  st1%=0
+ ELSE
+  st1%=1
+ ENDIF
+
+ IF Instr(1,rel2$,"PMax")>0 AND PI>relp2 THEN
+  st2%=0
+ ELSE IF Instr(1,rel2$,"DayOrange")>0 AND (EIq-EId)>dayo THEN
+  st2%=0
+ ELSE IF Instr(1,rel2$,"DayRed")>0 AND (EIq-EId)>dayr THEN
+  st1%=0
+ ELSE IF Instr(1,rel2$,"MonthOrange")>0 AND (EIq-EIm)>montho THEN
+  st2%=0
+ ELSE IF Instr(1,rel2$,"MonthRed")>0 AND (EIq-EIm)>monthr THEN
+  st2%=0
+ ELSE
+  st2%=1
+ ENDIF
+ 
+ 'Set relays
+ SYS.SET "s0_out2", "state="+str$(st1%)
+ SYS.SET "s0_out3", "state="+str$(st2%)
 END SUB
+
