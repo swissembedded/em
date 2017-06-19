@@ -15,12 +15,18 @@ ts0%=0
 ' Monthly written values
 EPm=rrdRead( 0, tsm% )
 ECm=rrdRead( 1, tsm% )
+EIm=rrdRead( 2, tsm% )
+EEm=rrdRead( 3, tsm% )
 ' Daily written values
-EPd=rrdRead( 2, tsd% )
-ECd=rrdRead( 3, tsd% )
+EPd=rrdRead( 4, tsd% )
+ECd=rrdRead( 5, tsd% )
+EId=rrdRead( 6, tsd% )
+EEd=rrdRead( 7, tsd% )
 ' Quarterly written values
-EPq=rrdRead( 4, tsq% )
-ECq=rrdRead( 5, tsq% )
+EPq=rrdRead( 8, tsq% )
+ECq=rrdRead( 9, tsq% )
+EIq=rrdRead( 10, tsq% )
+EEq=rrdRead( 11, tsq% )
 
 ' init
 LIBRARY LOAD "logger"
@@ -58,19 +64,26 @@ GOTO start
 
 ' Log every midnight
 FUNCTION midCron(id%,elapsed%)
-  LOCAL lgr$
+  LOCAL lr$
   EPd=EPq
   ECd=ECq
+  EId=EIq
+  EEd=EEq
   tsd%=tsq%
-  sc%=rrdWrite( 2, EPd)
-  sc%=rrdWrite( 3, ECd)
+  sc%=rrdWrite( 4, EPd)
+  sc%=rrdWrite( 5, ECd)
+  sc%=rrdWrite( 6, EId)
+  sc%=rrdWrite( 7, EEd)
+
   ' Write to daily log
-  lr$=LGRecStart$(ts0%)+LGRecItem$(EP0)+LGRecItem$(EC0)
-  LGWriter( lr$, LGGetYear$(ts0%), "Date,PV Energy[kWh],Consumed Energy[kWh]")
+  lr$=LGRecStart$(tsd%)+LGRecItem$(EPd)+LGRecItem$(ECd)+LGRecItem$(EId)+LGRecItem$(EEd)
+  LGWriter( lr$, LGGetYear$(tsd%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   IF m%=DateMonthDay(ts%,1) = 1 THEN
    ' new month, reset month counter
    sc%=rrdWrite( 0, EPd)
    sc%=rrdWrite( 1, ECd)
+   sc%=rrdWrite( 2, EId)
+   sc%=rrdWrite( 3, EEd)
   ENDIF
 END FUNCTION
 
@@ -94,41 +107,40 @@ END FUNCTION
 
 ' Log every 15 minutes
 FUNCTION quartCron(id%,elapsed%)
-  LOCAL min%,hour%,dEP,dEC,err%
+  LOCAL min%,hour%,err%
   'get time
-  ts%=Unixtime()
-  min%=DateMinutes(ts%,1)
-  hour%=DateHour(ts%,1)
+  tsq%=Unixtime()
+  min%=DateMinutes(tsq%,1)
+  hour%=DateHour(tsq%,1)
   ' Convert the number of pulses to kWh (delta since last quarter hour) and sum it up
   dEP=S0In ( 0 , 1 ) / S0Type
   dEC=S0In ( 1 , 1 ) / S0Type
   EPq=EPq+dEP
   ECq=ECq+dEC
-  sc%=rrdWrite( 4, EPq)
-  sc%=rrdWrite( 5, ECq)
+  IF dEP > dEC THEN
+   EEq=EEq+dEP-dEC
+  ELSE
+   EIq=EEq+dEC-dEP
+  ENDIF
+  sc%=rrdWrite( 8, EPq)
+  sc%=rrdWrite( 9, ECq)
+  sc%=rrdWrite( 10, EIq)
+  sc%=rrdWrite( 11, EEq)
   ' Calculate the new tariff
-  'err=getTariff(ts%,EmI,EmP,EeI,EeP,Elm,Eld,cpkWh)
+  getTariff()
   ' Write to quaterly hour log
-  lr$=LGRecStart$(tsq%)+LGRecItem$(EPq)+LGRecItem$(ECq)
-  LGWriter( lr$, LGGetDate$(ts%), "Date,PV Energy[kWh],Consumed Energy[kWh]")
+  lr$=LGRecStart$(tsq%)+LGRecItem$(EPq)+LGRecItem$(ECq)+LGRecItem$(EIq)+LGRecItem$(EEq)
+  LGWriter( lr$, LGGetDate$(tsq%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   ' Control the loads
   ControlQuartLoad()
 END FUNCTION
 
 ' Based on current monthly electricity consumption, predict the price, and daily and monthly limit
-' ts% unix timestamp
-' EmI imported energy this month
-' EmP produced energy this month
-' EmI imported energy estimate for this month
-' EmP produced energy estimate for this month
-' Elm monthly limit
-' Eld daily limit based on monthly limit
-' cpkWh cost per kWh based on estimated monthly limit
-FUNCTION getTariff(ts%,EmI,EmP,EeI,EeP,Elm,Eld,cpkWh)
- LOCAL md%,m%,d%,y%,i,EeI,EeP
- md%=DateMonthDay(ts%,1)
- m%=DateMonth(ts%,1)
- y%=DateYear(ts%,1)
+SUB getTariff()
+ LOCAL md%,m%,d%,y%,i
+ md%=DateMonthDay(tsq%,1)
+ m%=DateMonth(tsq%,1)
+ y%=DateYear(tsq%,1)
  ' Calculated the number of days this month
  d%=31
  IF m%=2 THEN
@@ -141,19 +153,21 @@ FUNCTION getTariff(ts%,EmI,EmP,EeI,EeP,Elm,Eld,cpkWh)
   d%=30
  ENDIF
  
- ' Estimate Elm and Eld based on EI
- EeI=EmI/md%*d%
- EeP=EmP/md%*d%
- ' Find the tariff
+ ' Estimate monthly extrapolation
+ EeP=(EPq-EPm)/md%*d%
+ EeC=(ECq-ECm)/md%*d%
+ EeI=(EIq-EIm)/md%*d%
+ EeE=(EEq-EEm)/md%*d%
+ ' Find the tariff and set montly limit (ElmI) and daily limit (EldI)
  FOR i=0 TO (TL%-1)
   IF EeI <= TkWh(i) THEN
-   Elm=TkWh(i)
-   Eld=TC(i)/TkWh(i)/d%
+   ElmI=TkWh(i)
+   EldI=TC(i)/TkWh(i)/d%
    cpkWh=TC(i)/TkWh(i)
   ENDIF
  NEXT i
  getTariff=0
-END FUNCTION
+END SUB
 
 ' Control the loads on mintue base, pls note loads should not switched on off too quickly
 SUB ControlMinLoad()
