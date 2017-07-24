@@ -111,8 +111,8 @@ END FUNCTION
 FUNCTION minCron(id%,elapsed%)  
   LOCAL ts%,min%,hour%, PD
   ' Read S0 Inputs
-  PP=S0In( 1 , "P" ) / S0Type*60.0
-  PC=S0In( 2 , "P" ) / S0Type*60.0
+  PP=S0In( 0 , "P" ) / S0Type*60.0
+  PC=S0In( 1 , "P" ) / S0Type*60.0
   PD=PC-PP
   IF PD<=0.0 THEN
    PE=-PD
@@ -137,8 +137,8 @@ FUNCTION quartCron(id%,elapsed%)
   min%=DateMinutes(tsq%,1)
   hour%=DateHours(tsq%,1)
   ' Convert the number of pulses to kWh (delta since last quarter hour) and sum it up
-  dEP=S0In( 1 , 1 ) / S0Type
-  dEC=S0In( 2 , 1 ) / S0Type
+  dEP=S0In( 0 , 1 ) / S0Type
+  dEC=S0In( 1 , 1 ) / S0Type
   EPq=EPq+dEP
   ECq=ECq+dEC
   IF dEP > dEC THEN
@@ -260,8 +260,8 @@ SUB ControlQuartLoad()
  ENDIF
  
  'Set relays
- SYS.SET "s0_out3", "state="+str$(st1%)
- SYS.SET "s0_out4", "state="+str$(st2%)
+ SYS.SET "s0_out2", "state="+str$(st1%)
+ SYS.SET "s0_out3", "state="+str$(st2%)
 
  ' Set status
  IF st1% THEN 
