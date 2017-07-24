@@ -1,201 +1,115 @@
 {
     "classes": {
-        "obis": {
+        "invertor": {
             "type": "text",
-            "text-top": "meter",
+            "text-top": "Sensor",
+            "tm-background-image": "sensor.png",
             "tm-text-background-color": "rgba(255, 255, 255, 0.3)",
-            "tm-font-size": "18px",
+            "tm-font-size": "16px",
             "tm-font-weight": "bold",
             "tm-shadow": true
-			}
+        }
 	},
     "dashboard1": {
         "name": "Dashboard",
         "tiles": [
             {
-                "id":"meter_96.1.0",
-                "class": "obis",
-                "text-top": "Geräteidentifikation",
-                "text-middle": "obis_96.1.0${}",
-                "text-bottom": "96.1.0",
+                "id":"consumption",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "pc_status${}",
+                "text-bottom": "Consumption",
                 "grid-x": 0,
-                "grid-y": 0,
-                "grid-w": 3,
-                "grid-h": 1
+                "grid-y": 0
             },
             {
-                "id":"meter_0.9.1",
-                "class": "obis",
-                "text-top": "Zeit",
-                "text-middle": "obis_0.9.1${}",
-                "text-bottom": "0.9.1",
+                "id":"production",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "pp_status${}",
+                "text-bottom": "Production",
+                "grid-x": 1,
+                "grid-y": 0
+            },
+            {
+                "id":"import",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "pi_status${}",
+                "text-bottom": "Import",
                 "grid-x": 0,
-                "grid-y": 1,
-                "grid-w": 3,
-                "grid-h": 1
+                "grid-y": 1
             },
             {
-                "id":"meter_0.9.2",
-                "class": "obis",
-                "text-top": "Datum",
-                "text-middle": "obis_0.9.2${}",
-                "text-bottom": "0.9.2",
+                "id":"export",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "pe_status${}",
+                "text-bottom": "Export",
+                "grid-x": 1,
+                "grid-y": 1
+            },
+            {
+                "id":"actuator1",
+                "type": "switch",
+                "text-top": "Control",
+                "text-bottom": "Relay 1",
+                "value": "r1_force%{}",
+                "text-middle": "r1_status${}",
                 "grid-x": 0,
-                "grid-y": 2,
-                "grid-w": 3,
-                "grid-h": 1
+                "grid-y": 2
             },
             {
-                "id":"meter_1.7.0",
-                "class": "obis",
-                "text-top": "Wirkleistung Bezug (+P)",
-                "text-middle": "obis_1.7.0${}",
-                "text-bottom": "1.7.0",
-                "grid-x": 0,
-                "grid-y": 3,
-                "grid-w": 3,
-                "grid-h": 1
-			},
-            {
-                "id":"meter_2.7.0",
-                "class": "obis",
-                "text-top": "Wirkleistung Lieferung (-P)",
-                "text-middle": "obis_2.7.0${}",
-                "text-bottom": "2.7.0",
-                "grid-x": 0,
-                "grid-y": 4,
-                "grid-w": 3,
-                "grid-h": 1
-			},
-            {
-                "id":"meter1.8.0",
-                "class": "obis",
-                "text-top": "Wirkenergie Bezug (+A) Total",
-                "text-middle": "obis_1.8.0${}",
-                "text-bottom": "1.8.0",
-                "grid-x": 3,
-                "grid-y": 0,
-				"grid-w": 3,
-                "grid-h": 1
+                "id":"actuator2",
+                "type": "switch",
+                "text-top": "Control",
+                "text-bottom": "Relay 2",
+                "value": "r2_force%{}",
+                "text-middle": "r2_status${}",
+                "grid-x": 1,
+                "grid-y": 2
             },
+            
             {
-                "id":"meter_1.8.1",
-                "class": "obis",
-                "text-top": "Wirkenergie Bezug +A Tarif 1",
-                "text-middle": "obis_1.8.1${}",
-                "text-bottom": "1.8.1",
-                "grid-x": 3,
-                "grid-y": 1,
-                "grid-w": 3,
-                "grid-h": 1
-			},
-            {
-                "id":"meter_1.8.2",
-                "class": "obis",
-                "text-top": "Wirkenergie Bezug +A Tarif 2",
-                "text-middle": "obis_1.8.2${}",
-                "text-bottom": "1.8.2",
-                "grid-x": 3,
-                "grid-y": 2,
-                "grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_1.8.3",
-                "class": "obis",
-                "text-top": "Wirkenergie Bezug +A Tarif 3",
-                "text-middle": "obis_1.8.3${}",
-                "text-bottom": "1.8.3",
-                "grid-x": 3,
-                "grid-y": 3,
-                "grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_1.8.4",
-                "class": "obis",
-                "text-top": "Wirkenergie Bezug +A Tarif 4",
-                "text-middle": "obis_1.8.4${}",
-                "text-bottom": "1.8.4",
-                "grid-x": 3,
-                "grid-y": 4,
-				"grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_2.8.0",
-                "class": "obis",
-                "text-top": "Wirkenergie Lieferung (-A) Total",
-                "text-middle": "obis_2.8.0${}",
-                "text-bottom": "2.8.0",
-                "grid-x": 6,
-                "grid-y": 0,
-                "grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_2.8.1",
-                "class": "obis",
-                "text-top": "Wirkenergie Lieferung (-A) Tarif 1",
-                "text-middle": "obis_2.8.1${}",
-                "text-bottom": "2.8.1",
-                "grid-x": 6,
-                "grid-y": 1,
-				"grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_2.8.2",
-                "class": "obis",
-                "text-top": "Wirkenergie Lieferung (-A) Tarif 2",
-                "text-middle": "obis_2.8.2${}",
-                "text-bottom": "2.8.2",
-                "grid-x": 6,
-                "grid-y": 2,
-				"grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_2.8.3",
-                "class": "obis",
-                "text-top": "Wirkenergie Lieferung (-A) Tarif 3",
-                "text-middle": "obis_2.8.3${}",
-                "text-bottom": "2.8.3",
-                "grid-x": 6,
-                "grid-y": 3,
-				"grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"meter_2.8.4",
-                "class": "obis",
-                "text-top": "Wirkenergie Lieferung (-A) Tarif 4",
-                "text-middle": "obis_2.8.4${}",
-                "text-bottom": "2.8.4",
-                "grid-x": 6,
-                "grid-y": 4,
-				"grid-w": 3,
-                "grid-h": 1
-            },
-            {
-                "id":"chart_energie_1",
+                "id":"chart1",
                 "type": "donut",
                 "grid-w": 4,
                 "grid-h": 3,
-				"grid-x": 9,
+                "grid-x": 2,
                 "grid-y": 0,
-                "text-top": "Energie",
-                "tt-font-size": "13px",
+                "text-top": "Daily Energy",
+                "tt-font-size": "10px",
                 "tt-color": "#fff",
                 "tt-background-color": "#2c9bc8",
-                "tm-background-color": "#eff6f8",
-                "chart-colors": "#2c9bc8, #c2c82c",
-                "chart-text-color": "#000000",
+                "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
+                "chart-text-color": "#ff0000",
                 "chart-data": {
-                    "Wirkenergie Bezug Tag":"EIDay{1.0}",
-					"Wirkenergie Lieferung Tag":"EEDay{0.0}"
+                    "Consumption kWh":"d_EC{0.0}",
+                    "Production kWh":"d_EP{0.0}",
+                    "Import kWh":"d_EI{0.0}",
+                    "Export kWh":"d_EE{0.0}"
+                }
+            },
+            {
+                "id":"chart2",
+                "type": "donut",
+                "grid-w": 4,
+                "grid-h": 3,
+                "grid-x": 6,
+                "grid-y": 0,
+                "text-top": "Monthly Energy",
+                "tt-font-size": "10px",
+                "tt-color": "#fff",
+                "tt-background-color": "#2c9bc8",
+                "chart-colors": "#9b8579, #6bcb84, #ff0000, #f8c935, #7A92A3",
+                "chart-text-color": "#ff0000",
+                "chart-data": {
+                    "Consumption kWh":"m_EC{0.0}",
+                    "Production kWh":"m_EP{0.0}",
+                    "Import kWh":"m_EI{0.0}",
+                    "Export kWh":"m_EE{0.0}"
                 }
             }
-        ]
+			]
     }
  }

@@ -15,10 +15,10 @@ rel1$="DayOrange"
 relp1=0.0
 rel2$="MonthRed,MonthOrange"
 relp2=0.0
-dayo%=0
-dayr%=0
-montho%=0
-monthr%=0
+dayo=0.0
+dayr=0.0
+montho=0.0
+monthr=0.0
 
 ' 5 Tariff for electricity on monthly basis
 DIM TkWh(3)=(50.0,150.0,300.0,600.0)
@@ -93,7 +93,7 @@ FUNCTION midCron(id%,elapsed%)
   ' Write to daily log
   lr$=LGRecStart$(tsd%)+LGRecItem$(EPd)+LGRecItem$(ECd)+LGRecItem$(EId)+LGRecItem$(EEd)
   LGWriter( lr$, LGGetYear$(tsd%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
-  IF m%=DateMonthDay(ts%,1) = 1 THEN
+  IF m%=DateMDay(ts%,1) = 1 THEN
    ' new month, reset month counter
    sc%=rrdWrite( 0, EPd)
    sc%=rrdWrite( 1, ECd)
@@ -111,8 +111,8 @@ END FUNCTION
 FUNCTION minCron(id%,elapsed%)  
   LOCAL ts%,min%,hour%, PD
   ' Read S0 Inputs
-  PP=S0In ( 1 , "P" ) / S0Type*60.0
-  PC=S0In ( 2 , "P" ) / S0Type*60.0
+  PP=S0In( 1 , "P" ) / S0Type*60.0
+  PC=S0In( 2 , "P" ) / S0Type*60.0
   PD=PC-PP
   IF PD<=0.0 THEN
    PE=-PD
@@ -121,6 +121,10 @@ FUNCTION minCron(id%,elapsed%)
    PI=PD
    PE=0.0
   ENDIF
+  PP_status$=str$(PP)+" Watt"
+  PC_status$=str$(PC)+" Watt"
+  PI_status$=str$(PI)+" Watt"
+  PE_status$=str$(PE)+" Watt"
   ControlMinLoad()
 END FUNCTION
 
@@ -131,10 +135,10 @@ FUNCTION quartCron(id%,elapsed%)
   'get time
   tsq%=Unixtime()
   min%=DateMinutes(tsq%,1)
-  hour%=DateHour(tsq%,1)
+  hour%=DateHours(tsq%,1)
   ' Convert the number of pulses to kWh (delta since last quarter hour) and sum it up
-  dEP=S0In ( 1 , 1 ) / S0Type
-  dEC=S0In ( 2 , 1 ) / S0Type
+  dEP=S0In( 1 , 1 ) / S0Type
+  dEC=S0In( 2 , 1 ) / S0Type
   EPq=EPq+dEP
   ECq=ECq+dEC
   IF dEP > dEC THEN
@@ -153,12 +157,22 @@ FUNCTION quartCron(id%,elapsed%)
   LGWriter( lr$, LGGetDate$(tsq%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   ' Control the loads
   ControlQuartLoad()
+   ' Set status
+   m_EC=ECq-ECm
+   m_EP=EPq-EPm
+   m_EI=EIq-EIm
+   m_EE=EEq-EEm
+   d_EC=ECq-ECd
+   d_EP=EPq-EPd
+   d_EI=EIq-EId
+   d_EE=EEq-EEd
+
 END FUNCTION
 
 ' Based on current monthly electricity consumption, predict the price, and daily and monthly limit
 SUB getTariff()
  LOCAL md%,m%,d%,y%,i
- md%=DateMonthDay(tsq%,1)
+ md%=DateMDay(tsq%,1)
  m%=DateMonth(tsq%,1)
  y%=DateYear(tsq%,1)
  ' Calculated the number of days this month
@@ -213,7 +227,9 @@ SUB ControlQuartLoad()
   ' We are importing energy, increase inverter power or switch loads off
  ENDIF
   ' Check relays
- IF Instr(1,rel1$,"PMax")>0 AND PI>relp1 THEN
+ IF r1_force% THEN 
+  st1%=1
+ ELSE IF Instr(1,rel1$,"PMax")>0 AND PI>relp1 THEN
   st1%=0
  ELSE IF Instr(1,rel1$,"DayOrange")>0 AND (EIq-EId)>dayo THEN
   st1%=0
@@ -227,12 +243,14 @@ SUB ControlQuartLoad()
   st1%=1
  ENDIF
 
- IF Instr(1,rel2$,"PMax")>0 AND PI>relp2 THEN
+ IF r2_force% THEN
+  st2%=1
+ ELSE IF Instr(1,rel2$,"PMax")>0 AND PI>relp2 THEN
   st2%=0
  ELSE IF Instr(1,rel2$,"DayOrange")>0 AND (EIq-EId)>dayo THEN
   st2%=0
  ELSE IF Instr(1,rel2$,"DayRed")>0 AND (EIq-EId)>dayr THEN
-  st1%=0
+  st2%=0
  ELSE IF Instr(1,rel2$,"MonthOrange")>0 AND (EIq-EIm)>montho THEN
   st2%=0
  ELSE IF Instr(1,rel2$,"MonthRed")>0 AND (EIq-EIm)>monthr THEN
@@ -244,5 +262,17 @@ SUB ControlQuartLoad()
  'Set relays
  SYS.SET "s0_out3", "state="+str$(st1%)
  SYS.SET "s0_out4", "state="+str$(st2%)
+
+ ' Set status
+ IF st1% THEN 
+  r1_status$="On"
+ ELSE
+  r1_status$="Off"
+ ENDIF
+ IF st2% THEN 
+  r2_status$="On"
+ ELSE
+  r2_status$="Off"
+ ENDIF
 END SUB
 
