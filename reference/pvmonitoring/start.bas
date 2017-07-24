@@ -268,10 +268,10 @@ SUB ControlQuartLoad()
   SYS.SET "s0_out2", "state=0"
  ENDIF
  
- tp%=SYS.GET "type"
+ tp%=SYS.GET("asset","type")
  if tp%=0 THEN
   r2_status$="absent"
-  r1_force%=0
+  r2_force%=0
   EXIT SUB
  ENDIF
  
