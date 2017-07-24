@@ -220,7 +220,7 @@ SUB ControlMinLoad()
 
 ' Control the loads on quaterly base, pls note loads should not switched on off too quickly
 SUB ControlQuartLoad()
- LOCAL st1%, st2%
+ LOCAL st1%, st2%, tp%
  IF PE > 0.0 THEN
   ' We are exporting energy, reduce inverter power or switch loads on 
  ELSE IF PI > 0.0 THEN
@@ -259,20 +259,28 @@ SUB ControlQuartLoad()
   st2%=1
  ENDIF
  
- 'Set relays
- SYS.SET "s0_out3", "state="+str$(st1%)
- SYS.SET "s0_out4", "state="+str$(st2%)
-
- ' Set status
+ ' Set status and relay
  IF st1% THEN 
   r1_status$="On"
+  SYS.SET "s0_out2", "state=1"
  ELSE
   r1_status$="Off"
+  SYS.SET "s0_out2", "state=0"
  ENDIF
+ 
+ tp%=SYS.GET "type"
+ if tp%=0 THEN
+  r2_status$="absent"
+  r1_force%=0
+  EXIT SUB
+ ENDIF
+ 
  IF st2% THEN 
   r2_status$="On"
+  SYS.SET "s0_out3", "state=1"
  ELSE
   r2_status$="Off"
+  SYS.SET "s0_out3", "state=0"
  ENDIF
 END SUB
 
