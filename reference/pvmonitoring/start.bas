@@ -260,8 +260,8 @@ SUB ControlQuartLoad()
  ENDIF
  
  'Set relays
- SYS.SET "s0_out2", "state="+str$(st1%)
- SYS.SET "s0_out3", "state="+str$(st2%)
+ SYS.SET "s0_out3", "state="+str$(st1%)
+ SYS.SET "s0_out4", "state="+str$(st2%)
 
  ' Set status
  IF st1% THEN 
