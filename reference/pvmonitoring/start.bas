@@ -29,10 +29,26 @@ DIM TC(3)=(19.75,94.64,200.69,475.95)
 
 TL%=4
 S0Type=1000.0
-' check the time
-IF TimeTrustworthy()<0 THEN
- print "Time is not correct, no logging possible"
+
+' Set microinverters
+LIBRARY LOAD "letrika_sol"
+
+OPTION LIBRARY wmbus PRINT ENABLE
+
+plant_pid$="LETRIKA_PLANT"
+@(plant_pid$,"desc()",0,"iv1")
+@(plant_pid$,"addr()",0,&H9BF)
+@(plant_pid$,"prefix()",0,"i1_")
+
+@(plant_pid$,"desc()",1,"iv2")
+@(plant_pid$,"addr()",1,&H9BE)
+@(plant_pid$,"prefix()",1,"i2_")
+
+IF letrikaConfigurePanels( &H80C37C, plant_pid$ )<0 THEN
+  ERROR "Failed to configure solar plant"
 ENDIF
+
+
 ' check values from previous start
 ts0%=0
 ' Monthly written values
@@ -104,14 +120,22 @@ FUNCTION midCron(id%,elapsed%)
   EId=EIq
   EEd=EEq
   tsd%=tsq%
+
+  ' Check the time
+  IF TimeTrustworthy()<0 THEN
+   print "Time is not correct, no logging possible"
+  ENDIF
+  
+  ' Write to daily log
+  lr$=LGRecStart$(tsd%)+LGRecItem$(EPd)+LGRecItem$(ECd)+LGRecItem$(EId)+LGRecItem$(EEd)
+  LGWriter( lr$, LGGetYear$(tsd%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
+  
+  ' Persist to flash
   sc%=rrdWrite( 4, EPd)
   sc%=rrdWrite( 5, ECd)
   sc%=rrdWrite( 6, EId)
   sc%=rrdWrite( 7, EEd)
 
-  ' Write to daily log
-  lr$=LGRecStart$(tsd%)+LGRecItem$(EPd)+LGRecItem$(ECd)+LGRecItem$(EId)+LGRecItem$(EEd)
-  LGWriter( lr$, LGGetYear$(tsd%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   
   IF m%=DateMDay(ts%,1) = 1 THEN
    ' new month, reset month counter
@@ -130,6 +154,7 @@ END FUNCTION
 ' Cron every minute
 FUNCTION minCron(id%,elapsed%)  
   LOCAL ts%,min%,hour%, PD
+  
   ' Read S0 inputs power (average over last pulses)
   PP=S0In( 0 , "P" ) / S0Type*60.0
   PC=S0In( 1 , "P" ) / S0Type*60.0
@@ -195,11 +220,22 @@ END FUNCTION
 
 ' Cron every 15 minutes
 FUNCTION quartCron(id%,elapsed%)
-  LOCAL min%,hour%,err%
+  LOCAL min%,hour%,err%,lr$
+
+  ' Check the time
+  IF TimeTrustworthy()<0 THEN
+   print "Time is not correct, no logging possible"
+  ENDIF
+  
   'get time
   tsq%=Unixtime()
   min%=DateMinutes(tsq%,1)
   hour%=DateHours(tsq%,1)
+
+  ' Write to quaterly hour log
+  lr$=LGRecStart$(tsq%)+LGRecItem$(EPq)+LGRecItem$(ECq)+LGRecItem$(EIq)+LGRecItem$(EEq)
+  LGWriter( lr$, LGGetDate$(tsq%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
+
   ' Persist flash
   sc%=rrdWrite( 8, EPq)
   sc%=rrdWrite( 9, ECq)
@@ -207,9 +243,6 @@ FUNCTION quartCron(id%,elapsed%)
   sc%=rrdWrite( 11, EEq)
   ' Calculate the new tariff
   getTariff()
-  ' Write to quaterly hour log
-  lr$=LGRecStart$(tsq%)+LGRecItem$(EPq)+LGRecItem$(ECq)+LGRecItem$(EIq)+LGRecItem$(EEq)
-  LGWriter( lr$, LGGetDate$(tsq%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   ' Control the loads
   ControlQuartLoad()
 END FUNCTION
@@ -338,11 +371,20 @@ LOCAL st2%, tp%
  ENDIF
 END SUB
 
-' Control the inverter output
+' Control the inverter output, call every minute
 SUB ControlInverter()
- i1_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
- i2_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
+ LOCAL sc%,p
+ i1_status$="Energie kWh"+chr$(10)+format$(i1_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i1_power,"%g")
+ i2_status$="Energie kWh"+chr$(10)+format$(i2_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i2_power,"%g")
  i1_errors%=0
  i2_errors%=0
+ p=dEC/2.0
+ IF p>291.0 THEN
+  p=291.0
+ ENDIF
+ iv1_ctlPower=p
+ iv2_ctlPower=p
+ sc%=letrikaSet(plant_pid$,-1,"iv1")
+ sc%=letrikaSet(plant_pid$,-1,"iv2")
 END SUB
 
