@@ -7,14 +7,17 @@
 
 ' Relais config
 ' PMax: consumption power > Limit
+' Switch every 15 minutes
 ' DayOrange
 ' DayRed
 ' MonthOrange
 ' MonthRed
 rel1$="DayOrange"
 relp1=0.0
+relt1%=15
 rel2$="MonthRed,MonthOrange"
 relp2=0.0
+relt2%=15
 dayo=0.0
 dayr=0.0
 montho=0.0
@@ -23,8 +26,13 @@ monthr=0.0
 ' 5 Tariff for electricity on monthly basis
 DIM TkWh(3)=(50.0,150.0,300.0,600.0)
 DIM TC(3)=(19.75,94.64,200.69,475.95)
+
 TL%=4
 S0Type=1000.0
+' check the time
+IF TimeTrustworthy()<0 THEN
+ print "Time is not correct, no logging possible"
+ENDIF
 ' check values from previous start
 ts0%=0
 ' Monthly written values
@@ -74,7 +82,18 @@ ELSE
 ENDIF
 
 start:
-Dispatch -1
+ Dispatch 1000
+ ' Force slider in dash takes immediate action
+ IF r1_force% THEN
+  SYS.SET "s0_out2", "state=1"
+ ENDIF
+ IF SYS.GET("asset","type")<>0 THEN
+  IF r2_force% THEN               
+   SYS.SET "s0_out3", "state=1"
+  ENDIF
+ ELSE
+  r2_force%=0
+ ENDIF
 GOTO start
 
 ' Cron midnight
@@ -93,6 +112,7 @@ FUNCTION midCron(id%,elapsed%)
   ' Write to daily log
   lr$=LGRecStart$(tsd%)+LGRecItem$(EPd)+LGRecItem$(ECd)+LGRecItem$(EId)+LGRecItem$(EEd)
   LGWriter( lr$, LGGetYear$(tsd%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
+  
   IF m%=DateMDay(ts%,1) = 1 THEN
    ' new month, reset month counter
    sc%=rrdWrite( 0, EPd)
@@ -110,9 +130,30 @@ END FUNCTION
 ' Cron every minute
 FUNCTION minCron(id%,elapsed%)  
   LOCAL ts%,min%,hour%, PD
-  ' Read S0 Inputs
+  ' Read S0 inputs power (average over last pulses)
   PP=S0In( 0 , "P" ) / S0Type*60.0
   PC=S0In( 1 , "P" ) / S0Type*60.0
+  ' Read S0 inputs Pulses
+  dEP=S0In( 0 , 1 ) / S0Type
+  dEC=S0In( 1 , 1 ) / S0Type
+
+' Correct quarter hour value
+  EPq=EPq+dEP
+  ECq=ECq+dEC
+  IF dEP > dEC THEN
+   EEq=EEq+dEP-dEC
+  ELSE
+   EIq=EIq+dEC-dEP
+  ENDIF
+
+  ' Correct power reading, if no pulses
+  IF dEP=0 THEN
+   PP=0.0
+  ENDIF
+  IF dEC=0 THEN
+   PC=0.0
+  ENDIF
+  
   PD=PC-PP
   IF PD<=0.0 THEN
    PE=-PD
@@ -121,11 +162,34 @@ FUNCTION minCron(id%,elapsed%)
    PI=PD
    PE=0.0
   ENDIF
-  PP_status$=str$(PP)+" Watt"
-  PC_status$=str$(PC)+" Watt"
-  PI_status$=str$(PI)+" Watt"
-  PE_status$=str$(PE)+" Watt"
+  ' Update dashboard
+  PP_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
+  PC_status$="Energie kWh"+chr$(10)+format$(ECq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PC,"%g")
+  PI_status$="Energie kWh"+chr$(10)+format$(EIq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PI,"%g")
+  PE_status$="Energie kWh"+chr$(10)+format$(EEq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PE,"%g")
+
+  m_EC=ECq-ECm
+  m_EP=EPq-EPm
+  m_EI=EIq-EIm
+  m_EE=EEq-EEm
+  d_EC=ECq-ECd
+  d_EP=EPq-EPd
+  d_EI=EIq-EId
+  d_EE=EEq-EEd
+  ' Control the loads   
   ControlMinLoad()
+  
+  ts%=Unixtime()
+  min%=DateMinutes(ts%,1)
+
+  IF (mon% MOD relt1%) = 0 THEN
+   ControlLoad1()
+  ENDIF  
+  IF (mon% MOD relt2%) = 0 THEN
+   ControlLoad2()
+  ENDIF
+  ' Adjust the Inverter Output
+  ControlInverter()
 END FUNCTION
 
 
@@ -136,16 +200,7 @@ FUNCTION quartCron(id%,elapsed%)
   tsq%=Unixtime()
   min%=DateMinutes(tsq%,1)
   hour%=DateHours(tsq%,1)
-  ' Convert the number of pulses to kWh (delta since last quarter hour) and sum it up
-  dEP=S0In( 0 , 1 ) / S0Type
-  dEC=S0In( 1 , 1 ) / S0Type
-  EPq=EPq+dEP
-  ECq=ECq+dEC
-  IF dEP > dEC THEN
-   EEq=EEq+dEP-dEC
-  ELSE
-   EIq=EEq+dEC-dEP
-  ENDIF
+  ' Persist flash
   sc%=rrdWrite( 8, EPq)
   sc%=rrdWrite( 9, ECq)
   sc%=rrdWrite( 10, EIq)
@@ -157,16 +212,6 @@ FUNCTION quartCron(id%,elapsed%)
   LGWriter( lr$, LGGetDate$(tsq%), "Date,PV Energy[kWh],Consumed Energy[kWh],Imported Energy[kWh],Exported Energy[kWh]")
   ' Control the loads
   ControlQuartLoad()
-   ' Set status
-   m_EC=ECq-ECm
-   m_EP=EPq-EPm
-   m_EI=EIq-EIm
-   m_EE=EEq-EEm
-   d_EC=ECq-ECd
-   d_EP=EPq-EPd
-   d_EI=EIq-EId
-   d_EE=EEq-EEd
-
 END FUNCTION
 
 ' Based on current monthly electricity consumption, predict the price, and daily and monthly limit
@@ -209,7 +254,7 @@ END SUB
 ' MonthOrange
 ' MonthRed
 
-' Control the loads on mintue base, pls note loads should not switched on off too quickly
+' Control the loads on minute base, pls note loads should not switched on off too quickly
 SUB ControlMinLoad()
  IF PE > 0.0 THEN
   ' We are exporting energy, reduce inverter power or switch loads on
@@ -218,15 +263,19 @@ SUB ControlMinLoad()
  ENDIF
  END SUB
 
-' Control the loads on quaterly base, pls note loads should not switched on off too quickly
+' Control the loads on quarter of an hour base, pls note loads should not switched on off too quickly
 SUB ControlQuartLoad()
- LOCAL st1%, st2%, tp%
  IF PE > 0.0 THEN
-  ' We are exporting energy, reduce inverter power or switch loads on 
+  ' We are exporting energy, reduce inverter power or switch loads on
  ELSE IF PI > 0.0 THEN
   ' We are importing energy, increase inverter power or switch loads off
  ENDIF
-  ' Check relays
+ END SUB
+
+' Control the first relay output
+SUB ControlLoad1()
+ LOCAL st1%
+ ' Check relays
  IF r1_force% THEN 
   st1%=1
  ELSE IF Instr(1,rel1$,"PMax")>0 AND PI>relp1 THEN
@@ -243,6 +292,27 @@ SUB ControlQuartLoad()
   st1%=1
  ENDIF
 
+' Set status and relay
+ IF st1% THEN 
+  r1_status$="On"
+  SYS.SET "s0_out2", "state=1"
+ ELSE
+  r1_status$="Off"
+  SYS.SET "s0_out2", "state=0"
+ ENDIF
+END SUB
+
+' Control the second relay outputSUB ControlLoad2()
+SUB ControlLoad2()
+LOCAL st2%, tp%
+  ' Check EMDO model, on EMDO101, only one relay output! 
+ IF SYS.GET("asset","type")=0 THEN
+  r2_status$="absent"
+  r2_force%=0
+  EXIT SUB
+ ENDIF
+
+ ' Check relays
  IF r2_force% THEN
   st2%=1
  ELSE IF Instr(1,rel2$,"PMax")>0 AND PI>relp2 THEN
@@ -259,22 +329,6 @@ SUB ControlQuartLoad()
   st2%=1
  ENDIF
  
- ' Set status and relay
- IF st1% THEN 
-  r1_status$="On"
-  SYS.SET "s0_out2", "state=1"
- ELSE
-  r1_status$="Off"
-  SYS.SET "s0_out2", "state=0"
- ENDIF
- 
- tp%=SYS.GET("asset","type")
- if tp%=0 THEN
-  r2_status$="absent"
-  r2_force%=0
-  EXIT SUB
- ENDIF
- 
  IF st2% THEN 
   r2_status$="On"
   SYS.SET "s0_out3", "state=1"
@@ -282,5 +336,13 @@ SUB ControlQuartLoad()
   r2_status$="Off"
   SYS.SET "s0_out3", "state=0"
  ENDIF
+END SUB
+
+' Control the inverter output
+SUB ControlInverter()
+ i1_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
+ i2_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
+ i1_errors%=0
+ i2_errors%=0
 END SUB
 

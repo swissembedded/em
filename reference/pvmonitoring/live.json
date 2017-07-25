@@ -50,6 +50,26 @@
                 "grid-y": 1
             },
             {
+                "id":"iv1",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "i1_status${}",
+                "tm-hasError": "i1_errors%{0}",
+                "text-bottom": "Microinverter 1",
+                "grid-x": 0,
+                "grid-y": 2
+            },
+            {
+                "id":"iv2",
+                "type": "text",
+                "text-top": "Status",
+                "text-middle": "i2_status${}",
+                "tm-hasError": "i2_errors%{0}",
+                "text-bottom": "Microinverter 2",
+                "grid-x": 1,
+                "grid-y": 2
+            },
+            {
                 "id":"actuator1",
                 "type": "switch",
                 "text-top": "Control",
@@ -57,7 +77,7 @@
                 "value": "r1_force%{}",
                 "text-middle": "r1_status${}",
                 "grid-x": 0,
-                "grid-y": 2
+                "grid-y": 3
             },
             {
                 "id":"actuator2",
@@ -67,9 +87,8 @@
                 "value": "r2_force%{}",
                 "text-middle": "r2_status${}",
                 "grid-x": 1,
-                "grid-y": 2
+                "grid-y": 3
             },
-            
             {
                 "id":"chart1",
                 "type": "donut",

@@ -8,19 +8,16 @@
 
 '@lib_init
 FUNCTION __logger_init()
- print "init logger"
 END FUNCTION
  
 '@lib_destroy
 FUNCTION __logger_destroy()
- print "deinit logger"
 END FUNCTION
 
 ' Logger get date filename in yyyymmdd format
 ' ts% timestamp based on unixtime()
 ' returns string of current date e.g. 20170423
 FUNCTION LGGetDate$(ts%)
- LOCAL dt$
  ' extract from 2017-04-23T14:21:40Z
  LGGetDate$=format$(DateYear(ts%),"%04g")+format$(DateMonth(ts%),"%02g")+format$(DateMday(ts%),"%02g")
 END FUNCTION
@@ -29,7 +26,6 @@ END FUNCTION
 ' ts% timestamp based on unixtime()
 ' returns string of current year e.g. 2017
 FUNCTION LGGetYear$(ts%)
- LOCAL dt$
  ' extract from 2017-04-23T14:21:40Z
  LGGetYear$=format$(DateYear(ts%),"%04g")
 END FUNCTION
@@ -58,7 +54,7 @@ END FUNCTION
 ' stmp$ Current date / year (6 letters goes to graphlogy and 6 letters to graphlogd)
 ' hdr$ Log file header.
 SUB LGWriter( lr$, stmp$, hdr$)
- LOCAL fnm$,inm$
+ LOCAL fnm$,inm$,fno%,fno2%
  fnm$="/output/"+stmp$+".csv"
  inm$="/output/graphlog"
  IF len(stmp$)=4 THEN
@@ -66,17 +62,17 @@ SUB LGWriter( lr$, stmp$, hdr$)
  ELSE
   inm$=inm$+"d.csv"
  ENDIF
- 
- Open fnm$ For Random AS #1
- IF LOF(#1) = 0 Then
+ __cmb 
+ Open fnm$ For Random AS fno%
+ IF LOF(fno%) = 0 Then
   ' this is a new file, write header to the log 
   ' and make an entry in the graphlog to plot it in the webinterface
-  PRINT #1, hdr$
-  OPEN inm$ For Random AS #2
-  PRINT #2, stmp$
-  CLOSE #2
+  PRINT #fno%, hdr$
+  OPEN inm$ For Random AS fno2%
+  PRINT #fno2%, stmp$
+  CLOSE fno2%
  ENDIF
- PRINT #1, lr$
- CLOSE #1
+ PRINT #fno%, lr$
+ CLOSE fno%
 END SUB
 
