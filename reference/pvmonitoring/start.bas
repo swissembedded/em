@@ -153,11 +153,22 @@ END FUNCTION
 
 ' Cron every minute
 FUNCTION minCron(id%,elapsed%)  
-  LOCAL ts%,min%,hour%, PD
+  LOCAL ts%,min%,hour%,PD,tP,tC
   
   ' Read S0 inputs power (average over last pulses)
-  PP=S0In( 0 , "P" ) / S0Type*60.0
-  PC=S0In( 1 , "P" ) / S0Type*60.0
+  tP=S0In( 0 , "P" )+S0In( 0 , "p" )
+  tC=S0In( 1 , "P" )+S0In( 1 , "p" )
+  IF tP > 0.0 THEN
+   PP=1000.0/tP*3600.0 / S0Type * 1000.0
+  ELSE
+   PP=0.0
+  ENDIF
+  IF tC > 0.0 THEN
+   PC=1000.0/tC*3600.0 / S0Type * 1000.0
+  ELSE
+   PC=0.0
+  ENDIF
+  
   ' Read S0 inputs Pulses
   dEP=S0In( 0 , 1 ) / S0Type
   dEC=S0In( 1 , 1 ) / S0Type
@@ -188,10 +199,10 @@ FUNCTION minCron(id%,elapsed%)
    PE=0.0
   ENDIF
   ' Update dashboard
-  PP_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%g")
-  PC_status$="Energie kWh"+chr$(10)+format$(ECq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PC,"%g")
-  PI_status$="Energie kWh"+chr$(10)+format$(EIq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PI,"%g")
-  PE_status$="Energie kWh"+chr$(10)+format$(EEq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PE,"%g")
+  PP_status$="Energie kWh"+chr$(10)+format$(EPq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PP,"%.0f")
+  PC_status$="Energie kWh"+chr$(10)+format$(ECq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PC,"%.0f")
+  PI_status$="Energie kWh"+chr$(10)+format$(EIq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PI,"%.0f")
+  PE_status$="Energie kWh"+chr$(10)+format$(EEq,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(PE,"%.0f")
 
   m_EC=ECq-ECm
   m_EP=EPq-EPm
@@ -374,8 +385,8 @@ END SUB
 ' Control the inverter output, call every minute
 SUB ControlInverter()
  LOCAL sc%,p
- i1_status$="Energie kWh"+chr$(10)+format$(i1_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i1_power,"%g")
- i2_status$="Energie kWh"+chr$(10)+format$(i2_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i2_power,"%g")
+ i1_status$="Energie kWh"+chr$(10)+format$(i1_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i1_power,"%.0f")
+ i2_status$="Energie kWh"+chr$(10)+format$(i2_energy/1000.0,"%.3f")+chr$(10)+chr$(10)+" Power W"+chr$(10)+format$(i2_power,"%.0f")
  i1_errors%=0
  i2_errors%=0
  p=dEC/2.0
