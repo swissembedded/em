@@ -176,13 +176,6 @@ FUNCTION minCron(id%,elapsed%)
    EIq=EIq+dEC-dEP
   ENDIF
 
-  ' Correct power reading, if no pulses
-  IF dEP=0 THEN
-   PP=0.0
-  ENDIF
-  IF dEC=0 THEN
-   PC=0.0
-  ENDIF
   
   PD=PC-PP
   IF PD<=0.0 THEN
