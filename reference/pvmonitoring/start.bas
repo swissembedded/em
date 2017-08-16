@@ -124,6 +124,7 @@ FUNCTION midCron(id%,elapsed%)
   ' Check the time
   IF TimeTrustworthy()<0 THEN
    print "Time is not correct, no logging possible"
+   EXIT FUNCTION
   ENDIF
   
   ' Write to daily log
@@ -156,19 +157,12 @@ FUNCTION minCron(id%,elapsed%)
   LOCAL ts%,min%,hour%,PD,tP,tC
   
   ' Read S0 inputs power (average over last pulses)
-  tP=S0In( 0 , "P" )+S0In( 0 , "p" )
-  tC=S0In( 1 , "P" )+S0In( 1 , "p" )
-  IF tP > 0.0 THEN
-   PP=1000.0/tP*3600.0 / S0Type * 1000.0
-  ELSE
-   PP=0.0
-  ENDIF
-  IF tC > 0.0 THEN
-   PC=1000.0/tC*3600.0 / S0Type * 1000.0
-  ELSE
-   PC=0.0
-  ENDIF
-  
+  tP=S0In( 0 , "V" )
+  tC=S0In( 1 , "V" )
+  print "tP " tP " tC " tc
+  PP=1000.0/tP*3600.0 / S0Type * 1000.0
+  PC=1000.0/tC*3600.0 / S0Type * 1000.0
+
   ' Read S0 inputs Pulses
   dEP=S0In( 0 , 1 ) / S0Type
   dEC=S0In( 1 , 1 ) / S0Type
