@@ -8,6 +8,7 @@
 
 '@lib_init
 FUNCTION __logger_init()
+  OPTION LIBRARY logger PRINT ENABLE
 END FUNCTION
  
 '@lib_destroy
