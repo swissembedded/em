@@ -2269,7 +2269,155 @@ FUNCTION eoRxA53Fxx(tp%,da$,oda$,xx%,stcnt%,rslv%,rldl%,mcm%,lrn%,msgid%,msgs%,m
  eoRxA53Fxx=0
 END FUNCTION
 
-
+' Callback eoRxD2 helper function for Electronic switches and dimmers with Energy Measurement and Local Control
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$   optional data array
+' xx%     type 00,01,..,12
+' cmd% command identifier 0x1 - Actuator Set Output, 0x2 - Actuator Set Local, 0x3 - Actuator Status Query
+'                    0x4 - Actuator Status Response,      0x5 - Actuator Set Measurement, 0x6 - Actuator Measurement Query,
+'                   0x7 - Actuator Measurement Response, 0x8 - Actuator Set Pilot Wire Mode,  0x9 - Actuator Pilot Wire Mode Query,
+'                   0xA - Actuator Pilot Wire Mode Response Offset, 0xB - Actuator Set External Interface Settings, 0xC - Actuator External Interface Settings Query, 0xD - Actuator External Interface Settings Response
+' dv%     dim value 0x00: Switch to new output value,         0x01: Dim to new output value – dim timer 1,
+'                   0x02: Dim to new output value – dim timer 2, 0x03: Dim to new output value – dim timer 3,                                  
+'                   0x04: Stop dimming,                                        0x05...0x07: not used
+' io%       i/o channel 0x00...0x1D: Output channel (to load), 0x1E: All output channels supported by the device, 0x1F: Input channel (from mains supply)
+' ov%       output value 0x00: Output value 0% or OFF, 0x01..0x64:Output value 1% to 100% or ON, 
+'                     0x65...0x7E:Not used,                                0x7F: Output value not valid / not applicable
+' de%       taught-in devices 0b0: Disable taught-in devices (with different EEP), 0b1: Enable taught-in devices (with different EEP)
+' oc%        over current shut down 0b0: static off, 0b1: automatic restart
+' ro%         reset over current shut down 0b0: not active, 0b1: trigger signal
+' lc%          local control 0b0: Disable local control, 0b1: Enable local control
+' dt2%       dim timer 2
+' dt3%       dim timer 3
+' dn%        user interface indcation 0b0: day operation, 0b1: night operation
+' pf%         power failure 0b0: Disable Power Failure Detection, 0b1: Enable Power Failure Detection
+' ds%         default state 0b00: Default state: 0% or OFF,             0b01: Default state: 100% or ON, 
+'                      0b10: Default state: remember previous state,     0b11: Not used
+' dt1%       dim timer 1 0x00: Not used, 0x01...0x0F: Dim timer 1 [0,5..7,5s / steps 0,5s]
+' qu%        
+' pm%
+' pfd%       power failure detection 0b0: Power Failure not detected/not supported/disabled, 0b1: Power Failure Detected
+' el             error level 0b00: Error level 0: hardware OK
+0b01: Error level 1: hardware warning, 0b10: Error level 2: hardware failure, 0b11: Error level not supported
+' rm%=-1
+' re%=-1
+' ep%=-1
+' lsb%=-1
+' un%=-1
+' msb%=-1
+' mat%=-1
+' mit%=-1
+' mv%=-1
+' aot%=-1
+' dot%=-1
+' ebm%=-1
+' swt%=-1
+FUNCTION eoRxD201xx(tp%,da$,oda$,xx%,cmd%, dv%,io%,ov%,de%,oc%,ro%,lc%,dt2%,dt3%,dn%,pf%,st%,dt1%,qu%,pm%,pfd%,el%,rm%,re%,ep%,lsb%,un%,msb%,mat%,mit%,mv%,aot%,dot%,ebm%,swt%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD201xx=-1
+  EXIT FUNCTION
+ ENDIF
+ dv%=-1
+ io%=-1
+ ov%=-1
+ de%=-1
+ oc%=-1
+ ro%=-1 
+ lc%=-1
+ dt2%=-1
+ dt3%=-1
+ dn%=-1
+ pf%=-1
+ ds%=-1
+ dt1%=-1
+ qu%=-1
+ pm%=-1
+ pfd%=-1
+ el=-1
+ rm%=-1
+ re%=-1
+ ep%=-1
+ lsb%=-1
+ un%=-1
+ msb%=-1
+ mat%=-1
+ mit%=-1
+ mv%=-1
+ aot%=-1
+ dot%=-1
+ ebm%=-1
+ swt%=-1
+ IF xx%>=&H00 AND xx%<=&H12 THEN
+  IF cmd%=&H01 THEN
+   cmd%=db2% AND 15
+   dv%=(db1% AND 224)/32
+   io%=db1% AND 31
+   ov%=db0% AND 127
+  ELSE IF cmd%=&H02 THEN
+   de%=(db3% AND 128)/128
+   cmd%=db3% AND 15
+   oc%=(db2% AND 128)/128
+   ro%=(db2% AND 64)/64
+   lc%=(db2% AND 32)/32
+   io%=db2% AND 31
+   dt2%=(db1% AND 240)/16
+   dt3%=db1% AND 15
+   dn%=(db0% AND 128)/128
+   pf%=(db0% AND 64)/64
+   ds%=(db0% AND 48)/16
+   dt1%=db0% AND 15
+  ELSE IF cmd%=&H03 OR cmd%=&H06 OR cmd%=&H08 OR cmd%=&H0A OR cmd%=&H0C THEN
+   cmd%=db1% AND 15
+   IF cmd%=&H03 OR cmd%=&H0C THEN io%=db0% AND 31
+   Else IF cmd%=&H06 THEN qu%=(db0% AND 32)/32
+   ELSE IF cmd%=&H08 OR cmd%=&H0A THEN pm%=db0% AND 7
+   END IF
+  ELSE IF cmd%=&H04 THEN
+   pf%=(db2% AND 128)/128
+   pfd%=(db2% AND 64)/64
+   cmd%=db2% AND 15
+   oc%=(db1% AND 128)/128
+   el%=(db1% AND 96)/32
+   io%=db1% AND 31
+   lc%=(db0% AND 128)/128
+   ov%=db0% AND 127
+  ELSE IF cmd%=&H05 THEN
+   cmd%=db5% AND 15
+   rm%=(db4% AND 128)/128
+   re%=(db4% AND 64)/64
+   ep%=(db4% AND 32)/32
+   io=db4% AND 31
+   lsb%=(db3% AND 240)/16
+   un%=db3% AND 7
+   msb%=db2%
+   mat%=db1%
+   mit%=db0%
+  ELSE IF cmd%=&H07 THEN
+   cmd%=db5% AND 15
+   un%=(db4% AND 224)/32
+   io%=db4% AND 15
+   mv%=(db3%*16777216)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF cmd%=&H09 THEN cmd%=db0% AND 15
+  ELSE IF cmd%=&H0B THEN
+   cmd%=db4% AND 15
+   io%=db3% AND 31
+   aot%=(db4%*256)+db3%
+   dot%=(db2%*256)+db1%
+   ebm%=(db0% AND 192)/64
+   swt%=(db0% AND 32)/32
+  ELSE 
+   ' unkown cmd
+   eoRxD201xx=-2
+  END IF
+ ELSE
+  ' unkown type
+  eoRxD201xx=-3
+ END IF 
+ eoRxD201xx=0
+END FUNCTION
 
 ' Callback eoRxD2 helper function for Room Control Panel (RCP)
 ' D2-00-01 RCP with Temperature Measurement and Display (BI-DIR)
@@ -2396,7 +2544,157 @@ FUNCTION eoRxD200xx(tp%,da$,oda$,xx%,mi%,cv%,kp%,m%,f%,md%,pr%,ta%,za%,se%,sd%,s
  eoRxD200xx=0
 END FUNCTION
 
-
+' Callback eoRxD2 helper function for Electronic switches and dimmers with Energy Measurement and Local Control
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$    optional data array
+' xx%     type 00,01,..,12
+' cmd%    command identifier 0x1 - Actuator Set Output,       0x2 - Actuator Set Local,                       0x3 - Actuator Status Query
+'             0x4 - Actuator Status Response,                 0x5 - Actuator Set Measurement,                 0x6 - Actuator Measurement Query,
+'             0x7 - Actuator Measurement Response,            0x8 - Actuator Set Pilot Wire Mode,             0x9 - Actuator Pilot Wire Mode Query,
+'             0xA - Actuator Pilot Wire Mode Response Offset, 0xB - Actuator Set External Interface Settings, 0xC - Actuator External Interface Settings Query, 0xD - Actuator External Interface Settings Response
+' dv%     dim value 0x00: Switch to new output value,      0x01: Dim to new output value – dim timer 1,
+'             0x02: Dim to new output value – dim timer 2, 0x03: Dim to new output value – dim timer 3,                                  
+'             0x04: Stop dimming,                          0x05...0x07: not used
+' io%     i/o channel 0x00...0x1D: Output channel (to load), 0x1E: All output channels supported by the device, 0x1F: Input channel (from mains supply)
+' ov%     output value 0x00: Output value 0% or OFF, 0x01..0x64:Output value 1% to 100% or ON, 
+'             0x65...0x7E:Not used,                  0x7F: Output value not valid / not applicable
+' de%     taught-in devices 0b0: Disable taught-in devices (with different EEP), 0b1: Enable taught-in devices (with different EEP)
+' oc%     over current shut down 0b0: static off, 0b1: automatic restart
+' ro%     reset over current shut down 0b0: not active, 0b1: trigger signal
+' lc%     local control 0b0: Disable local control, 0b1: Enable local control
+' dt2%    dim timer 2
+' dt3%    dim timer 3
+' dn%     user interface indcation 0b0: day operation, 0b1: night operation
+' pf%     power failure 0b0: Disable Power Failure Detection, 0b1: Enable Power Failure Detection
+' ds%     default state 0b00: Default state: 0% or OFF,          0b01: Default state: 100% or ON, 
+'             0b10: Default state: remember previous state,     0b11: Not used
+' dt1%    dim timer 1 0x00: Not used, 0x01...0x0F: Dim timer 1 [0,5..7,5s / steps 0,5s]
+' qu%     query 0b0:Query energy, 0b1: Query power
+' pm%  	  pilotwire mode 0x00:Off,   0x01:Comfort,   0x02: Eco,   0x03: Anti-freeze,   0x04:Comfort-1,    0x05:Comfort-2
+' pfd%    power failure detection 0b0: Power Failure not detected/not supported/disabled, 0b1: Power Failure Detected
+' el      error level 0b00: Error level 0: hardware OK, 0b01: Error level 1: hardware warning, 
+'             0b10: Error level 2: hardware failure,    0b11: Error level not supported
+' rm%     report management 0b0: Report measurement: query only, 0b1: Report measurement: query/auto reporting
+' re%     reset management 0b0: Reset measurement: not active, 0b1: Reset measurement: trigger signal
+' ep%     measurement mode 0b0: Energy measurement, 0b1: Power measurement
+' lsb%    Measurement delta to be reported (LSB) 0..4095
+' un%     unit 0x00: Energy [Ws]   0x01: Energy [Wh],     0x02: Energy [KWh],     0x03: Power [W],    
+'              0x04: Power [KW],   0x05...0x07:Not used
+' msb%    Measurement delta to be reported (MSB) 0..4095
+' mat%    Maximum time between two subsequent actuator messages 1..255: 10..2550 s
+' mit%    Minimum time between two subsequent actuator messages 1..255: 1..255 s, 0: Reserved
+' mv%     measurement value 
+' aot%    auto off timer 0x0000: Timer deactivated, 0x0001..0xFFFE: 0.1..6553.4 s, 0xFFFF: Does no modify saved value
+' dot%    delay iff timer 0x0000: Timer deactivated 0x0001...0xFFFE: 0.1...6553.4 s, 0xFFFF: Does not modify saved value
+' ebm%    external switch/push button 0b00: Not applicable, 0b01: External Switch, 0b10: External Push Button, 0b11:Auto detect
+' swt%    2-state switch 0b00: Change of key state sets ON or OFF, 
+'	      0b01: Specific ON/OFF positions. ON when contacts are closed. OFF when contacts are open.
+FUNCTION eoRxD201xx(tp%,da$,oda$,xx%,cmd%,dv%,io%,ov%,de%,oc%,ro%,lc%,dt2%,dt3%,dn%,pf%,st%,dt1%,qu%,pm%,pfd%,el%,rm%,re%,ep%,lsb%,un%,msb%,mat%,mit%,mv%,aot%,dot%,ebm%,swt%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD201xx=-1
+  EXIT FUNCTION
+ ENDIF
+ dv%=-1
+ io%=-1
+ ov%=-1
+ de%=-1
+ oc%=-1
+ ro%=-1 
+ lc%=-1
+ dt2%=-1
+ dt3%=-1
+ dn%=-1
+ pf%=-1
+ ds%=-1
+ dt1%=-1
+ qu%=-1
+ pm%=-1
+ pfd%=-1
+ el=-1
+ rm%=-1
+ re%=-1
+ ep%=-1
+ lsb%=-1
+ un%=-1
+ msb%=-1
+ mat%=-1
+ mit%=-1
+ mv%=-1
+ aot%=-1
+ dot%=-1
+ ebm%=-1
+ swt%=-1
+ IF xx%>=&H00 AND xx%<=&H12 THEN
+  IF cmd%=&H01 THEN
+   cmd%=db2% AND 15
+   dv%=(db1% AND 224)/32
+   io%=db1% AND 31
+   ov%=db0% AND 127
+  ELSE IF cmd%=&H02 THEN
+   de%=(db3% AND 128)/128
+   cmd%=db3% AND 15
+   oc%=(db2% AND 128)/128
+   ro%=(db2% AND 64)/64
+   lc%=(db2% AND 32)/32
+   io%=db2% AND 31
+   dt2%=(db1% AND 240)/16
+   dt3%=db1% AND 15
+   dn%=(db0% AND 128)/128
+   pf%=(db0% AND 64)/64
+   ds%=(db0% AND 48)/16
+   dt1%=db0% AND 15
+  ELSE IF cmd%=&H03 OR cmd%=&H06 OR cmd%=&H08 OR cmd%=&H0A OR cmd%=&H0C THEN
+   cmd%=db1% AND 15
+   IF cmd%=&H03 OR cmd%=&H0C THEN io%=db0% AND 31
+   Else IF cmd%=&H06 THEN qu%=(db0% AND 32)/32
+   ELSE IF cmd%=&H08 OR cmd%=&H0A THEN pm%=db0% AND 7
+   END IF
+  ELSE IF cmd%=&H04 THEN
+   pf%=(db2% AND 128)/128
+   pfd%=(db2% AND 64)/64
+   cmd%=db2% AND 15
+   oc%=(db1% AND 128)/128
+   el%=(db1% AND 96)/32
+   io%=db1% AND 31
+   lc%=(db0% AND 128)/128
+   ov%=db0% AND 127
+  ELSE IF cmd%=&H05 THEN
+   cmd%=db5% AND 15
+   rm%=(db4% AND 128)/128
+   re%=(db4% AND 64)/64
+   ep%=(db4% AND 32)/32
+   io=db4% AND 31
+   lsb%=(db3% AND 240)/16
+   un%=db3% AND 7
+   msb%=db2%
+   mat%=db1%
+   mit%=db0%
+  ELSE IF cmd%=&H07 THEN
+   cmd%=db5% AND 15
+   un%=(db4% AND 224)/32
+   io%=db4% AND 15
+   mv%=(db3%*16777216)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF cmd%=&H09 THEN cmd%=db0% AND 15
+  ELSE IF cmd%=&H0B THEN
+   cmd%=db4% AND 15
+   io%=db3% AND 31
+   aot%=(db4%*256)+db3%
+   dot%=(db2%*256)+db1%
+   ebm%=(db0% AND 192)/64
+   swt%=(db0% AND 32)/32
+  ELSE 
+   ' unkown cmd
+   eoRxD201xx=-2
+  END IF
+ ELSE
+  ' unkown type
+  eoRxD201xx=-3
+ END IF 
+ eoRxD201xx=0
+END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
