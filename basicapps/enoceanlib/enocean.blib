@@ -2547,6 +2547,25 @@ FUNCTION eoRxD200xx(tp%,da$,oda$,xx%,mi%,cv%,kp%,m%,f%,md%,pr%,ta%,za%,se%,sd%,s
 END FUNCTION
 
 ' Callback eoRxD2 helper function for Electronic switches and dimmers with Energy Measurement and Local Control
+' D2-02-00 Electronic switches and dimmers with Energy Measurement and Local Control type 00
+' D2-02-01 Electronic switches and dimmers with Energy Measurement and Local Control type 01
+' D2-02-02 Electronic switches and dimmers with Energy Measurement and Local Control type 02
+' D2-02-03 Electronic switches and dimmers with Energy Measurement and Local Control type 03
+' D2-02-04 Electronic switches and dimmers with Energy Measurement and Local Control type 04
+' D2-02-05 Electronic switches and dimmers with Energy Measurement and Local Control type 05
+' D2-02-06 Electronic switches and dimmers with Energy Measurement and Local Control type 06
+' D2-02-07 Electronic switches and dimmers with Energy Measurement and Local Control type 07
+' D2-02-08 Electronic switches and dimmers with Energy Measurement and Local Control type 08
+' D2-02-09 Electronic switches and dimmers with Energy Measurement and Local Control type 09
+' D2-02-0A Electronic switches and dimmers with Energy Measurement and Local Control type 0A
+' D2-02-0B Electronic switches and dimmers with Energy Measurement and Local Control type 0B
+' D2-02-0C Electronic switches and dimmers with Energy Measurement and Local Control type 0C
+' D2-02-0D Electronic switches and dimmers with Energy Measurement and Local Control type 0D
+' D2-02-0E Electronic switches and dimmers with Energy Measurement and Local Control type 0E
+' D2-02-0F Electronic switches and dimmers with Energy Measurement and Local Control type 0F
+' D2-02-10 Electronic switches and dimmers with Energy Measurement and Local Control type 10
+' D2-02-11 Electronic switches and dimmers with Energy Measurement and Local Control type 11
+' D2-02-12 Electronic switches and dimmers with Energy Measurement and Local Control type 12
 ' tp%     type of the packet (from callback eoRxD2)
 ' da$     data array
 ' oda$    optional data array
