@@ -2547,25 +2547,7 @@ FUNCTION eoRxD200xx(tp%,da$,oda$,xx%,mi%,cv%,kp%,m%,f%,md%,pr%,ta%,za%,se%,sd%,s
 END FUNCTION
 
 ' Callback eoRxD2 helper function for Electronic switches and dimmers with Energy Measurement and Local Control
-' D2-02-00 Electronic switches and dimmers with Energy Measurement and Local Control type 00
-' D2-02-01 Electronic switches and dimmers with Energy Measurement and Local Control type 01
-' D2-02-02 Electronic switches and dimmers with Energy Measurement and Local Control type 02
-' D2-02-03 Electronic switches and dimmers with Energy Measurement and Local Control type 03
-' D2-02-04 Electronic switches and dimmers with Energy Measurement and Local Control type 04
-' D2-02-05 Electronic switches and dimmers with Energy Measurement and Local Control type 05
-' D2-02-06 Electronic switches and dimmers with Energy Measurement and Local Control type 06
-' D2-02-07 Electronic switches and dimmers with Energy Measurement and Local Control type 07
-' D2-02-08 Electronic switches and dimmers with Energy Measurement and Local Control type 08
-' D2-02-09 Electronic switches and dimmers with Energy Measurement and Local Control type 09
-' D2-02-0A Electronic switches and dimmers with Energy Measurement and Local Control type 0A
-' D2-02-0B Electronic switches and dimmers with Energy Measurement and Local Control type 0B
-' D2-02-0C Electronic switches and dimmers with Energy Measurement and Local Control type 0C
-' D2-02-0D Electronic switches and dimmers with Energy Measurement and Local Control type 0D
-' D2-02-0E Electronic switches and dimmers with Energy Measurement and Local Control type 0E
-' D2-02-0F Electronic switches and dimmers with Energy Measurement and Local Control type 0F
-' D2-02-10 Electronic switches and dimmers with Energy Measurement and Local Control type 10
-' D2-02-11 Electronic switches and dimmers with Energy Measurement and Local Control type 11
-' D2-02-12 Electronic switches and dimmers with Energy Measurement and Local Control type 12
+' D2-02-00.. D2-02-12 Electronic switches and dimmers with Energy Measurement and Local Control type 00..12
 ' tp%     type of the packet (from callback eoRxD2)
 ' da$     data array
 ' oda$    optional data array
@@ -2715,6 +2697,77 @@ FUNCTION eoRxD201xx(tp%,da$,oda$,xx%,cmd%,dv%,io%,ov%,de%,oc%,ro%,lc%,dt2%,dt3%,
   eoRxD201xx=-3
  END IF 
  eoRxD201xx=0
+END FUNCTION
+
+' Callback eoRxD2 helper function for Sensors for Temperature, Illumination, Occupancy And Smoke
+' D2-02-00..D2-02-02 Sensors for Temperature, Illumination, Occupancy And Smoke type 00..02
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$    optional data array
+' xx%     type 00, 01, 02
+' cmd%    command ID 01: Sensor Measurement, 02: Sensor Test/Trigger, 03: Actuator Set Measurement, 04: Sensor Measurement Query
+' type%   measurement type 00: Temperature (0…65535: -40 to +120°C), 01: Illumination (0…65535: 0 to 2047lx), 02: Occupancy (0: not detected; 1: detected),           
+'            03: Smoke The following content applies for the value in DB_0 and DB_1: 
+'	     00 - No smoke detected, 01 - Smoke detected via ionization chamber, 02 - Smoke detected via optical chamber, 03 - Smoke detected via both chambers
+' mv%     measurement value 0..65535
+' st%     self-test 0b0: Self-test mode, 0b1:Normal operation
+' ta%     trigger alarm 0b0: Trigger alarm, 0b1: Normal operation
+' rm%     report measurement 0b0: Report measurement: query only, 0b1: Report measurement: query/auto reporting
+' mdlsb%  measurement delta to be reported (LSB) 0..4095
+' un%     unit 00: Temperature (°C), 01: Illumination (lx), 02..07: Not used
+' mdmsb%  measurement delta to be reported (MSB) 0..4095
+' mat     maximum time between two subsequent actuator 10..2550 s
+' mit%    minimum time between two subsequent actuator 0..255 s
+' qu%     query 0x0: Query temperature, 0x1: Query illumination, 0x2: Query occupancy, 0x3: Query smoke, 0x4..0x7: Not used
+FUNCTION eoRxD202xx(tp%,da$,oda$,xx%,cmd%,type%,mv%,st%,ta%,rm%,mdlsb%,un%,mdmsb%,mat,mit%,qu%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD202xx=-1
+  EXIT FUNCTION
+ ENDIF
+ type%=-1
+ mv%=-1
+ st%=-1
+ ta%=-1
+ rm%=-1
+ mdlsb%=-1
+ un%=-1
+ mdmsb%=-1
+ mat=-1
+ mit%=-1
+ qu%=-1
+ IF xx%>=&H00 AND xx%<=&H02 THEN
+  IF cmd%=&H01 THEN
+   cmd%=db3% AND 15
+   type%=(db2% AND 224)/32
+   mv%=(db1%*256)+db0%
+  ELSE IF cmd%=&H02 THEN
+   cmd%=db1% AND 15
+   st%=(db0% AND 128)/128
+   ta%=(db0% AND 64)/64
+  ELSE IF cmd%=&H04 THEN
+   cmd%=db5% AND 15
+   rm%=(db4% AND 128)/128
+   mdlsb%=(db3% AND 240)/16
+   un%=db3% AND 7
+   mdmsb%=db2%
+   mat=(2540.0/255.0)*db1%+10
+   mit%=db0%
+  ELSE IF cmd%=&H04 THEN
+   cmd%=db1% AND 15
+   qu%=(db0% AND 224)/32
+  ELSE
+   ' unknown cmd
+   eoRxD202xx=-2
+   EXIT FUNCTION
+  ENDIF 
+ ELSE
+  ' unknown type
+  eoRxD202xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxD202xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
