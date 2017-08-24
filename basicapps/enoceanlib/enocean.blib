@@ -2810,6 +2810,45 @@ FUNCTION eoRxD203xx(tp%,da$,oda$,xx%,ri%,win%,se%)
  eoRxD203xx=0
 END FUNCTION
 
+' Callback eoRxD2 helper function for CO2, Humidity, Temperature, Day/Night and Autonomy
+' D2-04-00..D2-04-1E CO2, Humidity, Temperature, Day/Night and Autonomy type 00..1E
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$    optional data array
+' xx%     type 00, 01, 02
+' co2	  concentration 1 LSB = 7.84ppm Or 1 LSB=19.6ppm, 0..2000 (or 5000)ppm
+' hum     humidity 1 LSB=0.5%
+' temp    temperature 1 LSB=0.2°C, 0..+51°C
+' dn%     day/night 0: Day, 1: Night
+' ba%     battery autonomy  0: 100-87.5%, 1: 87.5-75%,  2: 75-62.5%,  3: 62.5-50%, 
+'             4: 50-37.5%,  5: 37.5-25%,  6: 25-12.5%,  7: 12.5-0%
+FUNCTION eoRxD204xx(tp%,da$,oda$,xx%,co2,hum,temp,dn%,ba%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD204xx=-1
+  EXIT FUNCTION
+ ENDIF
+ co2=-1
+ hum=-1
+ temp=-1
+ dn%=-1
+ ba%=-1
+ IF xx%>=&H00 OR xx%<=&H1E THEN
+  co2=(2000.0/255.0)*db3%
+  hum=(100.0/200.0)*db2%
+  temp=(51.0/255.0)*db1%
+  dn%=(db0% AND 128)/128
+  ba%=(db0% AND 112)/16
+ ELSE
+  ' unknown type
+  eoRxD204xx=-2
+  EXIT FUNCTION
+ ENDIF 
+ eoRxD204xx=0
+END FUNCTION
+
+
  ' Pressac Version 1 CT Clamp A5-12-01
  ' http://www.pressac.com/current-transducer-enocean-ct-clamp
  ' scale% = db0 AND 3 
