@@ -1,0 +1,18 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO MQTT library for electromobility gadget on www.ednme.com portal
+' @VERSION 1.0
+
+
+FUNCTION EmobChargerCapability()
+END FUNCTION
+
+FUNCTION EmobChargerStatus()
+END FUNCTION
+
+FUNCTION EmobReserveConfirm()
+END FUNCTION
+
+FUNCTION EmobReserveCancel()
+END FUNCTION
