@@ -22,7 +22,8 @@ FUNCTION EdConnect(user$, pass$)
   EdConnect=sc%
   EXIT FUNCTION
  ENDIF
- sc%=MQTTSubscribe("0","EMDO/devices/"+SYS.GET("asset","serialID"),5000)
+ ' topic u/#username20#/#serialId106#/system
+ sc%=MQTTSubscribe("2","u/"+user$+"/"+SYS.GET("asset","serialID")+"/system",5000)
  IF sc% < 0 THEN
   PRINT "Subscribe to Ednme failed"
   EdConnect=sc%
@@ -32,9 +33,10 @@ FUNCTION EdConnect(user$, pass$)
 END FUNCTION
 
 ' Disconnect from Ednme web service and unsubscribe
-FUNCTION EdDisconnect()
+' user$   user
+FUNCTION EdDisconnect(user$)
  LOCAL sc%
- sc%=MQTTUnsubscribe("EMDO/devices/"+SYS.GET("asset","serial"),5000)
+ sc%=MQTTUnsubscribe("u/"+user$+"/"+SYS.GET("asset","serialID")+"/system",5000)
  IF sc% < 0 THEN
   ' We disconnect anyhow, this is just for being nice
   PRINT "Unsubscribe to Edmne failed" sc%
@@ -43,11 +45,33 @@ FUNCTION EdDisconnect()
  EdDisconnect=sc%
 END FUNCTION
 
+
+' Create Topic Name for webservice
+' user$ user
+' gadgetId$ gadget identifier created by webservice
+' gadgetTy$ gadget type, e.g. EMOB
+FUNCTION EdTopicNode$(user$,gadId$,gadTy$)
+ EdTopicNode$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/ws"
+END FUNCTION
+
+' Create Topic Name for node
+' user$ user
+' gadgetId$ gadget identifier created by webservice
+' gadgetTy$ gadget type, e.g. EMOB
+FUNCTION EdTopicWs$(user$,gadId$,gadTy$)
+ EdTopicWs$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/node"
+END FUNCTION
+
+
 ' Publish to Ednme web service
+' user$ user
+' gadgetId$ gadget identifier created by webservice
+' gadgetTy$ gadget type, e.g. EMOB
+' q$   quality
 ' msg$ message to publish
-FUNCTION EdPublish(msg$)
+FUNCTION EdPublish(user$,gadId$,gadTy$,q$,topic$,msg$)
  LOCAL sc%
- sc%=MQTTPublish("0","EMDO/devices/"+SYS.GET("asset","serial"),msg$,5000)
+ sc%=MQTTPublish(q$,EdTopicNode$(user$,gadId$,gadTy$),msg$,5000)
   IF sc% < 0 THEN  
   PRINT "Publish to Edmne failed" sc%
  ENDIF 
@@ -55,13 +79,16 @@ FUNCTION EdPublish(msg$)
 END FUNCTION
 
 ' Poll Subscription from Ednme web service
+' user$ user
+' gadgetId$ gadget identifier created by webservice
+' gadgetTy$ gadget type, e.g. EMOB
 ' q$       message quality
 ' topic$   message topic
 ' payload$ message payload
 ' return positive number of received messages or negative on error
-FUNCTION EdSubscription(q$,topic$,payload$)
+FUNCTION EdSubscription(user$,gadId$,gadTy$,q$,topic$,payload$)
  LOCAL sc%
- sc%=MQTTSubscription(q$,topic$,payload$)
+ sc%=MQTTSubscription(q$,EdTopicWs$(user$,gadId$,gadTy$),topic$,payload$)
  EdSubscription=sc%
 END FUNCTION
 
