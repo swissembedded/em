@@ -48,16 +48,16 @@ END FUNCTION
 
 ' Create Topic Name for webservice
 ' user$ user
-' gadgetId$ gadget identifier created by webservice
-' gadgetTy$ gadget type, e.g. EMOB
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
 FUNCTION EdTopicNode$(user$,gadId$,gadTy$)
  EdTopicNode$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/ws"
 END FUNCTION
 
 ' Create Topic Name for node
 ' user$ user
-' gadgetId$ gadget identifier created by webservice
-' gadgetTy$ gadget type, e.g. EMOB
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
 FUNCTION EdTopicWs$(user$,gadId$,gadTy$)
  EdTopicWs$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/node"
 END FUNCTION
@@ -65,11 +65,11 @@ END FUNCTION
 
 ' Publish to Ednme web service
 ' user$ user
-' gadgetId$ gadget identifier created by webservice
-' gadgetTy$ gadget type, e.g. EMOB
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
 ' q$   quality
 ' msg$ message to publish
-FUNCTION EdPublish(user$,gadId$,gadTy$,q$,topic$,msg$)
+FUNCTION EdPublish(user$,gadId$,gadTy$,q$,msg$)
  LOCAL sc%
  sc%=MQTTPublish(q$,EdTopicNode$(user$,gadId$,gadTy$),msg$,5000)
   IF sc% < 0 THEN  
@@ -80,15 +80,34 @@ END FUNCTION
 
 ' Poll Subscription from Ednme web service
 ' user$ user
-' gadgetId$ gadget identifier created by webservice
-' gadgetTy$ gadget type, e.g. EMOB
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
 ' q$       message quality
-' topic$   message topic
 ' payload$ message payload
 ' return positive number of received messages or negative on error
-FUNCTION EdSubscription(user$,gadId$,gadTy$,q$,topic$,payload$)
+FUNCTION EdSubscription(user$,gadId$,gadTy$,q$,payload$)
  LOCAL sc%
- sc%=MQTTSubscription(q$,EdTopicWs$(user$,gadId$,gadTy$),topic$,payload$)
+ sc%=MQTTSubscription(q$,EdTopicWs$(user$,gadId$,gadTy$),payload$)
  EdSubscription=sc%
 END FUNCTION
 
+' Generate JSON Key Value pair "key":"value"
+' key$ key
+' val$ value
+FUNCTION EdKVS$(key$,val$)
+ EdKVS$=chr$(34)+key$+chr$(34)+":"+chr$(34)+val$+chr$(34)
+END FUNCTION
+
+' Generate JSON Key Value pair "key":"value"
+' key$ key
+' val% value
+FUNCTION EdKVF$(key$,val%)
+ EdKVF$=chr$(34)+key$+chr$(34)+":"+str$(val%)
+END FUNCTION
+
+' Generate JSON Key Value pair "key":"value"
+' key$ key
+' val value
+FUNCTION EdKVI$(key$,val)
+ EdKVI$=chr$(34)+key$+chr$(34)+":"+str$(val)
+END FUNCTION
