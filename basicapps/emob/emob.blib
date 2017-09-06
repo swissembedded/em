@@ -40,8 +40,26 @@ FUNCTION EmobChargerStatus(user$,gadId$,gadTy$,chS$,caS$,aP$,er$,p,e,v,i,f)
  EmobChargerStatus=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
 END FUNCTION
 
-FUNCTION EmobReserveConfirm()
+' Confirm reservation to webservice
+' user$ user
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
+' rId$ Reservation Id
+' rS$ Reservation State
+FUNCTION EmobReserveConfirm(user$,gadId$,gadTy$,rId$,rS$)
+ local msg$
+ msg$="{"+EdKVS$("reservationId",rId$)+","+EdKVS$("reservationState",rS$)+"}"
+ EmobReserveConfirm=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
 END FUNCTION
 
-FUNCTION EmobReserveCancel()
+' Cancel reservation to webservice
+' user$ user
+' gadId$ gadget identifier created by webservice
+' gadTy$ gadget type, e.g. EMOB
+' rId$ Reservation Id
+FUNCTION EmobReserveCancel(user$,gadId$,gadTy$,rId$)
+ local msg$
+ msg$="{"+EdKVS$("reservationId",rId$)+"}"
+ EmobReserveCancel=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
 END FUNCTION
+
