@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ChargerCapability",
+  "description": "Communication from node to webservice with current charger capabilities",
+  "type": "object",
+  "properties": {
+    "plugType": {
+      "description": "Charger plug type",
+      "type": "string",
+      "enum": [
+        "TypIReceptable",
+        "TypIIReceptable",
+        "TypIPlug",
+        "TypIIPlug",
+        "ACReceptable"
+      ]
+    },
+    "chargerBrand": {
+      "description": "Charger brand",
+      "type": "string"
+    },
+    "chargerModel": {
+      "description": "Charger model",
+      "type": "string"
+    },
+    "maxPower": {
+      "description": "Charger maximal power in kWh",
+      "type": "number"
+    },
+    "minPower": {
+      "description": "Charger minimal power in kWh",
+      "type": "number"
+    },
+    "numOfPhase": {
+      "description": "Number of AC phases",
+      "type": "number"
+    }
+  },
+  "required": [
+    "chargerStatus"
+  ]
+}

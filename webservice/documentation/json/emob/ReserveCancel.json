@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ReservationCancel",
+  "description": "Communication from node to webservice or vice versa to cancel reservation immediately",
+  "type": "object",
+  "properties": {
+    "reservationId": {
+      "description": "Reservation Id for the charger",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reservationId",
+  ]
+}

@@ -209,3 +209,147 @@ FUNCTION OWForecastWeather( key$, pos$, lng$, unit$, cnt%, cb$)
  n%=HTTPClose(con%)	
  OWCurrentWeather=err%
 END FUNCTION
+
+' Read current weather
+' API documentation available at https://openweathermap.org/forecast5
+' key$ open weather key
+' pos$ position lat=35&lon=139 or id=2172797 or zip=94040,us or q=London,uk (iso3166 country code)
+' lng$ de, en, etc, pls see api description
+' unit$ imperial or metric
+' sunRise% sun rise
+' sunSet% sun set
+' wid% weather id
+' wcl$ weather text
+' wdesc$ weather description
+' wicon$ weather icon
+' teAv,teMin,teMax value, min, max
+' pr value in hPa 
+' hum value in %
+' wiSp in in meter per seconds
+' wiDir degrees
+' rain
+' cl
+' ti%
+' id%
+' name$
+
+FUNCTION OWCurrentWeather( key$, pos$, lng$, unit$,sunRise%,sunSet%,wid%,wcl$,wdesc$,wicon$,teAv,teMin,teMax,pr,hum,wiSp,wiDir,rain,cl,ti%,id%,name$)
+ LOCAL err%, n%, con%, lang$, units$, cnts$
+ lang$=""
+ IF lng$ <> "" THEN
+  lang$="&lang="+lng$
+ ENDIF
+ units$=""
+ IF unit$ <> "" THEN
+  units$="&units="+unit$
+ ENDIF
+ cnts$="&cnt="+str$(cnt%)
+ 'print "/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$
+ err%=HTTPRequest("api.openweathermap.org", 80, con%, "GET","/data/2.5/forecast?"+pos$+lang$+units$+"&appid="+key$+"&mode=xml"+cnts$, "", "" , 5000)
+ IF err% <0 THEN
+  print "open failed"
+  IF con% >=0 THEN n%=HTTPClose(con%)
+  OWCurrentWeather=err%
+  EXIT FUNCTION
+ ENDIF	
+ print "connection is" con%
+ ' Parse <sun rise="2017-01-28T06:56:59" set="2017-01-28T16:23:19"></sun>
+ LOCAL suna$(2) LENGTH 6 =("<sun ","</sun>","suns$"),suns$	
+ n%=StreamSearch(HTTPResponse(con%),"suna$", 5000)
+ 'print n%
+ IF n% <> 1 THEN
+ n%=HTTPClose(con%)
+ OWCurrentWeather=-2
+ EXIT FUNCTION		
+ ENDIF
+
+ LOCAL sunRise%,sunSet%
+ 'print suns$
+ sunRise%=TimeFromISO(HTTPGetValue$(suns$,"rise","", 0,0))
+ sunSet%=TimeFromISO(HTTPGetValue$(suns$,"set","", 0,0))
+ 'print sunRise% sunSet%
+
+ ' <time..
+ LOCAL timea$(2) LENGTH 20 = ("<time ",">","times$"),times$
+ ' <symbol..
+ LOCAL symbola$(2) LENGTH 20 = ("<symbol ","</symbol>","symbols$"), symbols$
+
+ ' <precipitation..
+ LOCAL precipitationa$(2) LENGTH 20 = ( "<precipitation ","</precipitation>","precipitations$"), precipitations$
+
+ ' <windDirection..
+ LOCAL windDirectiona$(2) LENGTH 20 = ("<windDirection ","</windDirection>","windDirections$"), windDirections$
+ 
+ ' <windSpeed..
+ LOCAL windSpeeda$(2) LENGTH 20 = ( "<windSpeed ","</windSpeed>","windSpeeds$"), windSpeeds$
+
+ ' <temperature..
+ LOCAL temperaturea$(2) LENGTH 20 = ( "<temperature ", "</temperature>", "temperatures$"), temperatures$
+
+ ' <pressure..
+ LOCAL pressurea$(2) LENGTH 20 = ( "<pressure ", "</pressure>", "pressures$") , pressures$
+
+ ' <humidity..
+ LOCAL humiditya$(2) LENGTH 20 = ( "<humidity ", "</humidity>", "humiditys$"), humiditys$
+
+ ' <clouds..
+ LOCAL cloudsa$(2) LENGTH 20 = ( "<clouds ","</clouds>","cloudss$"), cloudss$
+
+ LOCAL state%, idx%
+ state%=0
+ LOCAL tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$
+
+ ' read each time entry
+ FOR idx% = 1 TO cnt%
+  times$=""
+  symbols$=""
+  precipitations$=""
+  windDirections$=""
+  windSpeeds$=""
+  temperatures$=""
+  pressures$=""
+  humiditys$=""
+  cloudss$=""
+  n%=StreamSearch(HTTPReadToken(con%,"</time>",state%),"timea$", "symbola$", "precipitationa$", "windDirectiona$", "windSpeeda$", "temperaturea$", "pressurea$", "humiditya$", "cloudsa$", 5000)
+  IF n%<0 THEN       
+   err%=-n%
+   EXIT FOR      
+  ENDIF
+  tiFr%=TimeFromISO(HTTPGetValue$(times$,"from","",0,0))
+  tiTo%=TimeFromISO(HTTPGetValue$(times$,"to","",0,0))    
+  sym%=val(HTTPGetValue$(symbols$, "number","0",0,0))
+  symN$=HTTPGetValue$(symbols$,"name","",0,0)
+  symV$=HTTPGetValue$(symbols$,"var","",0,0)
+  pre=val(HTTPGetValue$(precipitations$,"value","0%",0,1))
+  preU$=HTTPGetValue$(precipitations$,"unit","",0,0)
+  preT$=HTTPGetValue$(precipitations$,"type","",0,0) 
+  wiDir=val(HTTPGetValue$(windDirections$,"deg","0",0,0))
+  wiDiC$=HTTPGetValue$(windDirections$,"code","",0,0)
+  wiDiN$=HTTPGetValue$(windDirections$,"name", "",0,0)
+  wiSp=val(HTTPGetValue$(windSpeeds$,"mps","0",0,0))
+  wiSpN$=HTTPGetValue$(windSpeeds$,"name","",0,0)
+  teAv=val(HTTPGetValue$(temperatures$,"value","0",0,0))
+  teMin=val(HTTPGetValue$(temperatures$,"min","0",0,0))
+  teMax=val(HTTPGetValue$(temperatures$,"max","0",0,0))
+  teU$=HTTPGetValue$(temperatures$,"unit","",0,0)
+  pr=val(HTTPGetValue$(pressures$,"value","0",0,0))
+  hum=val(HTTPGetValue$(humiditys$,"value","0",0,0))
+  cl=val(HTTPGetValue$(cloudss$,"all", "0",0,0))
+  clN$=HTTPGetValue$(cloudss$,"value", "",0,0)
+  ' Call this function for further analysis of the raw data
+  'print sunRise% sunSet% tiFr% tiTo% sym% symN$ symV$ pre preU$ preT$ wiDir wiDiC$ wiDiN$ wiSp wiSpN$ teAv teMin teMax teU$ pr hum cl clN$
+  IF Exists(cb$) >= 0 THEN
+   err%=CALL(cb$,sunRise%,sunSet%,tiFr%,tiTo%,sym%,symN$,symV$,pre,preU$,preT$,wiDir,wiDiC$,wiDiN$,wiSp,wiSpN$,teAv,teMin,teMax,teU$,pr,hum,cl,clN$)
+  ENDIF
+ NEXT idx%
+
+ IF err%>=0 THEN
+  cnt%=idx%
+  err%=0
+ ELSE
+  cnt%=0
+ ENDIF
+
+ n%=HTTPClose(con%)	
+ OWCurrentWeather=err%
+END FUNCTION

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ChargerControl",
+  "description": "Communication from webservice to node with current charger control command",
+  "type": "object",
+  "properties": {
+    "chargerControl": {
+      "description": "Charger operation state",
+      "type": "string",
+      "enum": [
+        "Idle",
+        "Start",
+        "Stop",
+        "Lock",
+        "Unlock",
+        "Maintenance",
+        "None"
+      ]
+    }
+  },
+  "required": [
+    "chargerControl"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ReservationCharger",
+  "description": "Communication from webservice to node with reservation request",
+  "type": "object",
+  "properties": {
+    "reservationId": {
+      "description": "Reservation Id for the charger",
+      "type": "string"
+    },
+    "reservationStart": {
+      "description": "Reservation start time iso date time",
+      "type": "string"
+    },
+    "reservationEnd": {
+      "description": "Reservation end time iso date time",
+      "type": "string"
+    },
+    "energy": {
+      "description": "Reservation Energy in kWh",
+      "type": "number"
+    }
+  },
+  "required": [
+    "reservationId",
+    "reservationStart",
+    "reservationEnd"
+  ]
+}

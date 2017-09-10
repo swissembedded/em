@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ReservationConfirm",
+  "description": "Communication from node to webservice with reservation accepted, rejected",
+  "type": "object",
+  "properties": {
+    "reservationId": {
+      "description": "Reservation Id for the charger",
+      "type": "string"
+    },
+    "reservationState": {
+      "description": "Result of the reservation",
+      "type": "string",
+      "enum": [
+        "Accepted",
+        "Rejected"
+      ]
+    }
+  },
+  "required": [
+    "reservationId",
+    "reservationState"
+  ]
+}
