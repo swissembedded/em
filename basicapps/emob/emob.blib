@@ -5,7 +5,6 @@
 ' @VERSION 1.0
 
 ' Send charger capability to webservice
-' user$ user
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 ' cT$ Charger Type
@@ -14,14 +13,13 @@
 ' cMax Charger minimal power
 ' cMin Charger maximal power
 ' cP% Charger number of phases
-FUNCTION EmobChargerCapability(user$,gadId$,gadTy$,cT$,cB$,cM$,cMax,cMin,cP%)
+FUNCTION EmobChargerCapability(gadId$,gadTy$,cT$,cB$,cM$,cMax,cMin,cP%)
  local msg$
  msg$="{"+EdKVS$("plugType",cT$)+","+EdKVS$("chargerBrand",cB$)+","+EdKVS$("chargerModel",cM$)+","+EdKVF$("maxPower",cMax)+","+EdKVF$("minPower",cMin)+","+EdKVI$("numOfPhase",cP%)+"}"
- EmobChargerCapability=EdPublish(user$,gadId$,gadTy$,"1",msg$)
+ EmobChargerCapability=EdPublish(gadId$,gadTy$,"1",msg$)
 END FUNCTION
 
 ' Send charger status to webservice
-' user$ user
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 ' chS$ Charger Status
@@ -33,11 +31,11 @@ END FUNCTION
 ' v Voltage
 ' i Current
 ' f Frequency
-FUNCTION EmobChargerStatus(user$,gadId$,gadTy$,chS$,caS$,aP$,er$,p,e,v,i,f)
+FUNCTION EmobChargerStatus(gadId$,gadTy$,chS$,caS$,aP$,er$,p,e,v,i,f)
  local msg$
- msg$="{"+EdKVS$("chargerStatus",chS$)+","+EdKVS$("cableState",caS$)+","+EdKVS$("availablePower",aP$)+","+EdKVF$("error",er$)+","
+ msg$="{"+EdKVS$("chargerStatus",chS$)+","+EdKVS$("cableState",caS$)+","+EdKVS$("availablePower",aP$)+","+EdKVS$("error",er$)+","
  msg$=msg$+EdKVF$("power",p)+","+EdKVF$("energy",e)+","+EdKVF$("voltage",v)+","+EdKVF$("current",i)+","+EdKVF$("frequency",f)+"}"
- EmobChargerStatus=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
+ EmobChargerStatus=EdPublish(gadId$,gadTy$,"1",msg$) 
 END FUNCTION
 
 ' Confirm reservation to webservice
@@ -46,7 +44,7 @@ END FUNCTION
 ' gadTy$ gadget type, e.g. EMOB
 ' rId$ Reservation Id
 ' rS$ Reservation State
-FUNCTION EmobReserveConfirm(user$,gadId$,gadTy$,rId$,rS$)
+FUNCTION EmobReserveConfirm(gadId$,gadTy$,rId$,rS$)
  local msg$
  msg$="{"+EdKVS$("reservationId",rId$)+","+EdKVS$("reservationState",rS$)+"}"
  EmobReserveConfirm=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
@@ -57,9 +55,9 @@ END FUNCTION
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 ' rId$ Reservation Id
-FUNCTION EmobReserveCancel(user$,gadId$,gadTy$,rId$)
+FUNCTION EmobReserveCancel(gadId$,gadTy$,rId$)
  local msg$
  msg$="{"+EdKVS$("reservationId",rId$)+"}"
- EmobReserveCancel=EdPublish(user$,gadId$,gadTy$,"1",msg$) 
+ EmobReserveCancel=EdPublish(gadId$,gadTy$,"1",msg$) 
 END FUNCTION
 

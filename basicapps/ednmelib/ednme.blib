@@ -12,21 +12,19 @@
 ' err%=EdPublish(msg$)
 
 ' Connect to Ednme web service
-' user$   user
-' pass$   password
 ' return negative on error
-FUNCTION EdConnect(user$, pass$)
+FUNCTION EdConnect()
  LOCAL sc%
- sc%=MQTTConnect(SYS.GET("ip","mqtt"), 1883, SYS.GET("asset","serialID"), "C0",user$,pass$,"","",5000)
+ sc%=MQTTConnectTLS(cdb("mqtt:server","mqtt.ednme.com"),cdb("mqtt:port",8883),SYS.GET("asset","serialID"),"C0",cdb("mqtt:cacrt","ca.crt"),cdb("mqtt:clicrt","client.crt"),cdb("mqtt:clikey","client.key"),cdb("mqtt:usr",""),cdb("mqtt:pw",""),"","",5000)
  IF sc% < 0 THEN
-  PRINT "Connect to Ednme failed"
+  PRINT "EDNME: Connect to Ednme failed"
   EdConnect=sc%
   EXIT FUNCTION
  ENDIF
  ' topic u/#username20#/#serialId106#/system
- sc%=MQTTSubscribe("2","u/"+user$+"/"+SYS.GET("asset","serialID")+"/system",5000)
+ sc%=MQTTSubscribe("2","u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/system",5000)
  IF sc% < 0 THEN
-  PRINT "Subscribe to Ednme failed"
+  PRINT "EDNME: Subscribe to Ednme failed"
   EdConnect=sc%
   EXIT FUNCTION
  ENDIF
@@ -34,45 +32,42 @@ FUNCTION EdConnect(user$, pass$)
 END FUNCTION
 
 ' Disconnect from Ednme web service and unsubscribe
-' user$   user
 ' return negative on error
-FUNCTION EdDisconnect(user$)
+FUNCTION EdDisconnect()
  LOCAL sc%
- sc%=MQTTUnsubscribe("u/"+user$+"/"+SYS.GET("asset","serialID")+"/system",5000)
+ sc%=MQTTUnsubscribe("u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/system",5000)
  IF sc% < 0 THEN
   ' We disconnect anyhow, this is just for being nice
-  PRINT "Unsubscribe to Edmne failed" sc%
+  PRINT "EDNME: Unsubscribe to Edmne failed" sc%
  ENDIF 
  sc%=MQTTDisconnect(5000)
  EdDisconnect=sc%
 END FUNCTION
 
 ' Publish to Ednme web service
-' user$ user
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 ' q$   quality
 ' msg$ message to publish
 ' return negative on error
-FUNCTION EdPublish(user$,gadId$,gadTy$,q$,msg$)
+FUNCTION EdPublish(gadId$,gadTy$,q$,msg$)
  LOCAL sc%
- sc%=MQTTPublish(q$,EdTopicNode$(user$,gadId$,gadTy$),msg$,5000)
+ sc%=MQTTPublish(q$,EdTopicNode$(gadId$,gadTy$),msg$,5000)
   IF sc% < 0 THEN  
-  PRINT "Publish to Edmne failed" sc%
+  PRINT "EDNME: Publish to Edmne failed" sc%
  ENDIF 
  EdPublish=sc%
 END FUNCTION
 
 ' Subscribe from Ednme web service
-' user$ user
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 ' q$       message quality
 ' payload$ message payload
 ' return negative on error
-FUNCTION EdSubscribe(user$,gadId$,gadTy$,q$)
+FUNCTION EdSubscribe(gadId$,gadTy$,q$)
  LOCAL sc%
- sc%=MQTTSubscribe(q$,EdTopicWs$(user$,gadId$,gadTy$),5000)
+ sc%=MQTTSubscribe(q$,EdTopicWs$(cdb("mqtt:usr",""),gadId$,gadTy$),5000)
  EdSubscribe=sc%
 END FUNCTION
 
@@ -81,9 +76,7 @@ END FUNCTION
 ' payload$ message payload
 ' return positive number of received messages or negative on error
 FUNCTION EdSubscription(q$,topic$,payload$)
- LOCAL sc%
- sc%=MQTTSubscription(q$,topic$,payload$)
- EdSubscription=sc%
+ EdSubscription=MQTTSubscription(q$,topic$,payload$)
 END FUNCTION
 
 ' Generate JSON Key Value pair "key":"value"
@@ -107,18 +100,16 @@ FUNCTION EdKVI$(key$,val)
  EdKVI$=chr$(34)+key$+chr$(34)+":"+str$(val)
 END FUNCTION
 
-' Create Topic Name for webservice
-' user$ user
+' Create Topic Name to be send by node
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
-FUNCTION EdTopicNode$(user$,gadId$,gadTy$)
- EdTopicNode$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/ws"
+FUNCTION EdTopicNode$(gadId$,gadTy$)
+ EdTopicNode$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/node"
 END FUNCTION
 
-' Create Topic Name for node
-' user$ user
+' Create Topic Name to be send by webservice
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
-FUNCTION EdTopicWs$(user$,gadId$,gadTy$)
- EdTopicWs$="u/"+user$+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/node"
+FUNCTION EdTopicWs$(gadId$,gadTy$)
+ EdTopicWs$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/ws"
 END FUNCTION
