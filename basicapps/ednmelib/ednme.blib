@@ -104,12 +104,12 @@ END FUNCTION
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 FUNCTION EdTopicNode$(gadId$,gadTy$)
- EdTopicNode$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/node"
+ EdTopicNode$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadId$+"/"+gadTy$+"/node"
 END FUNCTION
 
 ' Create Topic Name to be send by webservice
 ' gadId$ gadget identifier created by webservice
 ' gadTy$ gadget type, e.g. EMOB
 FUNCTION EdTopicWs$(gadId$,gadTy$)
- EdTopicWs$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadgetId$+"/"+gadgetTy$+"/ws"
+ EdTopicWs$="u/"+cdb("mqtt:usr","")+"/"+SYS.GET("asset","serialID")+"/"+gadId$+"/"+gadTy$+"/ws"
 END FUNCTION
