@@ -2815,7 +2815,7 @@ END FUNCTION
 ' tp%     type of the packet (from callback eoRxD2)
 ' da$     data array
 ' oda$    optional data array
-' xx%     type 00, 01, 02
+' xx%     type 00, 01, .., 1E
 ' co2	  concentration 1 LSB = 7.84ppm Or 1 LSB=19.6ppm, 0..2000 (or 5000)ppm
 ' hum     humidity 1 LSB=0.5%
 ' temp    temperature 1 LSB=0.2°C, 0..+51°C
@@ -2834,7 +2834,7 @@ FUNCTION eoRxD204xx(tp%,da$,oda$,xx%,co2,hum,temp,dn%,ba%)
  temp=-1
  dn%=-1
  ba%=-1
- IF xx%>=&H00 OR xx%<=&H1E THEN
+ IF xx%>=&H00 AND xx%<=&H1E THEN
   co2=(2000.0/255.0)*db3%
   hum=(100.0/200.0)*db2%
   temp=(51.0/255.0)*db1%
@@ -2853,7 +2853,7 @@ END FUNCTION
 ' tp%     type of the packet (from callback eoRxD2)
 ' da$     data array
 ' oda$    optional data array
-' xx%     type 00, 01, 02
+' xx%     type 00
 ' cmd%    command ID 1: Go to Position and Angle, 2: Stop, 3: Query Position and Angle, 4: Reply Position and Angle, 5: Set parameters
 ' pos%    position 0..100: 0..100%, 127: do not change
 ' ang%    rotation angle 0..100: 0..100%, 127: do not change
@@ -2909,6 +2909,29 @@ FUNCTION eoRxD205xx(tp%,da$,oda$,xx%,cmd%,pos%,ang%,repo%,lock%,chn%,vert%,rot%,
   EXIT FUNCTION
  ENDIF 
  eoRxD205xx=0
+END FUNCTION
+
+ ' Callback eoRxD2 helper function for Multisensor Window Handle
+
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$    optional data array
+' xx%     type 01
+
+FUNCTION eoRxD205xx(tp%,da$,oda$,xx%)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD206xx=-1
+  EXIT FUNCTION
+ ENDIF
+
+ELSE
+  ' unknown type
+  eoRxD206xx=-2
+  EXIT FUNCTION
+ ENDIF 
+ eoRxD206xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
