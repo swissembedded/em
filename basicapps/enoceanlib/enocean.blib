@@ -2918,7 +2918,7 @@ END FUNCTION
 ' oda$    optional data array
 ' xx%     type 01
 
-FUNCTION eoRxD205xx(tp%,da$,oda$,xx%)
+FUNCTION eoRxD206xx(tp%,da$,oda$,xx%)
  LOCAL n%,id%
  n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
  IF n% < 0 THEN
