@@ -2911,24 +2911,155 @@ FUNCTION eoRxD205xx(tp%,da$,oda$,xx%,cmd%,pos%,ang%,repo%,lock%,chn%,vert%,rot%,
  eoRxD205xx=0
 END FUNCTION
 
- ' Callback eoRxD2 helper function for Multisensor Window Handle
-
+' Callback eoRxD2 helper function for Multisensor Window Handle
+' D2-06-01  Multisensor Window Handle Alarm, Position Sensor, Vacation Mode, Optional Sensors
 ' tp%     type of the packet (from callback eoRxD2)
 ' da$     data array
 ' oda$    optional data array
 ' xx%     type 01
-
-FUNCTION eoRxD206xx(tp%,da$,oda$,xx%)
+' mt%     message type 00: Sensor Values, 10: Configuration Report, 20: Log Data 01, 22: Log Data 03
+'             23: Log Data 04, 80: Control and Settings
+' bal%    burglary alarm 0x0: Burglary Alarm Not Triggered,      0x1: Burglary Alarm Triggered, 
+'             0x2...0xD:Reserved,    0xE: Supported + Invalid,   0xF: Not Supported
+' ppal%   protection plus alarm 0x0: Protection Plus Alarm Not Triggered,      0x1: Protection Plus Alarm Triggered, 
+'             0x2..0xD: Reserved,           0xE: Supported + Invalid,          0xF: Not Supported
+' hp%     handle position   0x0: Handle Position Undefined,       0x1: Handle Up,          0x2: Handle Down,     0x3: Handle Left,     
+'             0x4: Handle Right,         0x5..0xD:Reserved,       0xE: Supported+Invalid,  0xF: Not Supported
+' ws%     window state 0x0: Window State Undefined,     0x1: Window Not Tilted,        0x2: Window Tilted, 
+'             0x3...0xD: Reserved,                      0xE: Supported + Invalid,      0xF: Not Supported
+' br%     button right 0x0: No Change,      0x1: Button Pressed,   0x2: Button Released,    0x3...0xD:Reserved, 
+'             0xE: Supported + Invalid,     0xF: Not Supported
+' bl%     button left 0x0: No Change,       0x1: Button Pressed,   0x2: Button Released,    0x3...0xD:Reserved, 
+'             0xE: Supported + Invalid,     0xF: Not Supported
+' m%      motion 0x0: Motion Not Triggered, 0x1: Motion Triggered, 0x2...0xD:Reserved,      0xE: Supported + Invalid, 
+'             0xF: Not Supported
+' v%      vacation mode 0x0: No Change,     0x1: Vacation Mode Locally Switched On,         0x2: Vacation Mode Locally Switched, Off, 
+'             0x3..0xD: Reserved,           0xE: Supported + Invalid,                       0xF: Not Supported
+' t%      temperature 0..250: -20..+60 °C,  251..253: Reserved,  254: Supported+Invalid,    255: Not Supported
+' h%      humidity 0...200: 0..100%,        201...253:Reserved,  254: Supported + Invalid,  255: Not Supported
+' i%      illumination 0..60000:0..60000lx, 60001: Over Range,   60002...65533: Reserved,   65534: Supported + Invalid, 
+'             65535: Not Supported
+' bs%     battery state 0..20:0..100%, 21..31:Reserved
+' mvr%    vacation mode 0x0:Vacation Mode is Off, 0x1:Vacation Mode is On
+' hccr%   handle closed click 0x0: Handle Closed Click Feature is Disabled, 0x1: Handle Closed Click Feature is Enabled
+' blcr%   battery low click   0x0: Battery Low Click Feature is Disabled,   0x1: Battery Low Click Feature is Enabled
+' suir%   sensor update interval 0x0000..0x0004:Reserved, 0x0005..0xFFFF: 5..65535s, 0x00...0x02:Reserved, 0x03..0xFF: 3..255s
+' vbir%   vacation blink interval 0x00..0x02:Reserved, 0x03..0xFF: 3..255s0
+' pon%    power ons 
+' all%    alarms
+' hmc%    handle movenments closed
+' hmo%    handle movenments open
+' hmt%    handle movenments titled
+' wt%     window tilts
+' brp%    button right presses
+' blp%    button left presses
+' gcs%    get configuration settings 0x0: No Change, 0x1: Start Transmission
+' gld%    get log data 0x0: No Change, 0x1: Start Transmission
+' vms%    vacation mode 0x0:Switch Vacation Mode Off, 0x1:Switch Vacation Mode On
+' hccs%   handle closed click 0x0: No Change,           0x1: Disable Handle Closed Click Feature,     
+'             0x2: Enable Handle Closed Click Feature,  0x3: Reserved
+' blcs%   battery low click  0x0: No Change,            0x1: Disable Battery Low Click Feature, 
+'             0x2: Enable Battery Low Click Feature,    0x3:Reserved
+' suis%   sensor update interval 0x0000: No Change,     0x0001..0x0004: Reserved,      0x0005..0xFFFF: 5..65535s
+' vbis%   vacation blink interval 0x00: No Change,      0x01...0x02: Reserved,         0x03..0xFF: 3..255s
+FUNCTION eoRxD206xx(tp%,da$,oda$,xx%,mt%,bal%,ppal%,hp%,ws%,br%,bl%,m%,v%,t%,h%,i%,bs%,mvr%,hccr%,blcr%,suir%,vbir%,pon%,all%,hmc%,hmo%,hmt%,wt%,brp%,blp%,gcs%,gld%,vms%,hccs%,blcs%,suis%,vbis%)
  LOCAL n%,id%
  n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
  IF n% < 0 THEN
   eoRxD206xx=-1
   EXIT FUNCTION
  ENDIF
-
-ELSE
+ mt%=-1
+ bal%=-1
+ ppal%=-1
+ hp%=-1
+ ws%=-1
+ br%=-1
+ bl%=-1
+ m%=-1
+ v%=-1
+ t%=-1
+ h%=-1
+ i%=-1
+ bs%=-1
+ mvr%=-1
+ hccr%=-1
+ blcr%=-1
+ suir%=-1
+ vbir%=-1
+ pon%=-1
+ all%=-1
+ hmc%=1
+ hmo%=-1
+ hmt%=-1
+ wt%=-1
+ brp%=-1
+ blp%=-1
+ gcs%=-1
+ gld%=-1
+ vms%=-1
+ hccs%=-1
+ blcs%=-1
+ suis%=-1
+ vbis%=-1
+ IF xx%=&H01 THEN
+  IF mt%=&H00 THEN
+   mt%=db9%
+   bal%=(db8% AND 240)/16
+   ppal%=db8% AND 15
+   hp%=(db7% AND 240)/16
+   ws%=db7% AND 15
+   br%=(db6% AND 240)/16
+   bl%=db6% AND 15
+   m%=(db5% AND 240)/16
+   v%=db5% AND 15
+   t%=db4%
+   h%=db3%
+   i%=(db2%*256)+dn1%
+   bs%=(db0% AND 248)/80
+  ELSE IF mt%=&H01 THEN
+   mt%=db4%
+   vmr%=(db3% AND 128)/128
+   hccr%=(db3% AND 64)/64
+   blcr%=(db3% AND 32)/32
+   suir%=(db2%*256)+db1%
+   vbir%=db0%
+  ELSE IF mt%=&H02 THEN
+   mt%=db8%
+   pon%=(db7%*2^24)+(db6%*65536)+(db5%*256)+db4%
+   all%=(db3%*2^24)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF mt%=&H21 THEN
+   mt%=db12%
+   hmc%=(db11%*2^24)+(db10%*65536)+(db9%*256)+db8%
+   hmo%=(db7%*2^24)+(db6%*65536)+(db5%*256)+db4%
+   hmt%=(db3%*2^24)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF mt%=&H03 THEN
+   mt%=db4%
+   wt%=(db3%*2^24)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF mt%=&H23 THEN
+   mt%=db4%
+   wt%=(db3%*2^24)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF mt%=&H04 THEN
+   mt%=db8%
+   brp%=(db7%*2^24)+(db6%*65536)+(db5%*256)+db4%
+   blp%=(db3%*2^24)+(db2%*65536)+(db1%*256)+db0%
+  ELSE IF mt%=&H80 THEN
+   mt%=db4%
+   gcs%=(db3% AND 128)/128
+   gld%=(db3% AND 64)/64
+   vns%=(db3% AND 32)/32
+   hccs%=(db3% AND 24)/8
+   blcs%=(db3% AND 6)/2
+   suis%=(db2%*256)+db1%
+   vbis%=db0%
+  ELSE
+   ' unknown message type
+   eoRxD206xx=-2
+   EXIT FUNCTION
+  END IF
+ ELSE
   ' unknown type
-  eoRxD206xx=-2
+  eoRxD206xx=-3
   EXIT FUNCTION
  ENDIF 
  eoRxD206xx=0
