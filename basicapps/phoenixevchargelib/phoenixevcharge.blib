@@ -53,6 +53,7 @@ END FUNCTION
 ' tch%  charging time [s]
 FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%, st$, prox%, tch%)
  LOCAL err%, reG$, reD$, reC$, reR$, dip%
+ __cmb 
  ' Read EV Status
  err%= mbFunc(itf$,slv%,4,100,8,reG$,500)
  IF err% THEN
