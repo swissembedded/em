@@ -60,7 +60,7 @@ FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
  n%=SocketWrite( con%, "failsafe "+str$(tmo%)+" "+str$(maxcur%)+" "+str$(sv%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAFailsafe=-2
   EXIT FUNCTION  
  ENDIF
@@ -401,7 +401,7 @@ FUNCTION KEBAEnable( server$, en%)
  n%=SocketWrite( con%, "ena "+str$(en%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAEnable=-2
   EXIT FUNCTION  
  ENDIF
@@ -424,7 +424,7 @@ FUNCTION KEBACurrent( server$, cur%)
  n%=SocketWrite( con%, "curr "+str$(cur%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBACurrent=-2
   EXIT FUNCTION  
  ENDIF
@@ -447,7 +447,7 @@ FUNCTION KEBAOutput( server$, out%)
  n%=SocketWrite( con%, "output "+str$(out%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAOutput=-2
   EXIT FUNCTION  
  ENDIF
@@ -471,7 +471,7 @@ FUNCTION KEBACurrentTime( server$, cur%, dly%)
  n%=SocketWrite( con%, "currtime "+str$(cur%)+" "+str$(dly%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBACurrentTime=-2
   EXIT FUNCTION  
  ENDIF
@@ -494,7 +494,7 @@ FUNCTION KEBAEnergy( server$, egy%)
  n%=SocketWrite( con%, "setenergy "+str$(egy%))
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAEnergy=-2
   EXIT FUNCTION  
  ENDIF
@@ -518,7 +518,7 @@ FUNCTION KEBAStart( server$, tag$, clss$)
  n%=SocketWrite( con%, "start "+tag$+" "+clss$)
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAStart=-2
   EXIT FUNCTION  
  ENDIF
@@ -541,7 +541,7 @@ FUNCTION KEBAStop( server$, tok$)
  n%=SocketWrite( con%, "stop "+tok$)
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAStop=-2
   EXIT FUNCTION  
  ENDIF
@@ -567,7 +567,8 @@ FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
  n%=SocketWrite( con%, "display "+str$(act%)+" "+str$(min%)+" "+str$(max%)+" 0 "+txt$)
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ print rsp$
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBADisplay=-2
   EXIT FUNCTION  
  ENDIF
@@ -590,7 +591,7 @@ FUNCTION KEBAUnlock( server$)
  n%=SocketWrite( con%, "unlock")
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- IF rsp$="" OR mid$(rsp$,6,2)<>"OK" THEN
+ IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAUnlock=-2
   EXIT FUNCTION  
  ENDIF
