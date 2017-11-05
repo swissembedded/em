@@ -24,14 +24,16 @@
 ' info$ firmware and model info
 ' return value < 0 on error
 FUNCTION KEBAInfo( server$, info$)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "i", cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAInfo=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "i")
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" THEN
   KEBAInfo=-2
   EXIT FUNCTION  
@@ -48,14 +50,16 @@ END FUNCTION
 ' sv% 0=enable until next startup of charger, 1=enable failsafe at startup of charger
 ' return value < 0 on error
 FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "failsafe "+str$(tmo%)+" "+str$(maxcur%)+" "+str$(sv%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAFailsafe=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "failsafe "+str$(tmo%)+" "+str$(maxcur%)+" "+str$(sv%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAFailsafe=-2
   EXIT FUNCTION  
@@ -73,30 +77,35 @@ END FUNCTION
 ' com% communication module installed(P30 only)
 ' sec% current clock (P30 only)
 ' return value < 0 on error
-FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$)
- LOCAL err%, n%, m%, cons%, rsp$
- err%=KEBATx(server$, "report", cons%)
- IF cons% < 0 THEN
+FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
+ LOCAL err%, n%, m%, con%, rsp$
+ LOCAL coms$, secs$
+
+ LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34),chr$(34),"id$")
+ LOCAL proda$(2) LENGTH 20 = (chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34),chr$(34),"prod$")
+ LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34),chr$(34),"ser$")
+ LOCAL firma$(2) LENGTH 20 = (chr$(34)+"Firmware"+chr$(34)+": "+chr$(34),chr$(34),"firm$")
+ ' P30 only
+ LOCAL coma$(2) LENGTH 20 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
+ LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAReport1=-1
   EXIT FUNCTION
  ENDIF
- LOCAL coms$, secs$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34),chr$(34),"id$")
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "report")
+ 
  id$=""
- LOCAL proda$(2) LENGTH 20 = (chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34),chr$(34),"prod$")
  prod$=""
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34),chr$(34),"ser$")
  ser$=""
- LOCAL firma$(2) LENGTH 20 = (chr$(34)+"Firmware"+chr$(34)+": "+chr$(34),chr$(34),"firm$")
  firm$=""
- ' P30 only
- LOCAL coma$(2) LENGTH 20 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
  coms$="0"
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
 
- n%=StreamSearch(SocketRead(cons%),"ida$","proda$","sera$","firma$","coma$","seca$",5000)
- m%=SocketClose( cons% )
+ n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$","coma$","seca$",5000)
+ m%=SocketClose( con% )
 
  IF n% <> 15 AND n% <> 63 THEN
   KEBAReport1=-2
@@ -132,58 +141,65 @@ END FUNCTION
 ' sec% system clock since wallbox start
 ' return value < 0 on error
 FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,maxcurp%,curhw%,curusr%,curfs%,tmofs%,curtim%,tmoct%,se%,out%,inp%,ser$,sec%)
- LOCAL err%, n%, m%, cons%, rsp$
- err%=KEBATx(server$, "report 2", cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, m%, con%, rsp$
+ LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL sta$(2) LENGTH 20 = (chr$(34)+"State"+chr$(34)+": ", ",", "sts$")
+ LOCAL erra1$(2) LENGTH 20 = (chr$(34)+"Error1"+chr$(34)+": ", ",", "errs1$")
+ LOCAL erra2$(2) LENGTH 20 = (chr$(34)+"Error2"+chr$(34)+": ", ",", "errs2$")
+ LOCAL pluga$(2) LENGTH 20 = (chr$(34)+"Plug"+chr$(34)+": ", ",", "plugs$")
+ LOCAL ensysa$(2) LENGTH 20 = (chr$(34)+"Enable sys"+chr$(34)+": ", ",", "ensyss$")
+ LOCAL enusera$(2) LENGTH 20 = (chr$(34)+"Enable user"+chr$(34)+": ", ",", "enusers$")
+ LOCAL maxcura$(2) LENGTH 20 = (chr$(34)+"Max curr"+chr$(34)+": ", ",", "maxcurs$")
+ LOCAL maxcurpa$(2) LENGTH 20 = (chr$(34)+"Max curr %"+chr$(34)+": ", ",", "maxcurps$")
+ LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW"+chr$(34)+": ", ",", "curhws$")
+ LOCAL curusra$(2) LENGTH 20 = (chr$(34)+"Curr user"+chr$(34)+": ", ",", "curusrs$")
+ LOCAL curfsa$(2) LENGTH 20 = (chr$(34)+"Curr FS"+chr$(34)+": ", ",", "curfss$")
+ LOCAL tmofsa$(2) LENGTH 20 = (chr$(34)+"Tmo FS"+chr$(34)+": ", ",", "tmofss$")
+ LOCAL curtima$(2) LENGTH 20 = (chr$(34)+"Curr timer"+chr$(34)+": ", ",", "curtims$")
+ LOCAL tmocta$(2) LENGTH 20 = (chr$(34)+"Tmo CT"+chr$(34)+": ", ",", "tmocts$")
+ LOCAL sea$(2) LENGTH 20 = (chr$(34)+"Setenergy"+chr$(34)+": ", ",", "ses$")
+ LOCAL outa$(2) LENGTH 20 = (chr$(34)+"Output"+chr$(34)+": ", ",", "outs$")
+ LOCAL inpa$(2) LENGTH 20 = (chr$(34)+"Input"+chr$(34)+": ", ",", "inps$")
+ LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+
+ LOCAL ids$,sts$,errs1$,errs2$,plugs$,ensyss$,enusers$
+ LOCAL maxcurs$,maxcurps$,curhws$,curusrs$,curfss$
+ LOCAL tmofss$,curtims$,tmocts$,ses$,outs$,inps$,sers$,secs$
+
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAReport2=-1
   EXIT FUNCTION
  ENDIF
- LOCAL ids$, sts$, errs1$, errs2$, plugs$, ensyss$, enusers$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "report 2")
+ 
  id$=""
- LOCAL sta$(2) LENGTH 20 = (chr$(34)+"State"+chr$(34)+": ", ",", "sts$")
  sts$="0"
- LOCAL erra1$(2) LENGTH 20 = (chr$(34)+"Error1"+chr$(34)+": ", ",", "errs1$")
  errs1$="0"
- LOCAL erra2$(2) LENGTH 20 = (chr$(34)+"Error2"+chr$(34)+": ", ",", "errs2$")
  errs2$="0"
- LOCAL pluga$(2) LENGTH 20 = (chr$(34)+"Plug"+chr$(34)+": ", ",", "plugs$")
  plugs$="0"
- LOCAL ensysa$(2) LENGTH 20 = (chr$(34)+"Enable sys"+chr$(34)+": ", ",", "ensyss$")
  ensyss$="0"
- LOCAL enusera$(2) LENGTH 20 = (chr$(34)+"Enable user"+chr$(34)+": ", ",", "enusers$")
  enusers$="0"
- LOCAL maxcura$(2),maxcurs$,maxcurpa$(2),maxcurps$,curhwa$(2),curhws$,curusra$(2),curusrs$,curfsa$(2),curfss$
- LOCAL maxcura$(2) LENGTH 20 = (chr$(34)+"Max curr"+chr$(34)+": ", ",", "maxcurs$")
+
  maxcurs$="0"
- LOCAL maxcurpa$(2) LENGTH 20 = (chr$(34)+"Max curr %"+chr$(34)+": ", ",", "maxcurps$")
  maxcurps$="0"
- LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW"+chr$(34)+": ", ",", "curhws$")
  curhws$="0"
- LOCAL curusra$(2) LENGTH 20 = (chr$(34)+"Curr user"+chr$(34)+": ", ",", "curusrs$")
  curusrs$="0"
- LOCAL curfsa$(2) LENGTH 20 = (chr$(34)+"Curr FS"+chr$(34)+": ", ",", "curfss$")
  curfss$="0"
- LOCAL tmofss$, curtims$,tmocts$, ses$, outs$,inps$, sers$, secs$
- LOCAL tmofsa$(2) LENGTH 20 = (chr$(34)+"Tmo FS"+chr$(34)+": ", ",", "tmofss$")
+
  tmofss$="0"
- LOCAL curtima$(2) LENGTH 20 = (chr$(34)+"Curr timer"+chr$(34)+": ", ",", "curtims$")
  curtims$="0"
- LOCAL tmocta$(2) LENGTH 20 = (chr$(34)+"Tmo CT"+chr$(34)+": ", ",", "tmocts$")
  tmocts$="0"
- LOCAL sea$(2) LENGTH 20 = (chr$(34)+"Setenergy"+chr$(34)+": ", ",", "ses$")
  ses$="0"
- LOCAL outa$(2) LENGTH 20 = (chr$(34)+"Output"+chr$(34)+": ", ",", "outs$")
  outs$="0"
- LOCAL inpa$(2) LENGTH 20 = (chr$(34)+"Input"+chr$(34)+": ", ",", "inps$")
  inps$="0"
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
  
- n%=StreamSearch(SocketRead(cons%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
- m%=SocketClose( cons% )
+ n%=StreamSearch(SocketRead(con%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
+ m%=SocketClose( con% )
 
  IF n% <> 2097151 AND n% <> 262143 THEN
   KEBAReport2=-2
@@ -229,43 +245,50 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%)
  LOCAL err%, n%, m%, con%, rsp$
- err%=KEBATx(server$, "report 3", cons%)
- IF cons% < 0 THEN
+ LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL Ua1$(2) LENGTH 20 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
+ LOCAL Ua2$(2) LENGTH 20 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
+ LOCAL Ua3$(2) LENGTH 20 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
+ LOCAL Ia1$(2) LENGTH 20 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
+ LOCAL Ia2$(2) LENGTH 20 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
+ LOCAL Ia3$(2) LENGTH 20 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
+ LOCAL Pa$(2) LENGTH 20 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
+ LOCAL PFa$(2) LENGTH 20 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
+ LOCAL Ea$(2) LENGTH 20 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
+ LOCAL Etota$(2) LENGTH 20 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
+ LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) length 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+ 
+ LOCAL Us1$, Us2$, Us3$
+ LOCAL Is1$, Is2$, Is3$
+ LOCAL Ps$, PFs$, Es$, Etots$
+ LOCAL secs$
+ 
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAReport3=-1
   EXIT FUNCTION
  ENDIF
- LOCAL Us1$, Us2$, Us3$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "report 3")
+
  id$=""
- LOCAL Ua1$(2) LENGTH 20 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
  Us1$="0"
- LOCAL Ua2$(2) LENGTH 20 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
  Us2$="0"
- LOCAL Ua3$(2) LENGTH 20 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
  Us3$="0"
- LOCAL Is1$, Is2$, Is3$
- LOCAL Ia1$(2) LENGTH 20 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
+
  Is1$="0"
- LOCAL Ia2$(2) LENGTH 20 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
  Is2$="0"
- LOCAL Ia3$(2) LENGTH 20 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
  Is3$="0"
- LOCAL Ps$, PFs$, Es$, Etots$
- LOCAL Pa$(2) LENGTH 20 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
  Ps$="0"
- LOCAL PFa$(2) LENGTH 20 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
  PFs$="0"
- LOCAL Ea$(2) LENGTH 20 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
  Es$="0"
- LOCAL Etota$(2) LENGTH 20 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
  Etots$="0"
- LOCAL secs$
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- LOCAL seca$(2) length 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
- n%=StreamSearch(SocketRead(cons%),"ida$","Ua1$","Ua2$","Ua3$","Ia1$","Ia2$","Ia3$","Pa$","PFa$","Ea$","Etota$","sera$","seca$",5000)
- m%=SocketClose( cons% )
+ n%=StreamSearch(SocketRead(con%),"ida$","Ua1$","Ua2$","Ua3$","Ia1$","Ia2$","Ia3$","Pa$","PFa$","Ea$","Etota$","sera$","seca$",5000)
+ m%=SocketClose( con% )
+
  IF n% <> 16383 THEN
   KEBAReport3=-2
   EXIT FUNCTION
@@ -302,42 +325,48 @@ END FUNCTION
 ' sec% system clock since wallbox start
 ' return value < 0 on error
 FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, started%, ended%, reason%, tag$, clss$, ser$, sec%)
- LOCAL err%, n%, m%, cons%, rsp$
- err%=KEBATx(server$, "report "+str$(100+off%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, m%, con%, rsp$
+ LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL sessa$(2) LENGTH 20 = (chr$(34)+"Session ID"+chr$(34)+": ", "}", "sesss$")
+ LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW   "+chr$(34)+": ", ",", "curhws$")
+ LOCAL estarta$(2) LENGTH 20 = (chr$(34)+"E Start   "+chr$(34)+": ", ",", "estarts$")
+ LOCAL epresa$(2) LENGTH 20 = (chr$(34)+"E Pres    "+chr$(34)+": ", ",", "epress$")
+ LOCAL starteda$(2) LENGTH 20 = (chr$(34)+"started[s]"+chr$(34)+": ", ",", "starteds$")
+ LOCAL endeda$(2) LENGTH 20 = (chr$(34)+"ended[s]  "+chr$(34)+": ", ",", "endeds$")
+ LOCAL reasona$(2) LENGTH 20 = (chr$(34)+"reason "+chr$(34)+": ", ",", "reasons$")
+ LOCAL taga$(2) LENGTH 20 = (chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34), chr$(34), "tag$")
+ LOCAL clssa$(2) LENGTH 20 = (chr$(34)+"RFID class"+chr$(34)+": "+chr$(34), chr$(34), "clss$")
+ LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+
+ LOCAL sesss$, curhws$, estarts$, epress$
+ LOCAL starteds$, endeds$
+ LOCAL reasons$, clsss$
+ LOCAL secs$
+
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAReport100=-1
   EXIT FUNCTION
  ENDIF
- LOCAL estarts$, epress$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "report "+str$(100+off%))
+
  id$=""
- LOCAL sessa$(2) LENGTH 20 = (chr$(34)+"Session ID"+chr$(34)+": ", "}", "sesss$")
  sesss$="0"
- LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW   "+chr$(34)+": ", ",", "curhws$")
  curhws$="0"
- LOCAL estarta$(2) LENGTH 20 = (chr$(34)+"E Start   "+chr$(34)+": ", ",", "estarts$")
  estarts$="0"
- LOCAL epresa$(2) LENGTH 20 = (chr$(34)+"E Pres    "+chr$(34)+": ", ",", "epress$")
  epress$="0"
- LOCAL starteds$, endeds$
- LOCAL starteda$(2) LENGTH 20 = (chr$(34)+"started[s]"+chr$(34)+": ", ",", "starteds$")
+
  starteds$="0"
- LOCAL endeda$(2) LENGTH 20 = (chr$(34)+"ended[s]  "+chr$(34)+": ", ",", "endeds$")
  endeds$="0"
- LOCAL reasons$, clsss$
- LOCAL reasona$(2) LENGTH 20 = (chr$(34)+"reason "+chr$(34)+": ", ",", "reasons$")
  reasons$="0"
- LOCAL taga$(2) LENGTH 20 = (chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34), chr$(34), "tag$")
  tag$=""
- LOCAL clssa$(2) LENGTH 20 = (chr$(34)+"RFID class"+chr$(34)+": "+chr$(34), chr$(34), "clss$")
  clss$=""
- LOCAL secs$
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  ser$=""
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  secs$="0"
- n%=StreamSearch(SocketRead(cons%),"ida$","sessa$","curhwa$", "estarta$", "epresa$", "starteda$","endeda$", "reasona$","taga$","clssa$", "sera$","seca$", 5000)
- m%=SocketClose( cons% )
+ n%=StreamSearch(SocketRead(con%),"ida$","sessa$","curhwa$", "estarta$", "epresa$", "starteda$","endeda$", "reasona$","taga$","clssa$", "sera$","seca$", 5000)
+ m%=SocketClose( con% )
 
  IF n% <> 8191 THEN
   KEBAReport100=-2
@@ -362,14 +391,16 @@ END FUNCTION
 ' en% enable or disable 0=disabled, 1=enabled
 ' return value < 0 on error
 FUNCTION KEBAEnable( server$, en%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "ena "+str$(en%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAEnable=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "ena "+str$(en%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAEnable=-2
   EXIT FUNCTION  
@@ -383,14 +414,16 @@ END FUNCTION
 ' cur% current in mA range 6000...63000
 ' return value < 0 on error
 FUNCTION KEBACurrent( server$, cur%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "curr "+str$(cur%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBACurrent=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "curr "+str$(cur%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBACurrent=-2
   EXIT FUNCTION  
@@ -404,14 +437,16 @@ END FUNCTION
 ' out% output 0=open, 1=closed
 ' return value < 0 on error
 FUNCTION KEBAOutput( server$, out%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "output "+str$(out%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAOutput=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "output "+str$(out%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAOutput=-2
   EXIT FUNCTION  
@@ -426,14 +461,16 @@ END FUNCTION
 ' dly% delay in seconds 860400 max
 ' return value < 0 on error
 FUNCTION KEBACurrentTime( server$, cur%, dly%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "currtime "+str$(cur%)+" "+str$(dly%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBACurrentTime=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "currtime "+str$(cur%)+" "+str$(dly%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBACurrentTime=-2
   EXIT FUNCTION  
@@ -447,14 +484,16 @@ END FUNCTION
 ' egy% charging energy limit in 0.1Wh ,0=no limit
 ' return value < 0 on error
 FUNCTION KEBAEnergy( server$, egy%)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "setenergy "+str$(egy%), cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAEnergy=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "setenergy "+str$(egy%))
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAEnergy=-2
   EXIT FUNCTION  
@@ -469,14 +508,16 @@ END FUNCTION
 ' clss$ rfid classifier
 ' return value < 0 on error
 FUNCTION KEBAStart( server$, tag$, clss$)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "start "+tag$+" "+clss$, cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAStart=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "start "+tag$+" "+clss$)
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAStart=-2
   EXIT FUNCTION  
@@ -490,14 +531,16 @@ END FUNCTION
 ' tok$ rfid token
 ' return value < 0 on error
 FUNCTION KEBAStop( server$, tok$)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "stop "+tok$, cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBAStop=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "stop "+tok$)
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBAStop=-2
   EXIT FUNCTION  
@@ -514,14 +557,16 @@ END FUNCTION
 ' txt$ text 23 chars max
 ' return value < 0 on error
 FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "display "+str$(act%)+" "+str$(min%)+" "+str$(max%)+" 0 "+txt$, cons%)
- IF cons% < 0 THEN
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
   KEBADisplay=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "display "+str$(act%)+" "+str$(min%)+" "+str$(max%)+" 0 "+txt$)
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
   KEBADisplay=-2
   EXIT FUNCTION  
@@ -535,44 +580,19 @@ END FUNCTION
 ' server$ ip address of the charger
 ' return value < 0 on error
 FUNCTION KEBAUnlock( server$)
- LOCAL err%, n%, cons%, rsp$
- err%=KEBATx(server$, "unlock", cons%)
- IF cons% < 0 THEN
-  KEBAUnlock=-1
+ LOCAL err%, n%, con%, rsp$
+ con%=SocketClient( 0, server$, 7090 )
+ IF con% < 0 THEN
+  KEBACurrent=-1
   EXIT FUNCTION
  ENDIF
- rsp$=SocketReadLn$(cons%,chr$(10),2000)
- n%=SocketClose( cons% )
+ n%=SocketOption(con%,"SO_RCVTIMEO",2000)
+ n%=SocketWrite( con%, "unlock")
+ rsp$=SocketReadLn$(con%,chr$(10),2000)
+ n%=SocketClose( con% )
  IF rsp$="" OR left$(rsp$,6,2)<>"OK" THEN
-  KEBAUnlock=-2
+  KEBACurrent=-2
   EXIT FUNCTION  
  ENDIF
- KEBAUnlock=0
-END FUNCTION
-
-' KEBA UDP communication transmit
-' server$ charger device to communicate with
-' rq$ request string to be send
-' cons% server connection
-' return value < 0 on error 
-FUNCTION KEBATx(server$, rq$, cons%)
- LOCAL n%, conc%, conc$
- cons% = SocketServer ( 0, 7090 )
- IF cons% < 0 THEN
-  KEBATx=-1
-  EXIT FUNCTION
- ENDIF
- conc% = SocketClient( 0, server$, 7090 )
- IF conc% < 0 THEN
-  n%=SocketClose( cons% )
-  KEBATx=-1
-  EXIT FUNCTION
- ENDIF
-
- n%=SocketOption(cons%,"SO_SNDTIMEO",2000)
- n%=SocketOption(conc%,"SO_RCVTIMEO",2000)
-
- n%=SocketWrite( conc%, rq$)
- n%=SocketClose( conc% )
- KEBATx=0
+ KEBACurrent=0
 END FUNCTION
