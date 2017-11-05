@@ -25,7 +25,7 @@
 ' return value < 0 on error
 FUNCTION KEBAInfo( server$, info$)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAInfo=-1
   EXIT FUNCTION
@@ -51,7 +51,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAFailsafe=-1
   EXIT FUNCTION
@@ -89,7 +89,7 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
  LOCAL coma$(2) LENGTH 20 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
  LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
 
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAReport1=-1
   EXIT FUNCTION
@@ -167,7 +167,7 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  LOCAL maxcurs$,maxcurps$,curhws$,curusrs$,curfss$
  LOCAL tmofss$,curtims$,tmocts$,ses$,outs$,inps$,sers$,secs$
 
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAReport2=-1
   EXIT FUNCTION
@@ -264,7 +264,7 @@ FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, E
  LOCAL Ps$, PFs$, Es$, Etots$
  LOCAL secs$
  
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAReport3=-1
   EXIT FUNCTION
@@ -344,7 +344,7 @@ FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, star
  LOCAL reasons$, clsss$
  LOCAL secs$
 
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAReport100=-1
   EXIT FUNCTION
@@ -392,7 +392,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAEnable( server$, en%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAEnable=-1
   EXIT FUNCTION
@@ -415,7 +415,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBACurrent( server$, cur%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBACurrent=-1
   EXIT FUNCTION
@@ -438,7 +438,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAOutput( server$, out%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAOutput=-1
   EXIT FUNCTION
@@ -462,7 +462,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBACurrentTime( server$, cur%, dly%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBACurrentTime=-1
   EXIT FUNCTION
@@ -485,7 +485,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAEnergy( server$, egy%)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAEnergy=-1
   EXIT FUNCTION
@@ -509,7 +509,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAStart( server$, tag$, clss$)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAStart=-1
   EXIT FUNCTION
@@ -532,7 +532,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAStop( server$, tok$)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAStop=-1
   EXIT FUNCTION
@@ -558,7 +558,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBADisplay=-1
   EXIT FUNCTION
@@ -581,7 +581,7 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAUnlock( server$)
  LOCAL err%, n%, con%, rsp$
- con%=SocketClient( 0, server$, 7090 )
+ con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBACurrent=-1
   EXIT FUNCTION
