@@ -128,6 +128,7 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
  ' tranceive over interface
  rsp$=""
  'print "rq$ " rq$
+ __cmb 
  IF interf$="RS485" THEN
   DO WHILE RS485Read(val(num$)) >=0
   LOOP
