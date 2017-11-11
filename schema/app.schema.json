@@ -1,0 +1,204 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"description": "Schema for app.json",
+	"type": "object",
+	"properties": {
+		"nodes": {
+			"type": "array",
+			"items": { "$ref": "#/definitions/node" }
+		}
+	},
+	"required": [
+		"nodes"
+	],
+	"additionalProperties": false,
+	"definitions": {
+		"positiveInteger": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+        },
+		"stringType": {
+			"type":"string",
+			"maxLength": 255
+		},
+		"idType": {
+			"type":"string",
+			"minLength": 1,
+			"maxLength": 32
+		},
+		"node": {
+			"anyOf": [ 
+				{ "$ref": "#/definitions/groupType" },
+				{ "$ref": "#/definitions/textType" },
+				{ "$ref": "#/definitions/numberType" },
+				{ "$ref": "#/definitions/integerType" },
+				{ "$ref": "#/definitions/choiceType" },
+				{ "$ref": "#/definitions/switchType" },
+				{ "$ref": "#/definitions/radioType" },
+				{ "$ref": "#/definitions/netAddrType" }
+			] 
+		},
+		"dependsItem": {
+			"type": "object",
+			"properties": {
+				"id": { "$ref": "#/definitions/idType" },
+				"value": { "$ref": "#/definitions/choiceItemValue"	}
+			},
+			"required": ["id","value"],
+			"additionalProperties": false
+		},
+		"dependsNode": {
+			"type": "array",
+			"items": { "$ref": "#/definitions/dependsItem" }
+		},
+		"networkAddress": {
+			"type": "string",
+			"anyOf": [
+                { "format": "ipv4" },
+                { "format": "hostname" }
+            ]
+		},
+		"choiceItem": {
+			"anyOf": [ 
+				{ "$ref": "#/definitions/stringType" },
+				{
+				 	"type": "object",	
+					"properties": {
+						"title": { "type": "string"	},
+						"value": { "type": "number"	}
+					}
+				}
+			]
+			
+		},
+		"choiceItemValue": {
+			"anyOf": [ 
+				{ "$ref": "#/definitions/stringType" },
+				{ "type": "number" }
+			]
+		},
+		"choiceType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"choice" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"values": { 
+					"type": "array",
+					"items": { "$ref": "#/definitions/choiceItem" }
+				},
+				"default": { "$ref": "#/definitions/choiceItemValue" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title","values"],
+			"additionalProperties": false
+		},
+		"textType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"text" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"minLength": { "$ref": "#/definitions/positiveInteger" },
+				"maxLength": { "$ref": "#/definitions/positiveInteger" },
+				"pattern": { "type": "string" },
+				"default": { "$ref": "#/definitions/stringType" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title"],
+			"additionalProperties": false
+		},
+		"numberType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"number" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"minimum": { "type": "number" },
+				"maximum": { "type": "number" },
+				"default": { "type": "number" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title"],
+			"additionalProperties": false
+		},
+		"integerType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"integer" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"minimum": { "type": "integer" },
+				"maximum": { "type": "integer" },
+				"default": { "type": "integer" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title"],
+			"additionalProperties": false
+		},
+		"switchType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"switch" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"default": { "type": "boolean" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title"],
+			"additionalProperties": false
+		},
+		"radioType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"radio" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"values": { 
+					"type": "array",
+					"items": { "$ref": "#/definitions/choiceItem" }
+				},
+				"default": { "$ref": "#/definitions/choiceItemValue" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title","values"],
+			"additionalProperties": false
+		},
+		"netAddrType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"netAddress" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"default": { "$ref": "#/definitions/networkAddress" },
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title"],
+			"additionalProperties": false
+		},
+		"groupType": {
+			"type": "object",	
+			"properties": { 
+				"id": { "$ref": "#/definitions/idType" },
+				"type": { "enum": [	"group" ] },
+				"title": { "type": "string" },
+				"description": { "type": "string" },
+				"nodes": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/node" }
+				},
+				"depends": { "$ref": "#/definitions/dependsNode" }
+			},
+			"required": ["id","type","title","nodes"],
+			"additionalProperties": false
+		}
+	}
+}
