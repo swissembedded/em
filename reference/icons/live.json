@@ -114,7 +114,7 @@
                 "tm-shadow": true,
                 "type": "text",
                 "text-top": "Weather",
-                "text-middle": "shower rain\n09d.png",
+                "text-middle": "Shower Rain\n09d.png",
                 "text-bottom": "Day",
                 "grid-x": 8,
                 "grid-y": 0
@@ -629,6 +629,9 @@
             {
                 "id":"49",
 				"tm-background-image": "4000.png",
+				"tm-font-size": "12px",
+				"tm-font-weight": "bold",
+                "tm-shadow": true,
                 "type": "text",
                 "text-top": "Appliance",
                 "text-middle": "Solar Module\n4000.png",

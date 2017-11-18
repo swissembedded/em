@@ -1,0 +1,308 @@
+{
+	"nodes": 
+	[
+		{
+			"id": "charger",
+			"type": "choice",
+			"title": "Group 1: Electric Vehicle Charger",
+			"description": "What model do you use as a charger?",
+			"values": 
+			[
+				"ABL",
+				"KEBA",
+				"Phoenix",
+				""
+			]
+		},
+		{
+			"id": "ablGroup",
+			"type": "group",
+			"title": "ABL Configuration",
+			"description": "Please specify ABL configuration, invalid settings might damage the charger!",
+			"depends": 
+			[
+				{
+					"id": "charger",
+					"value": "ABL"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "abl_emob",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Electromobility Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "abl_enable",
+					"type": "switch",
+					"title": "Group enable",
+					"description": "On/off",
+					"default": true
+				},
+				{
+					"id": "abl_num",
+					"type": "integer",
+					"title": "Number of Charger Stations",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "abl_id",
+					"type": "integer",
+					"title": "Device id",
+					"description": "Integer, default 0 (1..8)",
+					"minimum": 0,
+					"maximum": 8,
+					"default": 0
+				},
+				{
+					"id": "abl_minA",
+					"title": "Minimal Ampere [A]",
+					"description": "Number (6..80)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 80,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				},
+				{
+					"id": "abl_maxA",
+					"title": "Maximal Ampere [A]",
+					"description": "Number  (6..80)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 80,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				}
+			]
+		},
+		{
+			"id": "kebaGroup",
+			"type": "group",
+			"title": "KEBA Configuration",
+			"description": "Please specify KEBA configuration",
+			"depends": 
+			[
+				{
+					"id": "charger",
+					"value": "KEBA"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "keba_emob",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Electromobility Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "keba_enable",
+					"type": "switch",
+					"title": "Group enable",
+					"description": "On/off",
+					"default": true
+				},
+
+				{
+					"id": "keba_num",
+					"type": "integer",
+					"title": "Number of Charger Stations",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "keba_addr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4Aaddress or Network Host Name",
+					"default": "192.168.42.1"
+				},
+				{
+					"id": "keba_minA",
+					"title": "Minimal Ampere [A]",
+					"description": "Number (6..63)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 63,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				},
+				{
+					"id": "keba_maxA",
+					"title": "Maximal Ampere [A]",
+					"description": "Number (6..63)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 63,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				}
+			]
+		},
+		{
+			"id": "phoenixGroup",
+			"type": "group",
+			"title": "Phoenix Configuration",
+			"description": "Please specify Phoenix configuration",
+			"depends": 
+			[
+				{
+					"id": "charger",
+					"value": "Phoenix"
+				}
+			],
+			"nodes": 
+			[
+							{
+					"id": "phoenix_emob",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Electromobility Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "phoenix_enable",
+					"type": "switch",
+					"title": "Group enable",
+					"description": "On/off",
+					"default": true
+				},
+
+				{
+					"id": "phoenix_num",
+					"type": "integer",
+					"title": "Number of Charger Stations",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "phoenix_connType",
+					"type": "radio",
+					"title": "Connection media",
+					"description": "How do you connected charger?",
+					"values": 
+					[
+						"TCP/IP",
+						"RS485"
+					],
+					"default": "TCP/IP"
+				},
+				{
+					"id": "phoenix_addr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8",
+					"depends": 
+					[
+						{
+							"id": "phoenix_connType",
+							"value": "TCP/IP"
+						}
+					]
+				},
+				{
+					"id": "phoenix_rs485_idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0,
+					"depends": 
+					[
+						{
+							"id": "phoenix_connType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "phoenix_rs485_cfg",
+					"type": "text",
+					"title": "RS485 Configuration",
+					"description": "Specify Interface Configuration",
+					"default": "baud=9600 data=8 stop=1 parity=n term=1",
+					"depends": 
+					[
+						{
+							"id": "phoenix_connType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "phoenix_modbusAddr",
+					"title": "MODBUS slave address (for first device)",
+					"description": "Integer (1..247)",
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 247,
+					"default": 180
+				},
+				{
+					"id": "phoenix_minA",
+					"title": "Minimal Ampere [A]",
+					"description": "Number (6..80)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 80,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				},
+				{
+					"id": "phoenix_maxA",
+					"title": "Maximal Ampere [A]",
+					"description": "Number (6..80)",
+					"type": "number",
+					"minimum": 6,
+					"maximum": 80,
+					"default": 10,
+					"step": 0.1,
+					"decimals": 1
+				}
+			]
+		},
+		{
+			"id": "desc",
+			"type": "text",
+			"title": "Text example",
+			"description": "Type something alphanumeric",
+			"minLength": 1,
+			"maxLength": 10,
+			"pattern": "^[a-z0-9_]*$"
+		},
+		{
+			"id": "useRelay",
+			"type": "switch",
+			"title": "Switch example",
+			"description": "On/off",
+			"default": false
+		}
+	]
+}
