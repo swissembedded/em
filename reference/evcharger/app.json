@@ -2,10 +2,181 @@
 	"nodes": 
 	[
 		{
-			"id": "G1Charger",
+			"id": "IVG1Inverter",
+			"type": "choice",
+			"title": "IV Group 1: Photovoltaic Inverter",
+			"description": "Please choose your inverter model?",
+			"values": 
+			[
+				"SunSpec",
+				"Kostal",
+				""
+			],
+			"default": ""
+		},
+		{
+			"id": "IVG1SunSpecGroup",
+			"type": "group",
+			"title": "SunSpec Configuration",
+			"description": "Please specify SunSpec configuration",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "SunSpec"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1SunSpecIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1SunSpecNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "IVG1SunSpecConnType",
+					"type": "radio",
+					"title": "Connection media",
+					"description": "How did you connect the inverter?",
+					"values": 
+					[
+						"TCP/IP",
+						"RS485"
+					],
+					"default": "TCP/IP"
+				},
+				{
+					"id": "IVG1SunSpecAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8",
+					"depends": 
+					[
+						{
+							"id": "IVG1SunSpecConnType",
+							"value": "TCP/IP"
+						}
+					]
+				},
+				{
+					"id": "IVG1SunSpecRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0,
+					"depends": 
+					[
+						{
+							"id": "IVG1SunSpecConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "IVG1SunSpecRS485Cfg",
+					"type": "text",
+					"title": "RS485 Configuration",
+					"description": "Specify Interface Configuration",
+					"default": "baud=9600 data=8 stop=1 parity=n term=1",
+					"depends": 
+					[
+						{
+							"id": "IVG1SunSpecConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "IVG1SunSpecModbusAddr",
+					"title": "MODBUS slave address (for first device)",
+					"description": "Integer (1..247)",
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 247,
+					"default": 180
+				}
+			]
+		},
+		
+				{
+			"id": "IVG1KostalGroup",
+			"type": "group",
+			"title": "SunSpec Configuration",
+			"description": "Please specify SunSpec configuration",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "Kostal"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1KostalIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1KostalNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "IVG1KostalAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				},
+				{
+					"id": "IVG1KostalUser",
+					"type": "text",
+					"title": "User Name",
+					"description": "User Name",
+					"minLength": 1,
+					"maxLength": 255
+				},
+				{
+					"id": "IVG1KostalPassword",
+					"type": "text",
+					"title": "Password",
+					"description": "User Password",
+					"minLength": 1,
+					"maxLength": 255				}
+			]
+		},		
+		{
+			"id": "EVG1Charger",
 			"type": "choice",
 			"title": "EV Group 1: Electric Vehicle Charger",
-			"description": "What model do you use as a charger?",
+			"description": "Please choose your charger model?",
 			"values": 
 			[
 				"ABL",
@@ -16,21 +187,21 @@
 			"default": ""
 		},
 		{
-			"id": "G1AblGroup",
+			"id": "EVG1AblGroup",
 			"type": "group",
 			"title": "ABL Configuration",
 			"description": "Please specify ABL configuration, invalid settings might damage the charger!",
 			"depends": 
 			[
 				{
-					"id": "G1Charger",
+					"id": "EVG1Charger",
 					"value": "ABL"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G1AblEmob",
+					"id": "EVG1AblEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -39,14 +210,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G1AblEnable",
+					"id": "EVG1AblEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G1AblNum",
+					"id": "EVG1AblNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -55,7 +226,7 @@
 					"default": 1
 				},
 				{
-					"id": "G1AblDevAddr",
+					"id": "EVG1AblDevAddr",
 					"type": "integer",
 					"title": "Device id",
 					"description": "Integer, default 0 (1..8)",
@@ -64,7 +235,7 @@
 					"default": 0
 				},
 				{
-					"id": "G1AblMinA",
+					"id": "EVG1AblMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -75,7 +246,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G1AblMaxA",
+					"id": "EVG1AblMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number  (6..80)",
 					"type": "number",
@@ -88,21 +259,21 @@
 			]
 		},
 		{
-			"id": "G1KebaGroup",
+			"id": "EVG1KebaGroup",
 			"type": "group",
 			"title": "KEBA Configuration",
 			"description": "Please specify KEBA configuration",
 			"depends": 
 			[
 				{
-					"id": "G1Charger",
+					"id": "EVG1Charger",
 					"value": "KEBA"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G1KebaEmob",
+					"id": "EVG1KebaEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -111,14 +282,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G1KebaEnable",
+					"id": "EVG1KebaEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G1KebaNum",
+					"id": "EVG1KebaNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -127,14 +298,14 @@
 					"default": 1
 				},
 				{
-					"id": "G1KebaAddr",
+					"id": "EVG1KebaAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4Aaddress or Network Host Name",
 					"default": "192.168.42.1"
 				},
 				{
-					"id": "G1KebaMinA",
+					"id": "EVG1KebaMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -145,7 +316,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G1KebaMaxA",
+					"id": "EVG1KebaMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -158,21 +329,21 @@
 			]
 		},
 		{
-			"id": "G1PhoenixGroup",
+			"id": "EVG1PhoenixGroup",
 			"type": "group",
 			"title": "Phoenix Configuration",
 			"description": "Please specify Phoenix configuration",
 			"depends": 
 			[
 				{
-					"id": "G1Charger",
+					"id": "EVG1Charger",
 					"value": "Phoenix"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G1PhoenixEmob",
+					"id": "EVG1PhoenixEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -181,14 +352,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G1PhoenixEnable",
+					"id": "EVG1PhoenixEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G1PhoenixNum",
+					"id": "EVG1PhoenixNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -197,7 +368,7 @@
 					"default": 1
 				},
 				{
-					"id": "G1PhoenixConnType",
+					"id": "EVG1PhoenixConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How do you connected charger?",
@@ -209,7 +380,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "G1PhoenixAddr",
+					"id": "EVG1PhoenixAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -217,13 +388,13 @@
 					"depends": 
 					[
 						{
-							"id": "G1PhoenixConnType",
+							"id": "EVG1PhoenixConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "G1PhoenixRs485Idx",
+					"id": "EVG1PhoenixRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -235,13 +406,13 @@
 					"depends": 
 					[
 						{
-							"id": "G1PhoenixConnType",
+							"id": "EVG1PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G1PhoenixRS485Cfg",
+					"id": "EVG1PhoenixRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -249,13 +420,13 @@
 					"depends": 
 					[
 						{
-							"id": "G1PhoenixConnType",
+							"id": "EVG1PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G1PhoenixModbusAddr",
+					"id": "EVG1PhoenixModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -264,7 +435,7 @@
 					"default": 180
 				},
 				{
-					"id": "G1PhoenixMinA",
+					"id": "EVG1PhoenixMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -275,7 +446,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G1PhoenixMaxA",
+					"id": "EVG1PhoenixMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -289,10 +460,10 @@
 		},
 		
 				{
-			"id": "G2Charger",
+			"id": "EVG2Charger",
 			"type": "choice",
 			"title": "EV Group 2: Electric Vehicle Charger",
-			"description": "What model do you use as a charger?",
+			"description": "Please choose your charger model?",
 			"values": 
 			[
 				"ABL",
@@ -303,21 +474,21 @@
 			"default": ""
 		},
 		{
-			"id": "G2AblGroup",
+			"id": "EVG2AblGroup",
 			"type": "group",
 			"title": "ABL Configuration",
 			"description": "Please specify ABL configuration, invalid settings might damage the charger!",
 			"depends": 
 			[
 				{
-					"id": "G2Charger",
+					"id": "EVG2Charger",
 					"value": "ABL"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G2AblEmob",
+					"id": "EVG2AblEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -326,14 +497,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G2AblEnable",
+					"id": "EVG2AblEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G2AblNum",
+					"id": "EVG2AblNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -342,7 +513,7 @@
 					"default": 1
 				},
 				{
-					"id": "G2AblDevAddr",
+					"id": "EVG2AblDevAddr",
 					"type": "integer",
 					"title": "Device id",
 					"description": "Integer, default 0 (1..8)",
@@ -351,7 +522,7 @@
 					"default": 0
 				},
 				{
-					"id": "G2AblMinA",
+					"id": "EVG2AblMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -362,7 +533,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G2AblMaxA",
+					"id": "EVG2AblMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number  (6..80)",
 					"type": "number",
@@ -375,21 +546,21 @@
 			]
 		},
 		{
-			"id": "G2KebaGroup",
+			"id": "EVG2KebaGroup",
 			"type": "group",
 			"title": "KEBA Configuration",
 			"description": "Please specify KEBA configuration",
 			"depends": 
 			[
 				{
-					"id": "G2Charger",
+					"id": "EVG2Charger",
 					"value": "KEBA"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G2KebaEmob",
+					"id": "EVG2KebaEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -398,14 +569,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G2KebaEnable",
+					"id": "EVG2KebaEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G2KebaNum",
+					"id": "EVG2KebaNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -414,14 +585,14 @@
 					"default": 1
 				},
 				{
-					"id": "G2KebaAddr",
+					"id": "EVG2KebaAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4Aaddress or Network Host Name",
 					"default": "192.168.42.1"
 				},
 				{
-					"id": "G2KebaMinA",
+					"id": "EVG2KebaMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -432,7 +603,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G2KebaMaxA",
+					"id": "EVG2KebaMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -445,21 +616,21 @@
 			]
 		},
 		{
-			"id": "G2PhoenixGroup",
+			"id": "EVG2PhoenixGroup",
 			"type": "group",
 			"title": "Phoenix Configuration",
 			"description": "Please specify Phoenix configuration",
 			"depends": 
 			[
 				{
-					"id": "G2Charger",
+					"id": "EVG2Charger",
 					"value": "Phoenix"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G2PhoenixEmob",
+					"id": "EVG2PhoenixEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -468,14 +639,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G2PhoenixEnable",
+					"id": "EVG2PhoenixEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G2PhoenixNum",
+					"id": "EVG2PhoenixNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -484,7 +655,7 @@
 					"default": 1
 				},
 				{
-					"id": "G2PhoenixConnType",
+					"id": "EVG2PhoenixConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How do you connected charger?",
@@ -496,7 +667,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "G2PhoenixAddr",
+					"id": "EVG2PhoenixAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -504,13 +675,13 @@
 					"depends": 
 					[
 						{
-							"id": "G2PhoenixConnType",
+							"id": "EVG2PhoenixConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "G2PhoenixRs485Idx",
+					"id": "EVG2PhoenixRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -522,13 +693,13 @@
 					"depends": 
 					[
 						{
-							"id": "G2PhoenixConnType",
+							"id": "EVG2PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G2PhoenixRS485Cfg",
+					"id": "EVG2PhoenixRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -536,13 +707,13 @@
 					"depends": 
 					[
 						{
-							"id": "G2PhoenixConnType",
+							"id": "EVG2PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G2PhoenixModbusAddr",
+					"id": "EVG2PhoenixModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -551,7 +722,7 @@
 					"default": 180
 				},
 				{
-					"id": "G2PhoenixMinA",
+					"id": "EVG2PhoenixMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -562,7 +733,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G2PhoenixMaxA",
+					"id": "EVG2PhoenixMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -575,10 +746,10 @@
 			]
 		},
 				{
-			"id": "G3Charger",
+			"id": "EVG3Charger",
 			"type": "choice",
 			"title": "EV Group 3: Electric Vehicle Charger",
-			"description": "What model do you use as a charger?",
+			"description": "Please choose your charger model?",
 			"values": 
 			[
 				"ABL",
@@ -589,21 +760,21 @@
 			"default": ""
 		},
 		{
-			"id": "G3AblGroup",
+			"id": "EVG3AblGroup",
 			"type": "group",
 			"title": "ABL Configuration",
 			"description": "Please specify ABL configuration, invalid settings might damage the charger!",
 			"depends": 
 			[
 				{
-					"id": "G3Charger",
+					"id": "EVG3Charger",
 					"value": "ABL"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G3AblEmob",
+					"id": "EVG3AblEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -612,14 +783,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G3AblEnable",
+					"id": "EVG3AblEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G3AblNum",
+					"id": "EVG3AblNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -628,7 +799,7 @@
 					"default": 1
 				},
 				{
-					"id": "G3AblDevAddr",
+					"id": "EVG3AblDevAddr",
 					"type": "integer",
 					"title": "Device id",
 					"description": "Integer, default 0 (1..8)",
@@ -637,7 +808,7 @@
 					"default": 0
 				},
 				{
-					"id": "G3AblMinA",
+					"id": "EVG3AblMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -648,7 +819,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G3AblMaxA",
+					"id": "EVG3AblMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number  (6..80)",
 					"type": "number",
@@ -661,21 +832,21 @@
 			]
 		},
 		{
-			"id": "G3KebaGroup",
+			"id": "EVG3KebaGroup",
 			"type": "group",
 			"title": "KEBA Configuration",
 			"description": "Please specify KEBA configuration",
 			"depends": 
 			[
 				{
-					"id": "G3Charger",
+					"id": "EVG3Charger",
 					"value": "KEBA"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G3KebaEmob",
+					"id": "EVG3KebaEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -684,14 +855,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G3KebaEnable",
+					"id": "EVG3KebaEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G3KebaNum",
+					"id": "EVG3KebaNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -700,14 +871,14 @@
 					"default": 1
 				},
 				{
-					"id": "G3KebaAddr",
+					"id": "EVG3KebaAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4Aaddress or Network Host Name",
 					"default": "192.168.42.1"
 				},
 				{
-					"id": "G3KebaMinA",
+					"id": "EVG3KebaMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -718,7 +889,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G3KebaMaxA",
+					"id": "EVG3KebaMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -731,21 +902,21 @@
 			]
 		},
 		{
-			"id": "G3PhoenixGroup",
+			"id": "EVG3PhoenixGroup",
 			"type": "group",
 			"title": "Phoenix Configuration",
 			"description": "Please specify Phoenix configuration",
 			"depends": 
 			[
 				{
-					"id": "G3Charger",
+					"id": "EVG3Charger",
 					"value": "Phoenix"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G3PhoenixEmob",
+					"id": "EVG3PhoenixEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -754,14 +925,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G3PhoenixEnable",
+					"id": "EVG3PhoenixEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G3PhoenixNum",
+					"id": "EVG3PhoenixNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -770,7 +941,7 @@
 					"default": 1
 				},
 				{
-					"id": "G3PhoenixConnType",
+					"id": "EVG3PhoenixConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How do you connected charger?",
@@ -782,7 +953,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "G3PhoenixAddr",
+					"id": "EVG3PhoenixAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -790,13 +961,13 @@
 					"depends": 
 					[
 						{
-							"id": "G3PhoenixConnType",
+							"id": "EVG3PhoenixConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "G3PhoenixRs485Idx",
+					"id": "EVG3PhoenixRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -808,13 +979,13 @@
 					"depends": 
 					[
 						{
-							"id": "G3PhoenixConnType",
+							"id": "EVG3PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G3PhoenixRS485Cfg",
+					"id": "EVG3PhoenixRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -822,13 +993,13 @@
 					"depends": 
 					[
 						{
-							"id": "G3PhoenixConnType",
+							"id": "EVG3PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G3PhoenixModbusAddr",
+					"id": "EVG3PhoenixModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -837,7 +1008,7 @@
 					"default": 180
 				},
 				{
-					"id": "G3PhoenixMinA",
+					"id": "EVG3PhoenixMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -848,7 +1019,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G3PhoenixMaxA",
+					"id": "EVG3PhoenixMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -861,10 +1032,10 @@
 			]
 		},
 				{
-			"id": "G4Charger",
+			"id": "EVG4Charger",
 			"type": "choice",
 			"title": "EV Group 4: Electric Vehicle Charger",
-			"description": "What model do you use as a charger?",
+			"description": "Please choose your charger model?",
 			"values": 
 			[
 				"ABL",
@@ -875,21 +1046,21 @@
 			"default": ""
 		},
 		{
-			"id": "G4AblGroup",
+			"id": "EVG4AblGroup",
 			"type": "group",
 			"title": "ABL Configuration",
 			"description": "Please specify ABL configuration, invalid settings might damage the charger!",
 			"depends": 
 			[
 				{
-					"id": "G4Charger",
+					"id": "EVG4Charger",
 					"value": "ABL"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G4AblEmob",
+					"id": "EVG4AblEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -898,14 +1069,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G4AblEnable",
+					"id": "EVG4AblEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G4AblNum",
+					"id": "EVG4AblNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -914,7 +1085,7 @@
 					"default": 1
 				},
 				{
-					"id": "G4AblDevAddr",
+					"id": "EVG4AblDevAddr",
 					"type": "integer",
 					"title": "Device id",
 					"description": "Integer, default 0 (1..8)",
@@ -923,7 +1094,7 @@
 					"default": 0
 				},
 				{
-					"id": "G4AblMinA",
+					"id": "EVG4AblMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -934,7 +1105,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G4AblMaxA",
+					"id": "EVG4AblMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number  (6..80)",
 					"type": "number",
@@ -947,21 +1118,21 @@
 			]
 		},
 		{
-			"id": "G4KebaGroup",
+			"id": "EVG4KebaGroup",
 			"type": "group",
 			"title": "KEBA Configuration",
 			"description": "Please specify KEBA configuration",
 			"depends": 
 			[
 				{
-					"id": "G4Charger",
+					"id": "EVG4Charger",
 					"value": "KEBA"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G4KebaEmob",
+					"id": "EVG4KebaEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -970,14 +1141,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G4KebaEnable",
+					"id": "EVG4KebaEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G4KebaNum",
+					"id": "EVG4KebaNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -986,14 +1157,14 @@
 					"default": 1
 				},
 				{
-					"id": "G4KebaAddr",
+					"id": "EVG4KebaAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4Aaddress or Network Host Name",
 					"default": "192.168.42.1"
 				},
 				{
-					"id": "G4KebaMinA",
+					"id": "EVG4KebaMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -1004,7 +1175,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G4KebaMaxA",
+					"id": "EVG4KebaMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..63)",
 					"type": "number",
@@ -1017,21 +1188,21 @@
 			]
 		},
 		{
-			"id": "G4PhoenixGroup",
+			"id": "EVG4PhoenixGroup",
 			"type": "group",
 			"title": "Phoenix Configuration",
 			"description": "Please specify Phoenix configuration",
 			"depends": 
 			[
 				{
-					"id": "G4Charger",
+					"id": "EVG4Charger",
 					"value": "Phoenix"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "G4PhoenixEmob",
+					"id": "EVG4PhoenixEmob",
 					"type": "text",
 					"title": "EMOB Id",
 					"description": "Ednme Electromobility Id, leave blank if not needed",
@@ -1040,14 +1211,14 @@
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "G4PhoenixEnable",
+					"id": "EVG4PhoenixEnable",
 					"type": "switch",
 					"title": "Group enable",
 					"description": "On/off",
 					"default": true
 				},
 				{
-					"id": "G4PhoenixNum",
+					"id": "EVG4PhoenixNum",
 					"type": "integer",
 					"title": "Number of Charger Stations",
 					"description": "Integer (1..8)",
@@ -1056,7 +1227,7 @@
 					"default": 1
 				},
 				{
-					"id": "G4PhoenixConnType",
+					"id": "EVG4PhoenixConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How do you connected charger?",
@@ -1068,7 +1239,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "G4PhoenixAddr",
+					"id": "EVG4PhoenixAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -1076,13 +1247,13 @@
 					"depends": 
 					[
 						{
-							"id": "G4PhoenixConnType",
+							"id": "EVG4PhoenixConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "G4PhoenixRs485Idx",
+					"id": "EVG4PhoenixRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -1094,13 +1265,13 @@
 					"depends": 
 					[
 						{
-							"id": "G4PhoenixConnType",
+							"id": "EVG4PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G4PhoenixRS485Cfg",
+					"id": "EVG4PhoenixRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -1108,13 +1279,13 @@
 					"depends": 
 					[
 						{
-							"id": "G4PhoenixConnType",
+							"id": "EVG4PhoenixConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "G4PhoenixModbusAddr",
+					"id": "EVG4PhoenixModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -1123,7 +1294,7 @@
 					"default": 180
 				},
 				{
-					"id": "G4PhoenixMinA",
+					"id": "EVG4PhoenixMinA",
 					"title": "Minimal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
@@ -1134,7 +1305,7 @@
 					"decimals": 1
 				},
 				{
-					"id": "G4PhoenixMaxA",
+					"id": "EVG4PhoenixMaxA",
 					"title": "Maximal Ampere [A]",
 					"description": "Number (6..80)",
 					"type": "number",
