@@ -8,13 +8,57 @@
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
+				"ABB CDD Gateway",
 				"AEconversion",
 				"Kostal",
 				"Letrika",
+				"Letrika Gateway",
+				"Mastervolt Soladin/ Windmaster",
 				"SunSpec",
 				""
 			],
 			"default": ""
+		},
+		{
+			"id": "IVG1ABBCDDGroup",
+			"type": "group",
+			"title": "ABB CDD Gateway Configuration",
+			"description": "Please specify ABB CDD configuration",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "ABB CDD Gateway"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1ABBCDDIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1ABBCDDNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "IVG1ABBCDDAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				}
+			]
 		},
 		{
 			"id": "IVG1AEcGroup",
@@ -95,6 +139,93 @@
 				}
 			]
 		},
+		{
+			"id": "IVG1LetrikaGWGroup",
+			"type": "group",
+			"title": "Letrika Solar Gateway Configuration",
+			"description": "Please specify Letrika Gateway configuration",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "Letrika Gateway"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1LetrikaGWIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1LetrikaGWNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "IVG1LetrikaGWAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				}
+			]
+		},
+		
+		{
+			"id": "IVG1SoWiGroup",
+			"type": "group",
+			"title": "Mastervolt Soladin and Windmaster Configuration",
+			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "Mastervolt Soladin/ Windmaster"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1SoWiIvmo",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1SoWiNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..32)",
+					"minimum": 1,
+					"maximum": 32,
+					"default": 1
+				},
+				{
+					"id": "IVG1SoWiRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0
+				}
+			]
+		},		
 		{
 			"id": "IVG1KostalGroup",
 			"type": "group",
