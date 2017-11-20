@@ -8,11 +8,149 @@
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
-				"SunSpec",
+				"AEconversion",
 				"Kostal",
+				"Letrika",
+				"SunSpec",
 				""
 			],
 			"default": ""
+		},
+		{
+			"id": "IVG1AEcGroup",
+			"type": "group",
+			"title": "AEconversion Configuration",
+			"description": "Please specify AEconversion configuration!",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "AEconversion"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1AEcIvmo",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1AEcNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..32)",
+					"minimum": 1,
+					"maximum": 32,
+					"default": 1
+				},
+				{
+					"id": "IVG1AEcRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0
+				}
+			]
+		},
+		{
+			"id": "IVG1LetrikaGroup",
+			"type": "group",
+			"title": "Letrika Solar Configuration",
+			"description": "Please specify Letrika configuration!",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "Letrika"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1LetrikaIvmo",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},			
+				{
+					"id": "IVG1LetrikaNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..32)",
+					"minimum": 1,
+					"maximum": 32,
+					"default": 1
+				}
+			]
+		},
+		{
+			"id": "IVG1KostalGroup",
+			"type": "group",
+			"title": "SunSpec Configuration",
+			"description": "Please specify SunSpec configuration",
+			"depends": 
+			[
+				{
+					"id": "IVG1Inverter",
+					"value": "Kostal"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "IVG1KostalIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "IVG1KostalNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "IVG1KostalAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				},
+				{
+					"id": "IVG1KostalUser",
+					"type": "text",
+					"title": "User Name",
+					"description": "User Name",
+					"minLength": 1,
+					"maxLength": 255
+				},
+				{
+					"id": "IVG1KostalPassword",
+					"type": "text",
+					"title": "Password",
+					"description": "User Password",
+					"minLength": 1,
+					"maxLength": 255
+				}
+			]
 		},
 		{
 			"id": "IVG1SunSpecGroup",
@@ -115,63 +253,6 @@
 				}
 			]
 		},
-		
-				{
-			"id": "IVG1KostalGroup",
-			"type": "group",
-			"title": "SunSpec Configuration",
-			"description": "Please specify SunSpec configuration",
-			"depends": 
-			[
-				{
-					"id": "IVG1Inverter",
-					"value": "Kostal"
-				}
-			],
-			"nodes": 
-			[
-				{
-					"id": "IVG1KostalIvmo",
-					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
-					"minLength": 1,
-					"maxLength": 16,
-					"pattern": "^[A-Z0-9]*$"
-				},
-				{
-					"id": "IVG1KostalNum",
-					"type": "integer",
-					"title": "Number of Inverters",
-					"description": "Integer (1..8)",
-					"minimum": 1,
-					"maximum": 8,
-					"default": 1
-				},
-				{
-					"id": "IVG1KostalAddr",
-					"type": "netAddress",
-					"title": "Charger address",
-					"description": "IPv4 Address or Network Host Name",
-					"default": "192.168.0.8"
-				},
-				{
-					"id": "IVG1KostalUser",
-					"type": "text",
-					"title": "User Name",
-					"description": "User Name",
-					"minLength": 1,
-					"maxLength": 255
-				},
-				{
-					"id": "IVG1KostalPassword",
-					"type": "text",
-					"title": "Password",
-					"description": "User Password",
-					"minLength": 1,
-					"maxLength": 255				}
-			]
-		},		
 		{
 			"id": "EVG1Charger",
 			"type": "choice",
@@ -458,8 +539,7 @@
 				}
 			]
 		},
-		
-				{
+		{
 			"id": "EVG2Charger",
 			"type": "choice",
 			"title": "EV Group 2: Electric Vehicle Charger",
@@ -745,7 +825,7 @@
 				}
 			]
 		},
-				{
+		{
 			"id": "EVG3Charger",
 			"type": "choice",
 			"title": "EV Group 3: Electric Vehicle Charger",
@@ -1031,7 +1111,7 @@
 				}
 			]
 		},
-				{
+		{
 			"id": "EVG4Charger",
 			"type": "choice",
 			"title": "EV Group 4: Electric Vehicle Charger",
@@ -1317,7 +1397,6 @@
 				}
 			]
 		},
-		
 		{
 			"id": "desc",
 			"type": "text",
