@@ -2,48 +2,48 @@
 	"nodes": 
 	[
 		{
-			"id": "IVG1Inverter",
+			"id": "PVG1Inverter",
 			"type": "choice",
-			"title": "IV Group 1: Photovoltaic Inverter",
+			"title": "PV Group 1: Photovoltaic Inverter",
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
+				"",
 				"ABB CDD Gateway",
 				"AEconversion",
 				"Kostal",
 				"Letrika",
 				"Letrika Gateway",
 				"Mastervolt Soladin/ Windmaster",
-				"SunSpec",
-				""
+				"SunSpec"
 			],
 			"default": ""
 		},
 		{
-			"id": "IVG1ABBCDDGroup",
+			"id": "PVG1ABBCDDGroup",
 			"type": "group",
 			"title": "ABB CDD Gateway Configuration",
 			"description": "Please specify ABB CDD configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "ABB CDD Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1ABBCDDIvmo",
+					"id": "PVG1ABBCDDPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1ABBCDDNum",
+					"id": "PVG1ABBCDDNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -52,7 +52,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1ABBCDDAddr",
+					"id": "PVG1ABBCDDAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -61,30 +61,30 @@
 			]
 		},
 		{
-			"id": "IVG1AEcGroup",
+			"id": "PVG1AEcGroup",
 			"type": "group",
 			"title": "AEconversion Configuration",
 			"description": "Please specify AEconversion configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "AEconversion"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1AEcIvmo",
+					"id": "PVG1AEcPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1AEcNum",
+					"id": "PVG1AEcNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -93,7 +93,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1AEcRs485Idx",
+					"id": "PVG1AEcRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -106,30 +106,30 @@
 			]
 		},
 		{
-			"id": "IVG1LetrikaGroup",
+			"id": "PVG1LetrikaGroup",
 			"type": "group",
 			"title": "Letrika Solar Configuration",
 			"description": "Please specify Letrika configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "Letrika"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1LetrikaIvmo",
+					"id": "PVG1LetrikaPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
-				},			
+				},
 				{
-					"id": "IVG1LetrikaNum",
+					"id": "PVG1LetrikaNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -140,30 +140,30 @@
 			]
 		},
 		{
-			"id": "IVG1LetrikaGWGroup",
+			"id": "PVG1LetrikaGWGroup",
 			"type": "group",
 			"title": "Letrika Solar Gateway Configuration",
 			"description": "Please specify Letrika Gateway configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "Letrika Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1LetrikaGWIvmo",
+					"id": "PVG1LetrikaGWPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1LetrikaGWNum",
+					"id": "PVG1LetrikaGWNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -172,7 +172,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1LetrikaGWAddr",
+					"id": "PVG1LetrikaGWAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -180,32 +180,31 @@
 				}
 			]
 		},
-		
 		{
-			"id": "IVG1SoWiGroup",
+			"id": "PVG1SoWiGroup",
 			"type": "group",
 			"title": "Mastervolt Soladin and Windmaster Configuration",
 			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "Mastervolt Soladin/ Windmaster"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1SoWiIvmo",
+					"id": "PVG1SoWiPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1SoWiNum",
+					"id": "PVG1SoWiNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -214,7 +213,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1SoWiRs485Idx",
+					"id": "PVG1SoWiRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -225,32 +224,32 @@
 					"default": 0
 				}
 			]
-		},		
+		},
 		{
-			"id": "IVG1KostalGroup",
+			"id": "PVG1KostalGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "Kostal"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1KostalIvmo",
+					"id": "PVG1KostalPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1KostalNum",
+					"id": "PVG1KostalNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -259,14 +258,14 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1KostalAddr",
+					"id": "PVG1KostalAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
 					"default": "192.168.0.8"
 				},
 				{
-					"id": "IVG1KostalUser",
+					"id": "PVG1KostalUser",
 					"type": "text",
 					"title": "User Name",
 					"description": "User Name",
@@ -274,7 +273,7 @@
 					"maxLength": 255
 				},
 				{
-					"id": "IVG1KostalPassword",
+					"id": "PVG1KostalPassword",
 					"type": "text",
 					"title": "Password",
 					"description": "User Password",
@@ -284,30 +283,30 @@
 			]
 		},
 		{
-			"id": "IVG1SunSpecGroup",
+			"id": "PVG1SunSpecGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG1Inverter",
+					"id": "PVG1Inverter",
 					"value": "SunSpec"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG1SunSpecIvmo",
+					"id": "PVG1SunSpecPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG1SunSpecNum",
+					"id": "PVG1SunSpecNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -316,7 +315,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG1SunSpecConnType",
+					"id": "PVG1SunSpecConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How did you connect the inverter?",
@@ -328,7 +327,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "IVG1SunSpecAddr",
+					"id": "PVG1SunSpecAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -336,13 +335,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG1SunSpecConnType",
+							"id": "PVG1SunSpecConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "IVG1SunSpecRs485Idx",
+					"id": "PVG1SunSpecRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -354,13 +353,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG1SunSpecConnType",
+							"id": "PVG1SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG1SunSpecRS485Cfg",
+					"id": "PVG1SunSpecRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -368,13 +367,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG1SunSpecConnType",
+							"id": "PVG1SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG1SunSpecModbusAddr",
+					"id": "PVG1SunSpecModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -385,48 +384,48 @@
 			]
 		},
 		{
-			"id": "IVG2Inverter",
+			"id": "PVG2Inverter",
 			"type": "choice",
-			"title": "IV Group 2: Photovoltaic Inverter",
+			"title": "PV Group 2: Photovoltaic Inverter",
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
+			      "",
 				"ABB CDD Gateway",
 				"AEconversion",
 				"Kostal",
 				"Letrika",
 				"Letrika Gateway",
 				"Mastervolt Soladin/ Windmaster",
-				"SunSpec",
-				""
+				"SunSpec"
 			],
 			"default": ""
 		},
 		{
-			"id": "IVG2ABBCDDGroup",
+			"id": "PVG2ABBCDDGroup",
 			"type": "group",
 			"title": "ABB CDD Gateway Configuration",
 			"description": "Please specify ABB CDD configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "ABB CDD Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2ABBCDDIvmo",
+					"id": "PVG2ABBCDDPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2ABBCDDNum",
+					"id": "PVG2ABBCDDNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -435,7 +434,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2ABBCDDAddr",
+					"id": "PVG2ABBCDDAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -444,30 +443,30 @@
 			]
 		},
 		{
-			"id": "IVG2AEcGroup",
+			"id": "PVG2AEcGroup",
 			"type": "group",
 			"title": "AEconversion Configuration",
 			"description": "Please specify AEconversion configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "AEconversion"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2AEcIvmo",
+					"id": "PVG2AEcPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2AEcNum",
+					"id": "PVG2AEcNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -476,7 +475,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2AEcRs485Idx",
+					"id": "PVG2AEcRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -489,30 +488,30 @@
 			]
 		},
 		{
-			"id": "IVG2LetrikaGroup",
+			"id": "PVG2LetrikaGroup",
 			"type": "group",
 			"title": "Letrika Solar Configuration",
 			"description": "Please specify Letrika configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "Letrika"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2LetrikaIvmo",
+					"id": "PVG2LetrikaPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
-				},			
+				},
 				{
-					"id": "IVG2LetrikaNum",
+					"id": "PVG2LetrikaNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -523,30 +522,30 @@
 			]
 		},
 		{
-			"id": "IVG2LetrikaGWGroup",
+			"id": "PVG2LetrikaGWGroup",
 			"type": "group",
 			"title": "Letrika Solar Gateway Configuration",
 			"description": "Please specify Letrika Gateway configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "Letrika Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2LetrikaGWIvmo",
+					"id": "PVG2LetrikaGWPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2LetrikaGWNum",
+					"id": "PVG2LetrikaGWNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -555,7 +554,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2LetrikaGWAddr",
+					"id": "PVG2LetrikaGWAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -563,32 +562,31 @@
 				}
 			]
 		},
-		
 		{
-			"id": "IVG2SoWiGroup",
+			"id": "PVG2SoWiGroup",
 			"type": "group",
 			"title": "Mastervolt Soladin and Windmaster Configuration",
 			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "Mastervolt Soladin/ Windmaster"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2SoWiIvmo",
+					"id": "PVG2SoWiPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2SoWiNum",
+					"id": "PVG2SoWiNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -597,7 +595,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2SoWiRs485Idx",
+					"id": "PVG2SoWiRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -608,32 +606,32 @@
 					"default": 0
 				}
 			]
-		},		
+		},
 		{
-			"id": "IVG2KostalGroup",
+			"id": "PVG2KostalGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "Kostal"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2KostalIvmo",
+					"id": "PVG2KostalPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2KostalNum",
+					"id": "PVG2KostalNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -642,14 +640,14 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2KostalAddr",
+					"id": "PVG2KostalAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
 					"default": "192.168.0.8"
 				},
 				{
-					"id": "IVG2KostalUser",
+					"id": "PVG2KostalUser",
 					"type": "text",
 					"title": "User Name",
 					"description": "User Name",
@@ -657,7 +655,7 @@
 					"maxLength": 255
 				},
 				{
-					"id": "IVG2KostalPassword",
+					"id": "PVG2KostalPassword",
 					"type": "text",
 					"title": "Password",
 					"description": "User Password",
@@ -667,30 +665,30 @@
 			]
 		},
 		{
-			"id": "IVG2SunSpecGroup",
+			"id": "PVG2SunSpecGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG2Inverter",
+					"id": "PVG2Inverter",
 					"value": "SunSpec"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG2SunSpecIvmo",
+					"id": "PVG2SunSpecPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG2SunSpecNum",
+					"id": "PVG2SunSpecNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -699,7 +697,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG2SunSpecConnType",
+					"id": "PVG2SunSpecConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How did you connect the inverter?",
@@ -711,7 +709,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "IVG2SunSpecAddr",
+					"id": "PVG2SunSpecAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -719,13 +717,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG2SunSpecConnType",
+							"id": "PVG2SunSpecConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "IVG2SunSpecRs485Idx",
+					"id": "PVG2SunSpecRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -737,13 +735,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG2SunSpecConnType",
+							"id": "PVG2SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG2SunSpecRS485Cfg",
+					"id": "PVG2SunSpecRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -751,13 +749,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG2SunSpecConnType",
+							"id": "PVG2SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG2SunSpecModbusAddr",
+					"id": "PVG2SunSpecModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -768,48 +766,48 @@
 			]
 		},
 		{
-			"id": "IVG3Inverter",
+			"id": "PVG3Inverter",
 			"type": "choice",
-			"title": "IV Group 3: Photovoltaic Inverter",
+			"title": "PV Group 3: Photovoltaic Inverter",
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
+			      "",
 				"ABB CDD Gateway",
 				"AEconversion",
 				"Kostal",
 				"Letrika",
 				"Letrika Gateway",
 				"Mastervolt Soladin/ Windmaster",
-				"SunSpec",
-				""
+				"SunSpec"
 			],
 			"default": ""
 		},
 		{
-			"id": "IVG3ABBCDDGroup",
+			"id": "PVG3ABBCDDGroup",
 			"type": "group",
 			"title": "ABB CDD Gateway Configuration",
 			"description": "Please specify ABB CDD configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "ABB CDD Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3ABBCDDIvmo",
+					"id": "PVG3ABBCDDPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3ABBCDDNum",
+					"id": "PVG3ABBCDDNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -818,7 +816,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3ABBCDDAddr",
+					"id": "PVG3ABBCDDAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -827,30 +825,30 @@
 			]
 		},
 		{
-			"id": "IVG3AEcGroup",
+			"id": "PVG3AEcGroup",
 			"type": "group",
 			"title": "AEconversion Configuration",
 			"description": "Please specify AEconversion configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "AEconversion"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3AEcIvmo",
+					"id": "PVG3AEcPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3AEcNum",
+					"id": "PVG3AEcNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -859,7 +857,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3AEcRs485Idx",
+					"id": "PVG3AEcRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -872,30 +870,30 @@
 			]
 		},
 		{
-			"id": "IVG3LetrikaGroup",
+			"id": "PVG3LetrikaGroup",
 			"type": "group",
 			"title": "Letrika Solar Configuration",
 			"description": "Please specify Letrika configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "Letrika"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3LetrikaIvmo",
+					"id": "PVG3LetrikaPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
-				},			
+				},
 				{
-					"id": "IVG3LetrikaNum",
+					"id": "PVG3LetrikaNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -906,30 +904,30 @@
 			]
 		},
 		{
-			"id": "IVG3LetrikaGWGroup",
+			"id": "PVG3LetrikaGWGroup",
 			"type": "group",
 			"title": "Letrika Solar Gateway Configuration",
 			"description": "Please specify Letrika Gateway configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "Letrika Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3LetrikaGWIvmo",
+					"id": "PVG3LetrikaGWPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3LetrikaGWNum",
+					"id": "PVG3LetrikaGWNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -938,7 +936,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3LetrikaGWAddr",
+					"id": "PVG3LetrikaGWAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -946,32 +944,31 @@
 				}
 			]
 		},
-		
 		{
-			"id": "IVG3SoWiGroup",
+			"id": "PVG3SoWiGroup",
 			"type": "group",
 			"title": "Mastervolt Soladin and Windmaster Configuration",
 			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "Mastervolt Soladin/ Windmaster"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3SoWiIvmo",
+					"id": "PVG3SoWiPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3SoWiNum",
+					"id": "PVG3SoWiNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -980,7 +977,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3SoWiRs485Idx",
+					"id": "PVG3SoWiRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -991,32 +988,32 @@
 					"default": 0
 				}
 			]
-		},		
+		},
 		{
-			"id": "IVG3KostalGroup",
+			"id": "PVG3KostalGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "Kostal"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3KostalIvmo",
+					"id": "PVG3KostalPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3KostalNum",
+					"id": "PVG3KostalNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1025,14 +1022,14 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3KostalAddr",
+					"id": "PVG3KostalAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
 					"default": "192.168.0.8"
 				},
 				{
-					"id": "IVG3KostalUser",
+					"id": "PVG3KostalUser",
 					"type": "text",
 					"title": "User Name",
 					"description": "User Name",
@@ -1040,7 +1037,7 @@
 					"maxLength": 255
 				},
 				{
-					"id": "IVG3KostalPassword",
+					"id": "PVG3KostalPassword",
 					"type": "text",
 					"title": "Password",
 					"description": "User Password",
@@ -1050,30 +1047,30 @@
 			]
 		},
 		{
-			"id": "IVG3SunSpecGroup",
+			"id": "PVG3SunSpecGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG3Inverter",
+					"id": "PVG3Inverter",
 					"value": "SunSpec"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG3SunSpecIvmo",
+					"id": "PVG3SunSpecPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG3SunSpecNum",
+					"id": "PVG3SunSpecNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1082,7 +1079,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG3SunSpecConnType",
+					"id": "PVG3SunSpecConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How did you connect the inverter?",
@@ -1094,7 +1091,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "IVG3SunSpecAddr",
+					"id": "PVG3SunSpecAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -1102,13 +1099,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG3SunSpecConnType",
+							"id": "PVG3SunSpecConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "IVG3SunSpecRs485Idx",
+					"id": "PVG3SunSpecRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -1120,13 +1117,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG3SunSpecConnType",
+							"id": "PVG3SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG3SunSpecRS485Cfg",
+					"id": "PVG3SunSpecRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -1134,13 +1131,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG3SunSpecConnType",
+							"id": "PVG3SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG3SunSpecModbusAddr",
+					"id": "PVG3SunSpecModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -1151,48 +1148,48 @@
 			]
 		},
 		{
-			"id": "IVG4Inverter",
+			"id": "PVG4Inverter",
 			"type": "choice",
-			"title": "IV Group 4: Photovoltaic Inverter",
+			"title": "PV Group 4: Photovoltaic Inverter",
 			"description": "Please choose your inverter model?",
 			"values": 
 			[
+			      "",
 				"ABB CDD Gateway",
 				"AEconversion",
 				"Kostal",
 				"Letrika",
 				"Letrika Gateway",
 				"Mastervolt Soladin/ Windmaster",
-				"SunSpec",
-				""
+				"SunSpec"
 			],
 			"default": ""
 		},
 		{
-			"id": "IVG4ABBCDDGroup",
+			"id": "PVG4ABBCDDGroup",
 			"type": "group",
 			"title": "ABB CDD Gateway Configuration",
 			"description": "Please specify ABB CDD configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "ABB CDD Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4ABBCDDIvmo",
+					"id": "PVG4ABBCDDPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4ABBCDDNum",
+					"id": "PVG4ABBCDDNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1201,7 +1198,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4ABBCDDAddr",
+					"id": "PVG4ABBCDDAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -1210,30 +1207,30 @@
 			]
 		},
 		{
-			"id": "IVG4AEcGroup",
+			"id": "PVG4AEcGroup",
 			"type": "group",
 			"title": "AEconversion Configuration",
 			"description": "Please specify AEconversion configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "AEconversion"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4AEcIvmo",
+					"id": "PVG4AEcPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4AEcNum",
+					"id": "PVG4AEcNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -1242,7 +1239,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4AEcRs485Idx",
+					"id": "PVG4AEcRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -1255,30 +1252,30 @@
 			]
 		},
 		{
-			"id": "IVG4LetrikaGroup",
+			"id": "PVG4LetrikaGroup",
 			"type": "group",
 			"title": "Letrika Solar Configuration",
 			"description": "Please specify Letrika configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "Letrika"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4LetrikaIvmo",
+					"id": "PVG4LetrikaPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
-				},			
+				},
 				{
-					"id": "IVG4LetrikaNum",
+					"id": "PVG4LetrikaNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -1289,30 +1286,30 @@
 			]
 		},
 		{
-			"id": "IVG4LetrikaGWGroup",
+			"id": "PVG4LetrikaGWGroup",
 			"type": "group",
 			"title": "Letrika Solar Gateway Configuration",
 			"description": "Please specify Letrika Gateway configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "Letrika Gateway"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4LetrikaGWIvmo",
+					"id": "PVG4LetrikaGWPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4LetrikaGWNum",
+					"id": "PVG4LetrikaGWNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1321,7 +1318,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4LetrikaGWAddr",
+					"id": "PVG4LetrikaGWAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -1329,32 +1326,31 @@
 				}
 			]
 		},
-		
 		{
-			"id": "IVG4SoWiGroup",
+			"id": "PVG4SoWiGroup",
 			"type": "group",
 			"title": "Mastervolt Soladin and Windmaster Configuration",
 			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "Mastervolt Soladin/ Windmaster"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4SoWiIvmo",
+					"id": "PVG4SoWiPvmo",
 					"type": "text",
-					"title": "EMOB Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4SoWiNum",
+					"id": "PVG4SoWiNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..32)",
@@ -1363,7 +1359,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4SoWiRs485Idx",
+					"id": "PVG4SoWiRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -1374,32 +1370,32 @@
 					"default": 0
 				}
 			]
-		},		
+		},
 		{
-			"id": "IVG4KostalGroup",
+			"id": "PVG4KostalGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "Kostal"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4KostalIvmo",
+					"id": "PVG4KostalPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4KostalNum",
+					"id": "PVG4KostalNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1408,14 +1404,14 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4KostalAddr",
+					"id": "PVG4KostalAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
 					"default": "192.168.0.8"
 				},
 				{
-					"id": "IVG4KostalUser",
+					"id": "PVG4KostalUser",
 					"type": "text",
 					"title": "User Name",
 					"description": "User Name",
@@ -1423,7 +1419,7 @@
 					"maxLength": 255
 				},
 				{
-					"id": "IVG4KostalPassword",
+					"id": "PVG4KostalPassword",
 					"type": "text",
 					"title": "Password",
 					"description": "User Password",
@@ -1433,30 +1429,30 @@
 			]
 		},
 		{
-			"id": "IVG4SunSpecGroup",
+			"id": "PVG4SunSpecGroup",
 			"type": "group",
 			"title": "SunSpec Configuration",
 			"description": "Please specify SunSpec configuration",
 			"depends": 
 			[
 				{
-					"id": "IVG4Inverter",
+					"id": "PVG4Inverter",
 					"value": "SunSpec"
 				}
 			],
 			"nodes": 
 			[
 				{
-					"id": "IVG4SunSpecIvmo",
+					"id": "PVG4SunSpecPvmo",
 					"type": "text",
-					"title": "IVMO Id",
-					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"title": "PVMO Id",
+					"description": "Ednme Photovoltaic Monitoring Id, leave blank if not needed",
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
 				},
 				{
-					"id": "IVG4SunSpecNum",
+					"id": "PVG4SunSpecNum",
 					"type": "integer",
 					"title": "Number of Inverters",
 					"description": "Integer (1..8)",
@@ -1465,7 +1461,7 @@
 					"default": 1
 				},
 				{
-					"id": "IVG4SunSpecConnType",
+					"id": "PVG4SunSpecConnType",
 					"type": "radio",
 					"title": "Connection media",
 					"description": "How did you connect the inverter?",
@@ -1477,7 +1473,7 @@
 					"default": "TCP/IP"
 				},
 				{
-					"id": "IVG4SunSpecAddr",
+					"id": "PVG4SunSpecAddr",
 					"type": "netAddress",
 					"title": "Charger address",
 					"description": "IPv4 Address or Network Host Name",
@@ -1485,13 +1481,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG4SunSpecConnType",
+							"id": "PVG4SunSpecConnType",
 							"value": "TCP/IP"
 						}
 					]
 				},
 				{
-					"id": "IVG4SunSpecRs485Idx",
+					"id": "PVG4SunSpecRs485Idx",
 					"type": "choice",
 					"title": "RS485 interface",
 					"description": "What instance to use?",
@@ -1503,13 +1499,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG4SunSpecConnType",
+							"id": "PVG4SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG4SunSpecRS485Cfg",
+					"id": "PVG4SunSpecRS485Cfg",
 					"type": "text",
 					"title": "RS485 Configuration",
 					"description": "Specify Interface Configuration",
@@ -1517,13 +1513,13 @@
 					"depends": 
 					[
 						{
-							"id": "IVG4SunSpecConnType",
+							"id": "PVG4SunSpecConnType",
 							"value": "RS485"
 						}
 					]
 				},
 				{
-					"id": "IVG4SunSpecModbusAddr",
+					"id": "PVG4SunSpecModbusAddr",
 					"title": "MODBUS slave address (for first device)",
 					"description": "Integer (1..247)",
 					"type": "integer",
@@ -1540,10 +1536,10 @@
 			"description": "Please choose your charger model?",
 			"values": 
 			[
+			      "",
 				"ABL",
 				"KEBA",
-				"Phoenix",
-				""
+				"Phoenix"
 			],
 			"default": ""
 		},
@@ -1826,10 +1822,10 @@
 			"description": "Please choose your charger model?",
 			"values": 
 			[
+			      "",
 				"ABL",
 				"KEBA",
-				"Phoenix",
-				""
+				"Phoenix"
 			],
 			"default": ""
 		},
@@ -2112,10 +2108,10 @@
 			"description": "Please choose your charger model?",
 			"values": 
 			[
+			     "",
 				"ABL",
 				"KEBA",
-				"Phoenix",
-				""
+				"Phoenix"
 			],
 			"default": ""
 		},
@@ -2398,10 +2394,10 @@
 			"description": "Please choose your charger model?",
 			"values": 
 			[
+			      "",
 				"ABL",
 				"KEBA",
-				"Phoenix",
-				""
+				"Phoenix"
 			],
 			"default": ""
 		},
@@ -2674,6 +2670,410 @@
 					"default": 10,
 					"step": 0.1,
 					"decimals": 1
+				}
+			]
+		},
+		{
+			"id": "EMG1Meter",
+			"type": "choice",
+			"title": "EM Group 1: Energy Meter (Import and Export Meter)",
+			"description": "Please choose your smart energy meter model?",
+			"values": 
+			[
+			      "",
+				"CII",
+				"D0",
+				"Eastron",
+				"Gavazzi",
+				"Phoenix",
+				"S0",
+				"Wattnode"
+			],
+			"default": ""
+		},
+		{
+			"id": "EMG1CIIGroup",
+			"type": "group",
+			"title": "Customer Information Interface (CII) Configuration",
+			"description": "Please specify CII configuration. Based on MBUS configuration.",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "CII"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1CIIEmmo",
+					"type": "text",
+					"title": "EMMO Id",
+					"description": "Ednme Energy Meter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				}
+			]
+		},
+		{
+			"id": "EMG1D0Group",
+			"type": "group",
+			"title": "D0 Configuration",
+			"description": "Please specify D0 configuration. Based on D0 configuration.",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "D0"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1D0Emmo",
+					"type": "text",
+					"title": "EMMO Id",
+					"description": "Ednme Energy Meter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				}
+			]
+		},
+		{
+			"id": "EMG1EastronGroup",
+			"type": "group",
+			"title": "Eastron Configuration",
+			"description": "Please specify Letrika configuration!",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "Eastron"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1EastronEmmo",
+					"type": "text",
+					"title": "EMMO Id",
+					"description": "Ednme Energy Meter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1EastronConnType",
+					"type": "radio",
+					"title": "Connection media",
+					"description": "How did you connect the inverter?",
+					"values": 
+					[
+						"TCP/IP",
+						"RS485"
+					],
+					"default": "TCP/IP"
+				},
+				{
+					"id": "EMG1EastronAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8",
+					"depends": 
+					[
+						{
+							"id": "EMG1EastronConnType",
+							"value": "TCP/IP"
+						}
+					]
+				},
+				{
+					"id": "EMG1EastronRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0,
+					"depends": 
+					[
+						{
+							"id": "EMG1EastronConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "EMG1EastronRS485Cfg",
+					"type": "text",
+					"title": "RS485 Configuration",
+					"description": "Specify Interface Configuration",
+					"default": "baud=9600 data=8 stop=1 parity=n term=1",
+					"depends": 
+					[
+						{
+							"id": "EMG1EastronConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "EMG1EastronModbusAddr",
+					"title": "MODBUS slave address (for first device)",
+					"description": "Integer (1..247)",
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 247,
+					"default": 1
+				}
+			]
+		},
+		{
+			"id": "EMG1LetrikaGWGroup",
+			"type": "group",
+			"title": "Letrika Solar Gateway Configuration",
+			"description": "Please specify Letrika Gateway configuration",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "Letrika Gateway"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1LetrikaGWIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1LetrikaGWNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "EMG1LetrikaGWAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				}
+			]
+		},
+		{
+			"id": "EMG1SoWiGroup",
+			"type": "group",
+			"title": "Mastervolt Soladin and Windmaster Configuration",
+			"description": "Please specify Mastervolt Soladin and Windmaster configuration!",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "Mastervolt Soladin/ Windmaster"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1SoWiIvmo",
+					"type": "text",
+					"title": "EMOB Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1SoWiNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..32)",
+					"minimum": 1,
+					"maximum": 32,
+					"default": 1
+				},
+				{
+					"id": "EMG1SoWiRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0
+				}
+			]
+		},
+		{
+			"id": "EMG1KostalGroup",
+			"type": "group",
+			"title": "SunSpec Configuration",
+			"description": "Please specify SunSpec configuration",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "Kostal"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1KostalIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1KostalNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "EMG1KostalAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8"
+				},
+				{
+					"id": "EMG1KostalUser",
+					"type": "text",
+					"title": "User Name",
+					"description": "User Name",
+					"minLength": 1,
+					"maxLength": 255
+				},
+				{
+					"id": "EMG1KostalPassword",
+					"type": "text",
+					"title": "Password",
+					"description": "User Password",
+					"minLength": 1,
+					"maxLength": 255
+				}
+			]
+		},
+		{
+			"id": "EMG1SunSpecGroup",
+			"type": "group",
+			"title": "SunSpec Configuration",
+			"description": "Please specify SunSpec configuration",
+			"depends": 
+			[
+				{
+					"id": "EMG1Meter",
+					"value": "SunSpec"
+				}
+			],
+			"nodes": 
+			[
+				{
+					"id": "EMG1SunSpecIvmo",
+					"type": "text",
+					"title": "IVMO Id",
+					"description": "Ednme Inverter Monitoring Id, leave blank if not needed",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1SunSpecNum",
+					"type": "integer",
+					"title": "Number of Inverters",
+					"description": "Integer (1..8)",
+					"minimum": 1,
+					"maximum": 8,
+					"default": 1
+				},
+				{
+					"id": "EMG1SunSpecConnType",
+					"type": "radio",
+					"title": "Connection media",
+					"description": "How did you connect the inverter?",
+					"values": 
+					[
+						"TCP/IP",
+						"RS485"
+					],
+					"default": "TCP/IP"
+				},
+				{
+					"id": "EMG1SunSpecAddr",
+					"type": "netAddress",
+					"title": "Charger address",
+					"description": "IPv4 Address or Network Host Name",
+					"default": "192.168.0.8",
+					"depends": 
+					[
+						{
+							"id": "EMG1SunSpecConnType",
+							"value": "TCP/IP"
+						}
+					]
+				},
+				{
+					"id": "EMG1SunSpecRs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0,
+					"depends": 
+					[
+						{
+							"id": "EMG1SunSpecConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "EMG1SunSpecRS485Cfg",
+					"type": "text",
+					"title": "RS485 Configuration",
+					"description": "Specify Interface Configuration",
+					"default": "baud=9600 data=8 stop=1 parity=n term=1",
+					"depends": 
+					[
+						{
+							"id": "EMG1SunSpecConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "EMG1SunSpecModbusAddr",
+					"title": "MODBUS slave address (for first device)",
+					"description": "Integer (1..247)",
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 247,
+					"default": 180
 				}
 			]
 		},
