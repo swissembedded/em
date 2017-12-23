@@ -2109,7 +2109,7 @@ FUNCTION eoRxA538xx(tp%,da$,oda$,xx%,com%,tim,edim,rmp%,sp,bsp,cvov,cm%,cs%,fo%,
   eoRxA538xx=-1
   EXIT FUNCTION
  ENDIF
- tim=1-
+ tim=-1
  edim=-1
  rmp%=-1
  sp=-1
@@ -3063,6 +3063,116 @@ FUNCTION eoRxD206xx(tp%,da$,oda$,xx%,mt%,bal%,ppal%,hp%,ws%,br%,bl%,m%,v%,t%,h%,
   EXIT FUNCTION
  ENDIF 
  eoRxD206xx=0
+END FUNCTION
+
+' Callback eoRxD2 helper function for Room Control Panels with Temperature & Fan Speed Control, Room Status Information and Time Program
+
+' tp%     type of the packet (from callback eoRxD2)
+' da$     data array
+' oda$    optional data array
+' xx%     type 01
+' mcf%
+' irc%
+' fbc%
+' gmt%
+' mcf%
+' hum
+' hvf%
+' fs%
+' fsv%
+' fsm%
+' cw2%
+' cw1%
+' mx%
+' wod%
+' bs%
+' sps%
+' pir%
+' obs%
+' coo%
+' hea%
+' rcm%
+' spv%
+' tpv%
+' tsp
+' tmp
+FUNCTION eoRxD210xx(tp%,da$,oda$,xx%,mcf%,irc%,fbc%,gmt%,mcf%,hum,hvf%,fs%,fsv%,fsm%,cw2%,cw1%,mx%,wod%,bs%,sps%,pir%,obs%,coo%,hea%,rcm%,spv%,tpv%,tsp,tmp)
+ LOCAL n%,id%
+ n%=eoRxD2(tp%,da$,oda$,db0%,db1%,db2%,db3%,db4%,db5%,id%,st%)
+ IF n% < 0 THEN
+  eoRxD210xx=-1
+  EXIT FUNCTION
+ ENDIF
+ mcf%=-1
+ irc%=-1
+ fbc%=-1
+ gmt%=-1
+ mcf%=-1
+ hum=-1
+ hvf%=-1
+ fs%=-1
+ fsv%=-1
+ fsm%=-1
+ cw2%=-1
+ cw1%=-1
+ mx%=-1
+ wod%=-1
+ bs%=-1
+ sps%=-1
+ pir%=-1
+ obs%=-1
+ coo%=-1
+ hea%=-1
+ rcm%=-1
+ spv%=-1
+ tpv%=-1
+ tsp=-1
+ tmp=-1
+ 
+ IF xx%=&H00 THEN
+  IF mid%=0 THEN
+   mid%=(db1% AND 240)/16
+   mcf%=db1% AND 3
+   irc%=(db0% AND 56)/8
+   fbc%=(db0% AND 6)/2
+   gmt%=db0% AND 1
+  ELSE IF mid%=1 THEN
+   mid%=(db7% AND 240)/16
+   mcf%=db7% AND 3
+   hum=(100/255)*db6%
+   hvf%=(db5% AND 128)/128
+   fs%=db5% AND 127
+   fsv%=(db4% AND 128)/128
+   fsm%=(db4% AND 64)/64
+   cw2%=(db4% AND 16)/16
+   cw1%=(db4% AND 8)/8
+   mw%=(db4% AND 4)/4
+   wod%=db4% AND 3
+   bs%=(db3% AND 96)/32
+   sps%=(db3% AND 16)/16
+   pir%=(db3% AND 12)/4
+   obs%=db3% AND 3
+   coo%=(db2% AND 192)/64
+   hea%=(db2% AND 48)/16
+   rcm%=(db2% AND 12)/4
+   spv%=(db2% AND 2)/2
+   tpv%=db2% AND 1
+   tsp=(40/255)*db1%
+   tmp=(40/255)*db0%
+  ELSE IF mid%=&H02 THEN
+   mcf%=(db8% AND 240)/16
+   
+  ELSE
+   ' unknown message identifier
+   eoRxD210xx=-2
+   EXIT FUNCTION
+  END IF
+ ELSE
+  ' unknown type
+  eoRxD210xx=-3
+  EXIT FUNCTION
+ ENDIF 
+ eoRxD210xx=0
 END FUNCTION
 
  ' Pressac Version 1 CT Clamp A5-12-01
