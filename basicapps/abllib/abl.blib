@@ -162,3 +162,37 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
  ENDIF
  ABLCmd=0
 END FUNCTION
+
+FUNCTION ABLDutyA( duty )
+ ABLDutyA=0
+ IF duty < 8 THEN
+  ' Invalid
+  ABLDutyA=0
+ ELSE IF duty < 10 THEN 
+  ABLDutyA=6
+ ELSE IF duty <= 85 THEN
+  ABLDutyA=duty*0.6
+ ELSE IF duty <=96 THEN
+  ABLDutyA=(duty-64)*2.5
+ ELSE IF duty <=97 THEN
+  ABLDutyA=80
+ ELSE
+  ' Invalid
+  ABLDutyA=0
+ ENDIF
+END FUNCTION
+
+FUNCTION ABLADuty( amp )
+ ABLADuty=0
+ IF amp <6 THEN
+  ' Invalid
+  ABLADuty = 0
+ ELSE IF amp < 51 THEN
+  ABLADuty=amp*0.6
+ ELSE IF amp <= 80 THEN
+  ABLADuty=(amp/2.5)+64
+ ELSE IF amp > 80 THEN
+  ' Invalid
+  ABLADuty = 0
+ ENDIF
+END FUNCTION
