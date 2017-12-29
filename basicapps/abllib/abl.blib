@@ -1,6 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2017-2018 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO ABL EVCC library
 ' @VERSION 1.0
 ' Montage- und Bedienungsanleitung EVCC (ab V2.7)
@@ -163,10 +163,11 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
  ABLCmd=0
 END FUNCTION
 
+' Convert duty cycle to amp
 FUNCTION ABLDutyA( duty )
  ABLDutyA=0
  IF duty < 8 THEN
-  ' Invalid
+  ' Charging not allowed
   ABLDutyA=0
  ELSE IF duty < 10 THEN 
   ABLDutyA=6
@@ -177,22 +178,170 @@ FUNCTION ABLDutyA( duty )
  ELSE IF duty <=97 THEN
   ABLDutyA=80
  ELSE
-  ' Invalid
+  ' Charging not allowed
   ABLDutyA=0
  ENDIF
 END FUNCTION
 
+' Convert amp to duty cycle
 FUNCTION ABLADuty( amp )
  ABLADuty=0
- IF amp <6 THEN
+ IF amp < 6.0 THEN
   ' Invalid
   ABLADuty = 0
- ELSE IF amp < 51 THEN
-  ABLADuty=amp*0.6
+ ELSE IF amp <= 51.0 THEN
+  ABLADuty=amp/0.6
  ELSE IF amp <= 80 THEN
   ABLADuty=(amp/2.5)+64
- ELSE IF amp > 80 THEN
+ ELSE IF amp <=80 THEN
+  ABLADuty=96
+ ELSE
   ' Invalid
   ABLADuty = 0
  ENDIF
+END FUNCTION
+
+' ABL EV electric car charger controller
+' This function must be called at least every 60 seconds,
+' The device is not capable to interrupt charging from the Charger side
+' itf$ interface
+' slv% slave address of charger (default 0)
+' rst% restart charging cycle
+' en%  enable charger
+' amp charging current in Amp
+'     amp x 230V x num of phases = excess energy available for charging
+' ampmin minimal ampere
+' ampmax maximal ampere
+' amphw Ic is the minimum of Idefault, Icmax and cable rating (in amp), 
+'     ABL does not output proximity cable value directly
+' st$ device status (A..F)
+'     A Charger is not connected to car
+'     B Charger is connected to car or charging ended
+'     C Charging without ventilation
+'     E Shutoff, no power
+'     F Error
+'     else unknown status
+' vs$ version info
+FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
+ __cmb
+ LOCAL par, mode%, cbf%
+ ' Get Version
+ err%=ABLCmd( itf$, slv%, 1, par)
+ IF err% THEN
+  ABLEVControl=-10
+  EXIT FUNCTION
+ ENDIF 
+ vs$=str$(par)
+ 
+ ' Read EV Status
+ err%=ABLCmd( itf$, slv%, 2, par)
+ IF err% THEN
+  ABLEVControl=-11
+  EXIT FUNCTION
+ ENDIF
+ 'print "Mode " mode%
+ mode%=int(par)
+ IF mode%=0 THEN 
+  st$="A"
+ ELSE IF mode%=15 OR mode%=16 THEN
+  st$="A"
+ ELSE IF mode%=17 THEN
+  st$="A"
+ ELSE IF mode%=64 OR mode%=12 or mode%=1 THEN
+  st$="B"
+ ELSE IF mode%=2 OR mode%=13 OR mode%=3 THEN
+  st$="B"
+ ELSE IF mode%=65 OR mode%=66 OR mode%=67 or mode%=4 THEN
+  st$="B"
+ ELSE IF mode%=68 OR mode%=9 THEN
+  st$="B"
+ ELSE IF mode%=5 THEN 
+  st$="C"
+ ELSE IF mode%=6 THEN
+  st$="D"
+ ELSE IF mode%=33 OR mode%=35 OR mode%=37 OR mode%=39 THEN
+  st$="E"
+ ELSE IF mode%=17 THEN
+  st$="A"
+ ELSE
+  st$="U"
+ ENDIF
+ ' Plausibility check, Jump to A' on incorrect current settings
+ IF en% AND (amp < 6 OR amp > 80 OR amp < ampmin OR amp > ampmax) THEN
+  err%=ABLCmd( itf$, slv%, 30, par)
+  ABLEVControl=-12
+  EXIT FUNCTION
+ ENDIF
+ ' Set Icmax
+ par=ABLADuty(ampmax)*10
+ err%=ABLCmd( itf$, slv%, 12, par)
+ IF err% THEN
+  ABLEVControl=-13
+  EXIT FUNCTION
+ ENDIF
+ ' Set Icdefault
+ par=ABLADuty(amp)*10
+ err%=ABLCmd( itf$, slv%, 15, par)
+ IF err% THEN
+  ABLEVControl=-14
+  EXIT FUNCTION
+ ENDIF
+ ' Get Ic
+ ' The available current Ic is automatically set to the lowest value of Idefault, Icmax and rated current of charging cable
+ ' Ic is communicated to the EV by PWM on CP-line
+ err%=ABLCmd( itf$, slv%, 11, par)
+ IF err% THEN
+  ABLEVControl=-15
+  EXIT FUNCTION
+ ENDIF
+ amphw=ABLDutyA(par/10.0)
+ ' Get Break flag
+ err%=ABLCmd( itf$, slv%, 29, par)
+ IF err% THEN
+  ABLEVControl=-16
+  EXIT FUNCTION
+ ENDIF 
+ cbf%=par
+ IF en% THEN
+  'PRINT "Enable"
+  IF cbf% THEN
+   'PRINT "Clear cbf"
+   ' Clear bBreakCharge flag
+   err%=ABLCmd( itf$, slv%, 28, par)
+   IF err% THEN
+    ABLEVControl=-17
+    EXIT FUNCTION
+   ENDIF
+  ENDIF
+  ' We do little trick for restart as forcing to manual mode and then back to restart as cmd 30, 31 does not work
+  IF rst% = 1 THEN
+   'PRINT "restart"
+   ' Set manual mode
+   err%=ABLCmd( itf$, slv%, 3, par)
+   IF err% THEN
+    ABLEVControl=-18
+    EXIT FUNCTION
+   ENDIF
+   ' Restart
+   err%=ABLCmd( itf$, slv%, 25, par)
+   IF err% THEN
+    ABLEVControl=-19
+    EXIT FUNCTION
+   ENDIF
+  ENDIF 'rst%
+ ELSE ' en% is low
+  ' Jump to A'
+  err%=ABLCmd( itf$, slv%, 30, par)
+  IF err% THEN
+   ABLEVControl=-21
+   EXIT FUNCTION
+  ENDIF
+  ' Set bBreakCharge flag
+  err%=ABLCmd( itf$, slv%, 27, par)
+  IF err% THEN
+   ABLEVControl=-22
+   EXIT FUNCTION
+  ENDIF
+ ENDIF
+ ABLEVControl=0
 END FUNCTION

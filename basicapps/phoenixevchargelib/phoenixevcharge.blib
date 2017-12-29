@@ -1,6 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2015-2016 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2015-2018 swissEmbedded GmbH, All rights reserved.
 ' Phoenix EV control electric car charger with excess energy over modbus TCP and RTU
 ' Testet with Wallb-e Pro
 ' Compatible to all Phoenix EV based charger systems
@@ -16,8 +16,8 @@
 'slv%=180
 'itf$="TCP:192.168.0.114:502"
 'start:
-' err%=PhoenixEVControl(itf$,slv%, en%, amp%, st$, prox%, tch%)
-' print "Phoenix " err% st$ prox% tch%
+' err%=PhoenixEVControl(itf$,slv%, en%, amp%, 6, 16, amphw, st$)
+' print "Phoenix " err% st$ amphw
 ' pause 30000
 ' goto start
 '@lib_init
@@ -38,10 +38,14 @@ END FUNCTION
 ' This function must be called at least every 60 seconds,
 ' itf$ modbus interface (see EMDO modbus library for details)
 ' slv% slave address of charger (default 180)
+' rst% restart charging cycle
 ' en%  enable charger
-' amp% home energy at energy meter neg. 
+' amp charging current in Amp
 '     amp x 230V x num of phases = excess energy available for charging
-' st$ device status (A..F)
+' ampmin minimal ampere
+' ampmax maximal ampere
+' amphw proximity signal of the cable, max current of the cable (in amp)
+' st$ device status (A..F
 '     A Charger is not connected to car
 '     B Charger is connected to car or charging ended
 '     C Charging without ventilation
@@ -49,41 +53,42 @@ END FUNCTION
 '     E Shutoff, no power
 '     F Error
 '     else unknown status
-' prox% proximity signal
-' tch%  charging time [s]
-FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%, st$, prox%, tch%)
- LOCAL err%, reG$, reD$, reC$, reR$, dip%
- __cmb 
+' vs$ version info
+FUNCTION PhoenixEVControl(itf$, slv%, rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
+ LOCAL err%, reG$, reD$, reC$, reR$, dip%, vers%, di%
+ __cmb
  ' Read EV Status
  err%= mbFunc(itf$,slv%,4,100,8,reG$,500)
  IF err% THEN
-  PhoenixEVControl=err%
+  PhoenixEVControl=-10
   EXIT FUNCTION
  ENDIF
  
  ' Check DIP switches
  dip%=conv("bbe/u32",mid$(reG$,9,4))
  IF NOT (dip% and &H240) THEN  
-  PhoenixEVControl=-1  
+  PhoenixEVControl=-11  
   EXIT FUNCTION
  ENDIF
- 
  ' Status 
  st$=mid$(reG$,2,1)
  ' Proximity charge current in A
- prox%=conv("bbe/u16",mid$(reG$,3,2))
+ amphw=conv("bbe/u16",mid$(reG$,3,2))
  ' Charging time in s
  tch%=conv("bbe/u32",mid$(reG$,7,2)+mid$(reG$,5,2))
-
- IF en% AND (amp% < 6 OR amp% > 80) THEN
-  PhoenixEVControl=-2
+ ' Version
+ vers%=conv("bbe/u32",mid$(reG$,13,2)+mid$(reG$,11,2))
+ vs$=str$((vers%/10000) MOD 100)+"."+str$((vers%/100) MOD 100 )+"."+str$(vers% MOD 100)
+ ' Plausibility check
+ IF en% AND (amp < 6 OR amp > 80 OR amp < ampmin OR amp > ampmax) THEN
+  PhoenixEVControl=-12
   EXIT FUNCTION
  ENDIF
- 
- reG$=conv("u16/bbe",amp%)
+ ' Allow charging
+ reG$=conv("u16/bbe",int(amp))
  err%= mbFunc(itf$,slv%,6,300,1,reG$,500)
  IF err% THEN
-  PhoenixEVControl=err%
+  PhoenixEVControl=-13
   EXIT FUNCTION
  ENDIF
  IF en% THEN
@@ -93,9 +98,42 @@ FUNCTION PhoenixEVControl(itf$,slv%,en%, amp%, st$, prox%, tch%)
  ENDIF
  err%= mbFunc(itf$,slv%,5,400,1,reG$,500)
  IF err% THEN
-  PhoenixEVControl=err%
+  PhoenixEVControl=-14
   EXIT FUNCTION
  ENDIF
- 
+ ' Page 76 of the manual. If EN is set to low, the  "Charger Ready" (CR) is disabled
+ 'PRINT en% " " amphw " " st$
+ ' Read CR Status
+ err%= mbFunc(itf$,slv%,2,200,8,reG$,500)
+ IF err% THEN
+  PhoenixEVControl=-15
+  EXIT FUNCTION
+ ENDIF
+ di%=asc(left$(reG$,1))
+ PRINT di%
+ IF en%=0 AND ((di% AND 16)=0) AND (st$="C" OR st$="D") THEN
+  ' Even if charging is disabled and AC power is removed but the status stays at C or D
+  st$="B"
+ ENDIF
+ ' Charging station available
+ 'IF en% THEN
+ ' reG$=conv("u16/bbe",&HFF00)
+ 'ELSE
+ ' reG$=conv("u16/bbe",&H00)
+ 'ENDIF
+ 'err%= mbFunc(itf$,slv%,5,402,1,reG$,500)
+ 'IF err% THEN
+ ' PhoenixEVControl=-15
+ ' EXIT FUNCTION
+ 'ENDIF
+ 'PRINT "en " en% " stat " st$
+ 'IF en%=0 AND (st$="C" OR st$="D") THEN
+ ' reG$=conv("u16/bbe",&HFF00)
+ ' err%= mbFunc(itf$,slv%,5,409,1,reG$,500)
+ ' IF err% THEN
+ '  PhoenixEVControl=-16
+ '  EXIT FUNCTION
+ ' ENDIF
+ 'ENDIF
  PhoenixEVControl=0
 END FUNCTION

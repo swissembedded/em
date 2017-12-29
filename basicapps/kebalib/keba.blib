@@ -1,6 +1,6 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2017 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2017-2018 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO Keba EV Charger control P20, P30, BMW wallbox
 ' @VERSION 1.0
 ' Please make sure the Keba station is configured correctly
@@ -38,7 +38,7 @@ FUNCTION KEBAInfo( server$, info$)
   KEBAInfo=-2
   EXIT FUNCTION  
  ENDIF
- info$=rsp$
+ info$=mid$(rsp$, 13, len(rsp$)-14)
  KEBAInfo=0
 END FUNCTION
 
@@ -81,13 +81,13 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
  LOCAL err%, n%, m%, con%, rsp$
  LOCAL coms$, secs$
 
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34),chr$(34),"id$")
- LOCAL proda$(2) LENGTH 20 = (chr$(34)+"Product-ID"+chr$(34)+": "+chr$(34),chr$(34),"prod$")
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34),chr$(34),"ser$")
- LOCAL firma$(2) LENGTH 20 = (chr$(34)+"Firmware"+chr$(34)+": "+chr$(34),chr$(34),"firm$")
+ LOCAL ida$(2) LENGTH 15 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34),chr$(34),"id$")
+ LOCAL proda$(2) LENGTH 15 = (chr$(34)+"Product"+chr$(34)+": "+chr$(34),chr$(34),"prod$")
+ LOCAL sera$(2) LENGTH 15 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34),chr$(34),"ser$")
+ LOCAL firma$(2) LENGTH 15 = (chr$(34)+"Firmware"+chr$(34)+":"+chr$(34),chr$(34),"firm$")
  ' P30 only
- LOCAL coma$(2) LENGTH 20 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+ LOCAL coma$(2) LENGTH 15 = (chr$(34)+"COM-module"+chr$(34)+": ",",","coms$")
+ LOCAL seca$(2) LENGTH 15 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
 
  con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
@@ -95,7 +95,7 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
   EXIT FUNCTION
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",2000)
- n%=SocketWrite( con%, "report")
+ n%=SocketWrite( con%, "report 1")
  
  id$=""
  prod$=""
@@ -106,8 +106,8 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
 
  n%=StreamSearch(SocketRead(con%),"ida$","proda$","sera$","firma$","coma$","seca$",5000)
  m%=SocketClose( con% )
-
- IF n% <> 15 AND n% <> 63 THEN
+ ' P30 or P20
+ IF (n% AND 1)=0 THEN
   KEBAReport1=-2
   EXIT FUNCTION
  ENDIF
@@ -142,26 +142,26 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,maxcurp%,curhw%,curusr%,curfs%,tmofs%,curtim%,tmoct%,se%,out%,inp%,ser$,sec%)
  LOCAL err%, n%, m%, con%, rsp$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
- LOCAL sta$(2) LENGTH 20 = (chr$(34)+"State"+chr$(34)+": ", ",", "sts$")
- LOCAL erra1$(2) LENGTH 20 = (chr$(34)+"Error1"+chr$(34)+": ", ",", "errs1$")
- LOCAL erra2$(2) LENGTH 20 = (chr$(34)+"Error2"+chr$(34)+": ", ",", "errs2$")
- LOCAL pluga$(2) LENGTH 20 = (chr$(34)+"Plug"+chr$(34)+": ", ",", "plugs$")
- LOCAL ensysa$(2) LENGTH 20 = (chr$(34)+"Enable sys"+chr$(34)+": ", ",", "ensyss$")
- LOCAL enusera$(2) LENGTH 20 = (chr$(34)+"Enable user"+chr$(34)+": ", ",", "enusers$")
- LOCAL maxcura$(2) LENGTH 20 = (chr$(34)+"Max curr"+chr$(34)+": ", ",", "maxcurs$")
- LOCAL maxcurpa$(2) LENGTH 20 = (chr$(34)+"Max curr %"+chr$(34)+": ", ",", "maxcurps$")
- LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW"+chr$(34)+": ", ",", "curhws$")
- LOCAL curusra$(2) LENGTH 20 = (chr$(34)+"Curr user"+chr$(34)+": ", ",", "curusrs$")
- LOCAL curfsa$(2) LENGTH 20 = (chr$(34)+"Curr FS"+chr$(34)+": ", ",", "curfss$")
- LOCAL tmofsa$(2) LENGTH 20 = (chr$(34)+"Tmo FS"+chr$(34)+": ", ",", "tmofss$")
- LOCAL curtima$(2) LENGTH 20 = (chr$(34)+"Curr timer"+chr$(34)+": ", ",", "curtims$")
- LOCAL tmocta$(2) LENGTH 20 = (chr$(34)+"Tmo CT"+chr$(34)+": ", ",", "tmocts$")
- LOCAL sea$(2) LENGTH 20 = (chr$(34)+"Setenergy"+chr$(34)+": ", ",", "ses$")
- LOCAL outa$(2) LENGTH 20 = (chr$(34)+"Output"+chr$(34)+": ", ",", "outs$")
- LOCAL inpa$(2) LENGTH 20 = (chr$(34)+"Input"+chr$(34)+": ", ",", "inps$")
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+ LOCAL ida$(2) LENGTH 10 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL sta$(2) LENGTH 10 = (chr$(34)+"State"+chr$(34)+": ", ",", "sts$")
+ LOCAL erra1$(2) LENGTH 15 = (chr$(34)+"Error1"+chr$(34)+": ", ",", "errs1$")
+ LOCAL erra2$(2) LENGTH 15 = (chr$(34)+"Error2"+chr$(34)+": ", ",", "errs2$")
+ LOCAL pluga$(2) LENGTH 15 = (chr$(34)+"Plug"+chr$(34)+": ", ",", "plugs$")
+ LOCAL ensysa$(2) LENGTH 15 = (chr$(34)+"Enable sys"+chr$(34)+": ", ",", "ensyss$")
+ LOCAL enusera$(2) LENGTH 15 = (chr$(34)+"Enable user"+chr$(34)+": ", ",", "enusers$")
+ LOCAL maxcura$(2) LENGTH 15 = (chr$(34)+"Max curr"+chr$(34)+": ", ",", "maxcurs$")
+ LOCAL maxcurpa$(2) LENGTH 15 = (chr$(34)+"Max curr %"+chr$(34)+": ", ",", "maxcurps$")
+ LOCAL curhwa$(2) LENGTH 15 = (chr$(34)+"Curr HW"+chr$(34)+": ", ",", "curhws$")
+ LOCAL curusra$(2) LENGTH 15 = (chr$(34)+"Curr user"+chr$(34)+": ", ",", "curusrs$")
+ LOCAL curfsa$(2) LENGTH 15 = (chr$(34)+"Curr FS"+chr$(34)+": ", ",", "curfss$")
+ LOCAL tmofsa$(2) LENGTH 15 = (chr$(34)+"Tmo FS"+chr$(34)+": ", ",", "tmofss$")
+ LOCAL curtima$(2) LENGTH 15 = (chr$(34)+"Curr timer"+chr$(34)+": ", ",", "curtims$")
+ LOCAL tmocta$(2) LENGTH 15 = (chr$(34)+"Tmo CT"+chr$(34)+": ", ",", "tmocts$")
+ LOCAL sea$(2) LENGTH 15 = (chr$(34)+"Setenergy"+chr$(34)+": ", ",", "ses$")
+ LOCAL outa$(2) LENGTH 15 = (chr$(34)+"Output"+chr$(34)+": ", ",", "outs$")
+ LOCAL inpa$(2) LENGTH 15 = (chr$(34)+"Input"+chr$(34)+": ", ",", "inps$")
+ LOCAL sera$(2) LENGTH 15 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) LENGTH 15 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
 
  LOCAL ids$,sts$,errs1$,errs2$,plugs$,ensyss$,enusers$
  LOCAL maxcurs$,maxcurps$,curhws$,curusrs$,curfss$
@@ -200,8 +200,8 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  
  n%=StreamSearch(SocketRead(con%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
  m%=SocketClose( con% )
-
- IF n% <> 2097151 AND n% <> 262143 THEN
+ ' P30 or P20
+ IF (n% AND 1)=0 THEN
   KEBAReport2=-2
   EXIT FUNCTION
  ENDIF
@@ -245,19 +245,19 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%)
  LOCAL err%, n%, m%, con%, rsp$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
- LOCAL Ua1$(2) LENGTH 20 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
- LOCAL Ua2$(2) LENGTH 20 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
- LOCAL Ua3$(2) LENGTH 20 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
- LOCAL Ia1$(2) LENGTH 20 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
- LOCAL Ia2$(2) LENGTH 20 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
- LOCAL Ia3$(2) LENGTH 20 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
- LOCAL Pa$(2) LENGTH 20 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
- LOCAL PFa$(2) LENGTH 20 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
- LOCAL Ea$(2) LENGTH 20 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
- LOCAL Etota$(2) LENGTH 20 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
- LOCAL seca$(2) length 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+ LOCAL ida$(2) LENGTH 15 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL Ua1$(2) LENGTH 15 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
+ LOCAL Ua2$(2) LENGTH 15 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
+ LOCAL Ua3$(2) LENGTH 15 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
+ LOCAL Ia1$(2) LENGTH 15 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
+ LOCAL Ia2$(2) LENGTH 15 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
+ LOCAL Ia3$(2) LENGTH 15 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
+ LOCAL Pa$(2) LENGTH 15 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
+ LOCAL PFa$(2) LENGTH 15 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
+ LOCAL Ea$(2) LENGTH 15 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
+ LOCAL Etota$(2) LENGTH 15 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
+ LOCAL sera$(2) LENGTH 15 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) length 15 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
  
  LOCAL Us1$, Us2$, Us3$
  LOCAL Is1$, Is2$, Is3$
@@ -289,7 +289,7 @@ FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, E
  n%=StreamSearch(SocketRead(con%),"ida$","Ua1$","Ua2$","Ua3$","Ia1$","Ia2$","Ia3$","Pa$","PFa$","Ea$","Etota$","sera$","seca$",5000)
  m%=SocketClose( con% )
 
- IF n% <> 16383 THEN
+ IF (n% AND 1)=0 THEN
   KEBAReport3=-2
   EXIT FUNCTION
  ENDIF
@@ -326,18 +326,18 @@ END FUNCTION
 ' return value < 0 on error
 FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, started%, ended%, reason%, tag$, clss$, ser$, sec%)
  LOCAL err%, n%, m%, con%, rsp$
- LOCAL ida$(2) LENGTH 20 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
- LOCAL sessa$(2) LENGTH 20 = (chr$(34)+"Session ID"+chr$(34)+": ", "}", "sesss$")
- LOCAL curhwa$(2) LENGTH 20 = (chr$(34)+"Curr HW   "+chr$(34)+": ", ",", "curhws$")
- LOCAL estarta$(2) LENGTH 20 = (chr$(34)+"E Start   "+chr$(34)+": ", ",", "estarts$")
- LOCAL epresa$(2) LENGTH 20 = (chr$(34)+"E Pres    "+chr$(34)+": ", ",", "epress$")
- LOCAL starteda$(2) LENGTH 20 = (chr$(34)+"started[s]"+chr$(34)+": ", ",", "starteds$")
- LOCAL endeda$(2) LENGTH 20 = (chr$(34)+"ended[s]  "+chr$(34)+": ", ",", "endeds$")
- LOCAL reasona$(2) LENGTH 20 = (chr$(34)+"reason "+chr$(34)+": ", ",", "reasons$")
- LOCAL taga$(2) LENGTH 20 = (chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34), chr$(34), "tag$")
- LOCAL clssa$(2) LENGTH 20 = (chr$(34)+"RFID class"+chr$(34)+": "+chr$(34), chr$(34), "clss$")
- LOCAL sera$(2) LENGTH 20 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
- LOCAL seca$(2) LENGTH 20 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
+ LOCAL ida$(2) LENGTH 15 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
+ LOCAL sessa$(2) LENGTH 15 = (chr$(34)+"Session ID"+chr$(34)+": ", "}", "sesss$")
+ LOCAL curhwa$(2) LENGTH 15 = (chr$(34)+"Curr HW   "+chr$(34)+": ", ",", "curhws$")
+ LOCAL estarta$(2) LENGTH 15 = (chr$(34)+"E Start   "+chr$(34)+": ", ",", "estarts$")
+ LOCAL epresa$(2) LENGTH 15 = (chr$(34)+"E Pres    "+chr$(34)+": ", ",", "epress$")
+ LOCAL starteda$(2) LENGTH 15 = (chr$(34)+"started[s]"+chr$(34)+": ", ",", "starteds$")
+ LOCAL endeda$(2) LENGTH 15 = (chr$(34)+"ended[s]  "+chr$(34)+": ", ",", "endeds$")
+ LOCAL reasona$(2) LENGTH 15 = (chr$(34)+"reason "+chr$(34)+": ", ",", "reasons$")
+ LOCAL taga$(2) LENGTH 15 = (chr$(34)+"RFID tag"+chr$(34)+": "+chr$(34), chr$(34), "tag$")
+ LOCAL clssa$(2) LENGTH 15 = (chr$(34)+"RFID class"+chr$(34)+": "+chr$(34), chr$(34), "clss$")
+ LOCAL sera$(2) LENGTH 15 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
+ LOCAL seca$(2) LENGTH 15 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
 
  LOCAL sesss$, curhws$, estarts$, epress$
  LOCAL starteds$, endeds$
@@ -368,7 +368,7 @@ FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, star
  n%=StreamSearch(SocketRead(con%),"ida$","sessa$","curhwa$", "estarta$", "epresa$", "starteda$","endeda$", "reasona$","taga$","clssa$", "sera$","seca$", 5000)
  m%=SocketClose( con% )
 
- IF n% <> 8191 THEN
+ IF (n% AND 1)=0 THEN
   KEBAReport100=-2
   EXIT FUNCTION
  ENDIF
@@ -567,7 +567,6 @@ FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
  n%=SocketWrite( con%, "display "+str$(act%)+" "+str$(min%)+" "+str$(max%)+" 0 "+txt$)
  rsp$=SocketReadLn$(con%,chr$(10),2000)
  n%=SocketClose( con% )
- print rsp$
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBADisplay=-2
   EXIT FUNCTION  
@@ -596,4 +595,73 @@ FUNCTION KEBAUnlock( server$)
   EXIT FUNCTION  
  ENDIF
  KEBAUnlock=0
+END FUNCTION
+
+' KEBA EV electric car charger controller
+' This function must be called at least every 60 seconds,
+' server$ device ip address
+' rst% restart charging cycle
+' en%  enable charger
+' amp charging current in Amp
+'     amp x 230V x num of phases = excess energy available for charging
+' ampmin minimal ampere
+' ampmax maximal ampere
+' amphw is the minimum of DIP switch setting, Icmax and cable rating, temperature reduction (in amp), 
+'     ABL does not output proximity cable value directly
+' st$ device status (A..F)
+'     A Charger is not connected to car
+'     B Charger is connected to car or charging ended
+'     C Charging without ventilation
+'     D Charging with ventilation
+'     E Shutoff, no power
+'     F Error
+'     else unknown status
+' vs$ version info
+FUNCTION KEBAEVControl(server$, rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
+ __cmb
+ LOCAL id$, stat%, dmy%, plug%, ensys%, enuser%, maxcur%, curhw%, curusr%, curfs%, dmys$, cur%
+ ' Read Info
+ err%=KEBAInfo( server$, vs$)
+ IF err% THEN
+  KEBAEVControl=-10
+  EXIT FUNCTION
+ ENDIF
+
+ ' Read EV Status
+ err%=KEBAReport2( server$,id$,stat%,dmy%,dmy%,plug%,ensys%,enuser%,maxcur%,dmy%,curhw%,curusr%, curfs%, dmy%, dmy%, dmy%, dmy%,dmy%,dmy%,dmys$,dmy%)
+ IF err% THEN
+  print "report failed" err%
+  KEBAEVControl=-11
+  EXIT FUNCTION
+ ENDIF
+ IF plug%=0 OR plug%=1 OR plug%=3 OR stat%=0 OR stat%=1 OR stat%=2 OR stat%=5 THEN 
+  st$="A"
+ ELSE IF (plug%=5 OR plug%=7) AND stat%<>3 THEN
+  st$="B"
+ ELSE IF stat%=3 THEN
+  st$="C"
+ ELSE IF stat%=5 THEN
+  st$="F"
+ ELSE 
+  st$="U"
+ ENDIF
+ ' calculate cable proximity and charger/line hardware limit value
+ amphw=curhw%/1000.0
+ IF en% AND (amp < 6 OR amp > 63 OR amp < ampmin OR amp > ampmax OR amp > amphw) THEN
+  KEBAEVControl=-12
+  EXIT FUNCTION
+ ENDIF
+ ' Set the current
+ cur%=int(amp*1000.0)
+ err%=KEBACurrent( server$, cur%)
+ IF err% THEN
+  KEBAEVControl=-13
+ ENDIF
+ ' Enable / disable the charger
+ err%=KEBAEnable( server$, en%)
+ IF err% THEN
+  KEBAEVControl=-14
+ ENDIF
+ 
+ KEBAEVControl=0
 END FUNCTION
