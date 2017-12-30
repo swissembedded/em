@@ -8,7 +8,7 @@
 ' http://www.keba.com/en/emobility/service-support/downloads/Downloads
 ' UDP Programmer's Guide V2.0 
 ' If you have problems, pls ensure that latest firmware is installed on your Keba
-
+' Test commands with netcat e.g. echo -n "display 0 0 0 0 12346,6" | nc -p 7090 -u 192.168.10.21 7090
 ' Some examples on usage 
 'charger IP
 'server$="192.168.0.25"
@@ -246,12 +246,12 @@ END FUNCTION
 FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%)
  LOCAL err%, n%, m%, con%, rsp$
  LOCAL ida$(2) LENGTH 15 = (chr$(34)+"ID"+chr$(34)+": "+chr$(34), chr$(34), "id$")
- LOCAL Ua1$(2) LENGTH 15 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Ua1$")
- LOCAL Ua2$(2) LENGTH 15 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Ua2$")
- LOCAL Ua3$(2) LENGTH 15 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Ua3$")
- LOCAL Ia1$(2) LENGTH 15 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Ia1$")
- LOCAL Ia2$(2) LENGTH 15 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Ia2$")
- LOCAL Ia3$(2) LENGTH 15 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Ia3$")
+ LOCAL Ua1$(2) LENGTH 15 = (chr$(34)+"U1"+chr$(34)+": ", ",", "Us1$")
+ LOCAL Ua2$(2) LENGTH 15 = (chr$(34)+"U2"+chr$(34)+": ", ",", "Us2$")
+ LOCAL Ua3$(2) LENGTH 15 = (chr$(34)+"U3"+chr$(34)+": ", ",", "Us3$")
+ LOCAL Ia1$(2) LENGTH 15 = (chr$(34)+"I1"+chr$(34)+": ", ",", "Is1$")
+ LOCAL Ia2$(2) LENGTH 15 = (chr$(34)+"I2"+chr$(34)+": ", ",", "Is2$")
+ LOCAL Ia3$(2) LENGTH 15 = (chr$(34)+"I3"+chr$(34)+": ", ",", "Is3$")
  LOCAL Pa$(2) LENGTH 15 = (chr$(34)+"P"+chr$(34)+": ", ",", "Ps$")
  LOCAL PFa$(2) LENGTH 15 = (chr$(34)+"PF"+chr$(34)+": ", ",", "PFs$")
  LOCAL Ea$(2) LENGTH 15 = (chr$(34)+"E pres"+chr$(34)+": ", ",", "Es$")
@@ -310,7 +310,7 @@ END FUNCTION
 ' KEBA UDP command "report 100"
 ' P30,BMW wallbox
 ' server$ ip address of the charger
-' off% history offset 1..30
+' off% history offset 0..30
 ' id$ ID calling report
 ' sess% session counter
 ' curhw% highest possible charging current
@@ -379,8 +379,6 @@ FUNCTION KEBAReport100( server$, off%, id$, sess%, curhw%, estart%, epres%, star
  started%=val(starteds$)
  ended%=val(endeds$)
  reason%=val(reasons$)
- tag%=val(tags$)
- clss%=val(clsss$)
  sec%=val(secs$)
  KEBAReport100=0
 END FUNCTION
