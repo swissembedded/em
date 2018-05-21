@@ -1,0 +1,99 @@
+' This script is an example of the EMDO101 energy manager
+' Please visit us at www.swissembedded.com
+' Copyright (c) 2017-2018 swissEmbedded GmbH, All rights reserved.
+' @DESCRIPTION EMDO ABL EVCC library
+' @VERSION 1.0
+' Control the EVGroup
+
+
+' States:
+' 0 Idle (A)
+' 1 Connect (B)
+' 2 Initiate (waiting for external condition to start charging)
+' 3 Charge (C)
+' 4 Error (F)
+' 5 Break (external condition to stop charging)
+' 6 Interrupted (B charging interrupted by vehicle)
+' 7 Disconnect (A vehicle disconnected)
+FUNCTION EVGroup(en%, power, amp)
+ LOCAL i%, gn%, n%, j%, err%, itf$, addr%, par, mode%, duty, amp, st%, nst%, msg$, evm$
+ DIM evm$(8) LENGTH 10 = ("Unplugged","Ready","Initiating","Charging","Error","Break","Interrupted","Disconnected")
+ gn%=4
+ ' Read the config
+ 'tp$=cdbGet( "EVG1Charger", "")
+ FOR i% = 1 TO gn%
+  ' set group type and number of devices
+  FOR j%= 1 TO n%
+   ' process states   
+   ' Get charger state
+   nst%=st%
+   ' ABL, PHOENIX and KEBA
+   SELECT CASE st%
+    CASE 0
+	 ' Idle
+	 en%=0
+	 IF st$="B" THEN
+	  nst%=1
+	 ELSE IF st$="E" THEN
+	  nst%=4
+	 ENDIF
+    CASE 1
+	 ' Connect
+	 IF st$="E" THEN
+	  nst%=4
+	 ELSE
+	  nst%=2
+	 ENDIF
+    CASE 2
+	 ' Initiate
+	 IF THEN
+	  ena%=1
+	 ENDIF
+	 IF st$="E" THEN
+	  nst%=4
+ 	 ELSE IF st$="A" THEN
+	  nst%=0
+	 ELSE IF st$="C" OR st$="D" THEN
+	  nst%=3
+	 ENDIF
+    CASE 3
+	 ' Charge
+	 IF st$="E" THEN 
+	  nst%=4
+	 ELSE IF st$="B" THEN
+	  nst%=6
+	 ELSE IF st$="A" THEN
+	  nst%=7
+	 ENDIF
+    CASE 4
+	 ' Error
+	 IF st$="A" THEN
+	  nst%=0
+	 ENDIF
+    CASE 5
+	 ' Break
+	 IF st$="E" THEN 
+	  nst%=4
+	 ' FIXME
+	 ELSE IF st$="C" OR st$="D" THEN
+	  nst%=3
+	 ELSE IF st$="A" THEN
+	  nst%=7
+	 ENDIF
+    CASE 6
+	 ' Interrupted
+	 IF st$="E" THEN 
+	  nst%=4
+	 ELSE IF st$="C" OR st$="D" THEN
+	  nst%=3
+	 ELSE IF st$="A" THEN
+	  nst%=7
+	 ENDIF
+    CASE 7
+	 ' Disconnect
+	 nst%=0
+   END SELECT
+   msg$=evm$(st%)
+  NEXT j%
+ NEXT i%
+END FUNCTION

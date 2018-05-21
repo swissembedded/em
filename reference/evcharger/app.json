@@ -2738,6 +2738,31 @@
 					"minLength": 1,
 					"maxLength": 16,
 					"pattern": "^[A-Z0-9]*$"
+				},
+				{
+					"id": "EMG1D0Rs485Idx",
+					"type": "choice",
+					"title": "RS485 interface",
+					"description": "What instance to use?",
+					"values": 
+					[
+						"$SYS$RS485_LIST"
+					],
+					"default": 0,
+					"depends": 
+					[
+						{
+							"id": "EMG1D0ConnType",
+							"value": "RS485"
+						}
+					]
+				},
+				{
+					"id": "EMG1D0Cfg",
+					"type": "text",
+					"title": "D0 Interface Configuration",
+					"description": "Specify Interface Configuration",
+					"default": "if=0 mode=c baud=9600 data=7 stop=1 parity=e term=1 echo=0 auto-parity=0 strip-parity= autoread=1"
 				}
 			]
 		},

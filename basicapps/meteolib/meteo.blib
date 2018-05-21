@@ -25,7 +25,7 @@
 ' Ndn day lenght
 ' return   estimated value Is
 FUNCTION mtEstimatorS(Ix, Aa, Ab, nd, Ndn)
- mtEstimatorS=Ix * Aa * Ab * nd / Ndn
+ mtEstimatorS=Ix * (Aa + /Ab * nd / Ndn))
 END FUNCTION
 
 
