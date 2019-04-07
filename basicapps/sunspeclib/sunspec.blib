@@ -1,10 +1,10 @@
 ' This script is an example of the EMDO101 energy manager
 ' Please visit us at www.swissembedded.com
-' Copyright (c) 2015 - 20116 swissEmbedded GmbH, All rights reserved.
+' Copyright (c) 2015 - 2019 swissEmbedded GmbH, All rights reserved.
 ' @DESCRIPTION EMDO sunspec library
 ' @VERSION 1.0
 ' This example reads a sunspec compatible inverter over modbus
-' Please make sure that the inverters RS485 interface 
+' Please make sure that the inverters RS485 interface
 ' is configured correctly. If multiple inverters are connected on a serial
 ' line make sure each device has a unique modbus slave address configured.
 ' Cable must be twisted pair with correct end termination on both ends
@@ -25,30 +25,43 @@
 'start:
 'err%=SunspecCommon( itf$, slv%, iMan$, iMod$, iOpt$, iVer$, iSer$, iAddr%)
 'print "Common" err% iMan$ iMod$ iOpt$, iVer$ iSer$ iAddr%
-'err%=SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code% )
+'err%=SunspecInverter(itf$, slv%, NumAc%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code% )
 'print "Inverter" err% Iac1 Iac2 Iac3 Uac1 Uac2 Uac3 Pac Fac VA VAR PF E Idc Udc Pdc T1 T2 T3 T4 Status% Code%
 'pause 30000
 'goto start
+
+'@lib_init
+FUNCTION __sunspec_init()
+ LIBRARY LOAD "modbus"
+ 'OPTION LIBRARY modbus PRINT ENABLE
+ 'OPTION LIBRARY sunspec PRINT ENABLE
+ print "Init sunspec"
+END FUNCTION
+
+'@lib_destroy
+FUNCTION __sunspec_destroy()
+  PRINT "Deinit sunspec"
+END FUNCTION
 
 ' Sunspec Read block and check for magic
 ' itf$ Modbus Interface
 ' slv% Modbus Slave address
 ' bAddr% Modbus base address of the found block, if base is 0, address is detected automatically
-' return negative value on error 
+' return negative value on error
 FUNCTION SunspecMagic(itf$,slv%,bAddr%)
   LOCAL err%, rsp$
-  err%=mbFunc(itf$,slv%,3,bAddr%-1,2,rsp$,1000)  
+  err%=mbFunc(itf$,slv%,3,bAddr%-1,2,rsp$,1000)
   IF err% THEN
-    SunspecMagic=err% 
+    SunspecMagic=err%
     EXIT FUNCTION
-  ENDIF 
+  ENDIF
   IF len(rsp$)<>4 THEN
     SunspecMagic=-1
     EXIT FUNCTION
-  ENDIF 
+  ENDIF
 
-  ' Expect SunSpec "SunS" magic and Common Model Block (1)  
-  ' Block is at least 65 registers                                                  
+  ' Expect SunSpec "SunS" magic and Common Model Block (1)
+  ' Block is at least 65 registers
   IF conv("bbe/u32", rsp$)<> &H53756e53 THEN
    print conv("bbe/u32", rsp$)
    SunspecMagic=-100
@@ -63,11 +76,11 @@ END FUNCTION
 ' bId%   Sunspec block id that is interesting
 ' bAddr% Modbus base address of the found block, if base is 0, address is detected automatically
 ' bLen%  Len of the block
-' return negative value on error 
+' return negative value on error
 FUNCTION SunspecBlock(itf$,slv%,bId%, bAddr%,bLen%)
  LOCAL err%, ids%, rsp$
  IF bAddr%=0 THEN
-  ' Autodetect the base of sunspec register at 40001,50001, 1  
+  ' Autodetect the base of sunspec register at 40001,50001, 1
   bAddr%=40001
   err%=SunspecMagic(itf$,slv%,bAddr%)
   IF err% THEN
@@ -85,9 +98,9 @@ FUNCTION SunspecBlock(itf$,slv%,bId%, bAddr%,bLen%)
   print "start" bAddr%
   ' We must point to start of block (e.g. 40003)
   bAddr%=bAddr%+2
- ENDIF 
+ ENDIF
  ' Now we iterate through the blocks, first on bAddr% is always block id
- DO 
+ DO
   ' Read ID and L of the block
   err%=mbFunc(itf$,slv%,3,bAddr%-1,2,rsp$,1000)
   IF err% THEN
@@ -97,16 +110,16 @@ FUNCTION SunspecBlock(itf$,slv%,bId%, bAddr%,bLen%)
   ids%=conv("bbe/u16",left$(rsp$,2))
   bLen%=conv("bbe/u16",right$(rsp$,2))
   'print bAddr% ids% bLen% len(rsp$)
-  IF ids%=bId% THEN 
-   ' We found the block     
+  IF ids%=bId% THEN
+   ' We found the block
    SunspecBlock=0
-   EXIT FUNCTION  
+   EXIT FUNCTION
   ELSEIF ids%=&HFFFF THEN
    ' Last block, we did not find the block
    SunspecBlock=-101
-   EXIT FUNCTION    
+   EXIT FUNCTION
   ENDIF
-  bAddr%=bAddr%+bLen%+2 
+  bAddr%=bAddr%+bLen%+2
  LOOP
 END FUNCTION
 
@@ -118,7 +131,7 @@ END FUNCTION
 ' iVer$ Inverter Version
 ' iSer$ Inverter Serial Number
 ' iAddr% Inverter Modbus Device Address
-' return negative value on error 
+' return negative value on error
 FUNCTION SunspecCommon(itf$,slv%,iMan$,iMod$,iOpt$,iVer$,iSer$,iAddr%)
  LOCAL err%, bId%, bAddr%, bLen%, rRsp$
  bId%=1
@@ -128,13 +141,13 @@ FUNCTION SunspecCommon(itf$,slv%,iMan$,iMod$,iOpt$,iVer$,iSer$,iAddr%)
  IF err% THEN
   SunspecCommon=err%
   EXIT FUNCTION
- ENDIF 
- err%=mbFunc(itf$,slv%,3,bAddr%+2-1,16,iMan$,2000) OR mbFunc(itf$,slv%,3,bAddr%+18-1,16,iMod$,2000) OR mbFunc(itf$,slv%,3,bAddr%+34-1,8,iOpt$,2000) 
+ ENDIF
+ err%=mbFunc(itf$,slv%,3,bAddr%+2-1,16,iMan$,2000) OR mbFunc(itf$,slv%,3,bAddr%+18-1,16,iMod$,2000) OR mbFunc(itf$,slv%,3,bAddr%+34-1,8,iOpt$,2000)
  err%=err% OR mbFunc(itf$,slv%,3,bAddr%+42-1,8,iVer$,2000) OR mbFunc(itf$,slv%,3,bAddr%+50-1,16,iSer$,2000) OR mbFunc(itf$,slv%,3,bAddr%+66-1,1,rRsp$,500)
  IF err% THEN
   SunspecCommon=err%
   EXIT FUNCTION
- ENDIF  
+ ENDIF
  SunspecTrim(iMan$)
  SunspecTrim(iMod$)
  SunspecTrim(iOpt$)
@@ -147,21 +160,22 @@ END FUNCTION
 ' Sunspec reader for Solaredge, SMA, Fronius
 ' itf$   Modbus Interface
 ' slv%   Modbus Slave address
+' NumAc Number of phases
 ' Iac1  AC Current Phase 1
 ' Iac2  AC Current Phase 2 (if available)
 ' Iac3  AC Current Phase 3 (if available)
 ' Uac1  AC Voltage Phase 1
 ' Uac2  AC Voltage Phase 2 (if available)
 ' Uac3  AC Voltage Phase 3 (if available)
-' Pac   AC Power
+' Pac   AC Power [kW]
 ' Fac   AC Frequency
 ' VA    Apparent Power
 ' VAR   Reactive Power
 ' PF    Power Factor
-' E     AC Lifetime Energy Production
+' E     AC Lifetime Energy Production [kWh]
 ' Idc   DC Current
 ' Udc   DC Voltage
-' Pdc   DC Power
+' Pdc   DC Power [kW]
 ' T1    Temperature 1 (Cabinet)
 ' T2    Temperature 2 (Coolant)
 ' T3    Temperature 3 (Transformer)
@@ -178,10 +192,10 @@ END FUNCTION
 '  7=one or more error occured
 '  8=standby
 ' Code% vendor specific code (see vendor sunspec documentation for details)
-FUNCTION SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code%)
+FUNCTION SunspecInverter(itf$, slv%, NumAc%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fac, VA, VAR, PF, E, Idc, Udc, Pdc, T1, T2, T3, T4, Status%, Code%)
  LOCAL err%,bId%,bAddr%,bLen%,rRsp$,Iacsf,Uacsf,Pacsf,Facsf,VAsf,VARsf,PFsf,Esf,Idcsf,Udcsf,Pdcsf,Tsf
  ' Single Phase
- bAddr%=0 
+ bAddr%=0
  bId%=101
  err%=SunspecBlock(itf$,slv%,bId%,bAddr%,bLen%)
  IF err% THEN
@@ -212,17 +226,19 @@ FUNCTION SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fa
      ENDIF
     ENDIF
    ENDIF
-  ENDIF  
+  ENDIF
  ENDIF
- 
+
+
  IF bId%=101 OR bId%=102 OR bId%=103 THEN
+  NumAc%=bId%-100
   ' Normal format with scaling
   pNum%=id%-110
   err%=mbFunc(itf$,slv%,3,bAddr%+2-1,38,rRsp$,2000)
   IF err% THEN
    SunspecInverter=err%
    EXIT FUNCTION
-  ENDIF  
+  ENDIF
   Iacsf=10.0^conv("bbe/i16",mid$(rRsp$,9,2))
   Iac1=conv("bbe/u16",mid$(rRsp$,3,2))*Iacsf
   Iac2=conv("bbe/u16",mid$(rRsp$,5,2))*Iacsf
@@ -232,7 +248,7 @@ FUNCTION SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fa
   Uac2=conv("bbe/u16",mid$(rRsp$,19,2))*Uacsf
   Uac3=conv("bbe/u16",mid$(rRsp$,21,2))*Uacsf
   Pacsf=10.0^conv("bbe/i16",mid$(rRsp$,27,2))
-  Pac=conv("bbe/i16",mid$(rRsp$,25,2))*Pacsf
+  Pac=conv("bbe/i16",mid$(rRsp$,25,2))*Pacsf / 1000.0
   Facsf=10.0^conv("bbe/i16",mid$(rRsp$,31,2))
   Fac=conv("bbe/u16",mid$(rRsp$,29,2))*Facsf
   VAsf=10.0^conv("bbe/i16",mid$(rRsp$,35,2))
@@ -242,22 +258,23 @@ FUNCTION SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fa
   PFsf=10.0^conv("bbe/i16",mid$(rRsp$,43,2))
   PF=conv("bbe/i16",mid$(rRsp$,41,2))*PFsf
   Esf=10.0^conv("bbe/u16",mid$(rRsp$,49,2))
-  E=conv("bbe/u32",mid$(rRsp$,45,4))*Esf
+  E=conv("bbe/u32",mid$(rRsp$,45,4))*Esf / 1000.0
   Idcsf=10.0^conv("bbe/i16",mid$(rRsp$,53,2))
   Idc=conv("bbe/u16",mid$(rRsp$,51,2))*Idcsf
   Udcsf=10.0^conv("bbe/i16",mid$(rRsp$,57,2))
   Udc=conv("bbe/u16",mid$(rRsp$,55,2))*Udcsf
   Pdcsf=10.0^conv("bbe/i16",mid$(rRsp$,61,2))
-  Pdc=conv("bbe/i16",mid$(rRsp$,59,2))*Pdcsf
+  Pdc=conv("bbe/i16",mid$(rRsp$,59,2))*Pdcsf / 1000.0
   Tsf=10.0^conv("bbe/i16",mid$(rRsp$,71,2))
   T1=conv("bbe/i16",mid$(rRsp$,63,2))*Tsf
   T2=conv("bbe/i16",mid$(rRsp$,65,2))*Tsf
-  T2=conv("bbe/i16",mid$(rRsp$,67,2))*Tsf
-  T2=conv("bbe/i16",mid$(rRsp$,69,2))*Tsf
+  T3=conv("bbe/i16",mid$(rRsp$,67,2))*Tsf
+  T4=conv("bbe/i16",mid$(rRsp$,69,2))*Tsf
   Status%=conv("bbe/u16",mid$(rRsp$,73,2))
-  Code%=conv("bbe/u16",mid$(rRsp$,75,2)) 
+  Code%=conv("bbe/u16",mid$(rRsp$,75,2))
  ELSE
   ' Floating point format
+  NumAc%=bId%-110
   pNum%=id%-100
   err%=mbFunc(itf$,slv%,3,bAddr%+2-1,49,rRsp$,2000)
   IF err% THEN
@@ -270,23 +287,48 @@ FUNCTION SunspecInverter(itf$, slv%, Iac1, Iac2, Iac3, Uac1, Uac2, Uac3, Pac, Fa
   Uac1=conv("bbe/f32",mid$(rRsp$,25,2))
   Uac2=conv("bbe/f32",mid$(rRsp$,29,2))
   Uac3=conv("bbe/f32",mid$(rRsp$,33,2))
-  Pac=conv("bbe/f32",mid$(rRsp$,37,2))
+  Pac=conv("bbe/f32",mid$(rRsp$,37,2)) / 1000.0
   Fac=conv("bbe/f32",mid$(rRsp$,41,2))
   VA=conv("bbe/f32",mid$(rRsp$,45,2))
   VAR=conv("bbe/f32",mid$(rRsp$,49,2))
   PF=conv("bbe/f32",mid$(rRsp$,53,2))
-  E=conv("bbe/u32",mid$(rRsp$,57,4))
+  E=conv("bbe/u32",mid$(rRsp$,57,4)) / 1000.0
   Idc=conv("bbe/f32",mid$(rRsp$,61,2))
   Udc=conv("bbe/f32",mid$(rRsp$,65,2))
-  Pdc=conv("bbe/f32",mid$(rRsp$,69,2))
+  Pdc=conv("bbe/f32",mid$(rRsp$,69,2)) / 1000.0
   T1=conv("bbe/f32",mid$(rRsp$,73,2))
   T2=conv("bbe/f32",mid$(rRsp$,77,2))
   T3=conv("bbe/f32",mid$(rRsp$,81,2))
-  T4=conv("bbe/f32",mid$(rRsp$,85,2))   
+  T4=conv("bbe/f32",mid$(rRsp$,85,2))
   Status%=conv("bbe/u16",mid$(rRsp$,89,2))
-  Code%=conv("bbe/u16",mid$(rRsp$,91,2)) 
- ENDIF 
+  Code%=conv("bbe/u16",mid$(rRsp$,91,2))
+ ENDIF
  SunspecInverter=0
+END FUNCTION
+
+' Convert Status Enum from Inverter into Text
+' return status text
+FUNCTION SunspecInverterStatus$(Status%)
+  LOCAL st$
+  SELECT CASE Status%
+    CASE 1
+      st$="Off"
+    CASE 2
+      st$="Sleeping"
+    CASE 3
+      st$="Starting"
+    CASE 4
+      st$="MPPT"
+    CASE 5
+      st$="Throttled"
+    CASE 6
+      st$="Shutting down"
+    CASE 7
+      st$="Fault"
+    CASE 8
+      st$="Standby"
+  END SELECT
+  SunspecInverterStatus$=st$
 END FUNCTION
 
 ' Sunspec trim strings by removing 0 characters from name
@@ -300,4 +342,3 @@ SUB SunspecTrim(stg$)
   ENDIF
  NEXT i
 END SUB
-

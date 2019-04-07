@@ -6,10 +6,10 @@
 ' Please make sure the Keba station is configured correctly
 ' Make sure DIP-switch DWS1.3 = ON
 ' http://www.keba.com/en/emobility/service-support/downloads/Downloads
-' UDP Programmer's Guide V2.0 
+' UDP Programmer's Guide V2.0
 ' If you have problems, pls ensure that latest firmware is installed on your Keba
 ' Test commands with netcat e.g. echo -n "display 0 0 0 0 12346,6" | nc -p 7090 -u 192.168.10.21 7090
-' Some examples on usage 
+' Some examples on usage
 'charger IP
 'server$="192.168.0.25"
 'start:
@@ -32,13 +32,13 @@ FUNCTION KEBAInfo( server$, info$)
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",2000)
  n%=SocketWrite( con%, "i")
- rsp$=SocketReadLn$(con%,chr$(10),2000)
+ rsp$=KEBASocketReadLn$(con%,2000)
  n%=SocketClose( con% )
  IF rsp$="" THEN
   KEBAInfo=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
- info$=mid$(rsp$, 13, len(rsp$)-14)
+ info$=mid$(rsp$, 13, len(rsp$)-13)
  KEBAInfo=0
 END FUNCTION
 
@@ -62,7 +62,7 @@ FUNCTION KEBAFailsafe( server$, tmo%, maxcur%, sv%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAFailsafe=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAFailsafe=0
 END FUNCTION
@@ -96,7 +96,7 @@ FUNCTION KEBAReport1( server$, id$, prod$, ser$, firm$, com%, sec% )
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",2000)
  n%=SocketWrite( con%, "report 1")
- 
+
  id$=""
  prod$=""
  ser$=""
@@ -174,7 +174,7 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  ENDIF
  n%=SocketOption(con%,"SO_RCVTIMEO",2000)
  n%=SocketWrite( con%, "report 2")
- 
+
  id$=""
  sts$="0"
  errs1$="0"
@@ -197,7 +197,7 @@ FUNCTION KEBAReport2( server$,id$,st%,err1%,err2%,plug%,ensys%,enuser%,maxcur%,m
  inps$="0"
  ser$=""
  secs$="0"
- 
+
  n%=StreamSearch(SocketRead(con%),"ida$","sta$","erra1$","erra2$","pluga$","ensysa$","enusera$","maxcura$","maxcurpa$","curhwa$","curusra$","curfsa$","tmofsa$","curtima$","tmocta$","sea$","outa$","inpa$","sera$","seca$",5000)
  m%=SocketClose( con% )
  ' P30 or P20
@@ -258,12 +258,12 @@ FUNCTION KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, E
  LOCAL Etota$(2) LENGTH 15 = (chr$(34)+"E total"+chr$(34)+": ", ",", "Etots$")
  LOCAL sera$(2) LENGTH 15 = (chr$(34)+"Serial"+chr$(34)+": "+chr$(34), chr$(34), "ser$")
  LOCAL seca$(2) length 15 = (chr$(34)+"Sec"+chr$(34)+": ", "}", "secs$")
- 
+
  LOCAL Us1$, Us2$, Us3$
  LOCAL Is1$, Is2$, Is3$
  LOCAL Ps$, PFs$, Es$, Etots$
  LOCAL secs$
- 
+
  con%=SocketClient( 0, server$, 7090, 7090 )
  IF con% < 0 THEN
   KEBAReport3=-1
@@ -401,7 +401,7 @@ FUNCTION KEBAEnable( server$, en%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAEnable=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAEnable=0
 END FUNCTION
@@ -424,7 +424,7 @@ FUNCTION KEBACurrent( server$, cur%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBACurrent=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBACurrent=0
 END FUNCTION
@@ -447,7 +447,7 @@ FUNCTION KEBAOutput( server$, out%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAOutput=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAOutput=0
 END FUNCTION
@@ -471,7 +471,7 @@ FUNCTION KEBACurrentTime( server$, cur%, dly%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBACurrentTime=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBACurrentTime=0
 END FUNCTION
@@ -494,7 +494,7 @@ FUNCTION KEBAEnergy( server$, egy%)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAEnergy=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAEnergy=0
 END FUNCTION
@@ -518,7 +518,7 @@ FUNCTION KEBAStart( server$, tag$, clss$)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAStart=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAStart=0
 END FUNCTION
@@ -541,7 +541,7 @@ FUNCTION KEBAStop( server$, tok$)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAStop=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAStop=0
 END FUNCTION
@@ -567,7 +567,7 @@ FUNCTION KEBADisplay( server$, act%, min%, max%, txt$)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBADisplay=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBADisplay=0
 END FUNCTION
@@ -590,76 +590,127 @@ FUNCTION KEBAUnlock( server$)
  n%=SocketClose( con% )
  IF rsp$="" OR mid$(rsp$,5,2)<>"OK" THEN
   KEBAUnlock=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  KEBAUnlock=0
+END FUNCTION
+
+' KEBA EV electric car charger controller state
+' This function must be called at least every 60 seconds,
+' server$ device ip address
+' Pac current AC power
+' Eac cummulativ energy of the charging
+' NumAc% control loop factor
+' curhw% available charging current limited by hardware [mA]
+' st$ device status (A..F)
+'     A Charger is not connected to car
+'     B Charger is connected to car or charging ended
+'     C Charging without ventilation
+'     E Shutoff, no power
+'     F Error
+'     U unknown status
+FUNCTION KEBAEVControlState(server$, Pac, Eac, NumAc%, enusr%, curusr%, curhw%, st$)
+  __cmb
+  LOCAL err%, id$, stat%, dmy%, plug%, ensys%, maxcur%, curfs%, dmys$, cur%
+  ' Read EV Status
+  err%=KEBAReport2( server$,id$,stat%,dmy%,dmy%,plug%,ensys%,enusr%,maxcur%,dmy%,curhw%,curusr%, curfs%, dmy%, dmy%, dmy%, dmy%,dmy%,dmy%,dmys$,dmy%)
+  IF err% THEN
+   KEBAEVControlState=err%
+   EXIT FUNCTION
+  ENDIF
+  ' Current state of the charging station
+  ' 0 : starting
+  ' 1 : not ready for charging; e.g. unplugged, X1 or "ena" not enabled, RFID not enabled,.....
+  ' 2 : ready for charging; waiting for EV charging request (S2)
+  ' 3 : charging
+  ' 4 : error
+  ' 5 : authorization rejected
+  ' "Plug" = Current condition of the loading connection
+  ' 0 unplugged
+  ' 1 plugged on charging station
+  ' 3 plugged on charging station plug locked
+  ' 5 plugged on charging station plugged on EV
+  ' 7 plugged on charging station plug locked plugged on EV
+  ' map to IEC 61851
+  ' A – standby (vehicle not connected)
+  ' B – vehicle detected
+  ' C – ready (charging)
+  ' D – with ventilation (charging with ventilation, not supported)
+  IF plug%<=3 AND stat%<3 THEN
+   st$="A"
+  ELSE IF plug%<>7 OR (plug%=7 AND stat%<=2)THEN
+   st$="B"
+  ELSE IF plug%=7 AND stat%=3 THEN
+   st$="C"
+  ELSE IF stat%>=4 THEN
+   st$="F"
+  ELSE
+   st$="U"
+  ENDIF
+  PRINT "KEBAControlState", plug%, stat%, curhw%
+
+  LOCAL U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%, I
+  err%=KEBAReport3( server$, id$, U1%, U2%, U3%, I1%, I2%, I3%, P%, PF%, E%, Etot%, ser$, sec%)
+  Pac = P%/1000000.0 ' mW to kW
+  Eac = E%/10000.0 ' 0.1Wh to kWh
+  NumAc%=0
+  IF I1% > 500 THEN NumAc% = NumAc%+1
+  IF I2% > 500 THEN NumAc% = NumAc%+1
+  IF I3% > 500 THEN NumAc% = NumAc%+1
+  KEBAEVControlState=err%
 END FUNCTION
 
 ' KEBA EV electric car charger controller
 ' This function must be called at least every 60 seconds,
 ' server$ device ip address
-' rst% restart charging cycle
 ' en%  enable charger
-' amp charging current in Amp
+' cur% charging current [mA]
 '     amp x 230V x num of phases = excess energy available for charging
-' ampmin minimal ampere
-' ampmax maximal ampere
-' amphw is the minimum of DIP switch setting, Icmax and cable rating, temperature reduction (in amp), 
-'     ABL does not output proximity cable value directly
-' st$ device status (A..F)
-'     A Charger is not connected to car
-'     B Charger is connected to car or charging ended
-'     C Charging without ventilation
-'     D Charging with ventilation
-'     E Shutoff, no power
-'     F Error
-'     else unknown status
-' vs$ version info
-FUNCTION KEBAEVControl(server$, rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
+FUNCTION KEBAEVControl(server$, en%, cur%)
  __cmb
- LOCAL id$, stat%, dmy%, plug%, ensys%, enuser%, maxcur%, curhw%, curusr%, curfs%, dmys$, cur%
- ' Read Info
- err%=KEBAInfo( server$, vs$)
+ LOCAL err%, id$, stat%, dmy%, plug%, enusr%, ensys%, maxcur%, curusr%, curfs%, dmys$
+ ' Read EV Status
+ err%=KEBAReport2( server$,id$,stat%,dmy%,dmy%,plug%,ensys%,enusr%,maxcur%,dmy%,curhw%,curusr%, curfs%, dmy%, dmy%, dmy%, dmy%,dmy%,dmy%,dmys$,dmy%)
  IF err% THEN
-  KEBAEVControl=-10
+  KEBAEVControl=err%
   EXIT FUNCTION
  ENDIF
 
- ' Read EV Status
- err%=KEBAReport2( server$,id$,stat%,dmy%,dmy%,plug%,ensys%,enuser%,maxcur%,dmy%,curhw%,curusr%, curfs%, dmy%, dmy%, dmy%, dmy%,dmy%,dmy%,dmys$,dmy%)
- IF err% THEN
-  print "report failed" err%
-  KEBAEVControl=-11
-  EXIT FUNCTION
- ENDIF
- IF plug%=0 OR plug%=1 OR plug%=3 OR stat%=0 OR stat%=1 OR stat%=2 OR stat%=5 THEN 
-  st$="A"
- ELSE IF (plug%=5 OR plug%=7) AND stat%<>3 THEN
-  st$="B"
- ELSE IF stat%=3 THEN
-  st$="C"
- ELSE IF stat%=5 THEN
-  st$="F"
- ELSE 
-  st$="U"
- ENDIF
- ' calculate cable proximity and charger/line hardware limit value
- amphw=curhw%/1000.0
- IF en% AND (amp < 6 OR amp > 63 OR amp < ampmin OR amp > ampmax OR amp > amphw) THEN
-  KEBAEVControl=-12
-  EXIT FUNCTION
- ENDIF
+ PRINT "KEBAEVControl", en%, cur%, plug%, stat%, enusr%, curhw%, curusr%
  ' Set the current
- cur%=int(amp*1000.0)
  err%=KEBACurrent( server$, cur%)
  IF err% THEN
-  KEBAEVControl=-13
+  KEBAEVControl=err%
+  EXIT FUNCTION
  ENDIF
- ' Enable / disable the charger
- err%=KEBAEnable( server$, en%)
- IF err% THEN
-  KEBAEVControl=-14
+
+ IF enusr% <> en% THEN
+  ' Enable / disable the charger
+  err%=KEBAEnable( server$, en%)
+  IF err% THEN
+    KEBAEVControl=err%
+    EXIT FUNCTION
+  ENDIF
  ENDIF
- 
  KEBAEVControl=0
+END FUNCTION
+
+FUNCTION KEBASocketReadLn$(con%,tm%)
+  LOCAL st%, ed%, rt$, md%
+  st% = Ticks()
+  ed% = st% + tm%
+  rt$=""
+  md%=0
+  DO WHILE Ticks()< ed%
+      ' end of line is } , LF or "":""
+      ch% = SocketRead(con%)
+      IF ch% >= 0 THEN rt$=rt$+chr$(ch%)
+      IF ch%=125 THEN EXIT DO
+      IF ch%=44 THEN EXIT DO
+      IF ch%=10 THEN EXIT DO
+      IF (ch%=34 AND md%<2) OR (ch%=34 AND md%>2) THEN md%=md%+1
+      IF ch%=58 AND md%=2 THEN md%=md%+1
+      IF md%=5 THEN EXIT DO
+  LOOP
+  KEBASocketReadLn$=rt$
 END FUNCTION

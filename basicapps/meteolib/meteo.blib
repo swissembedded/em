@@ -25,13 +25,13 @@
 ' Ndn day lenght
 ' return   estimated value Is
 FUNCTION mtEstimatorS(Ix, Aa, Ab, nd, Ndn)
- mtEstimatorS=Ix * (Aa + /Ab * nd / Ndn))
+ mtEstimatorS=Ix * (Aa + (Ab * nd / Ndn))
 END FUNCTION
 
 
 ' Solar radiation estimator  from cloud coverage and air temperature
 ' based on Supit and Van Kappel equation 4.3 page 70
-' Coefficients chapter 4.4.2 page 77 and figure 4.4 page 
+' Coefficients chapter 4.4.2 page 77 and figure 4.4 page
 ' Sa=0.011 +- 0.01
 ' Sb=0.039 +- 0.272
 ' Sc=0.218 +- 0.272
@@ -59,4 +59,3 @@ END FUNCTION
 FUNCTION mtEstimatorT(Ix, Tx, Tn, Ha, Hb)
  mtEstimatorT=Ix * Ha * sqr(Tx-Tn) + Hb
 END FUNCTION
-

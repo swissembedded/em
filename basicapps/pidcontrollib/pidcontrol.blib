@@ -17,7 +17,7 @@
 FUNCTION PIDControl(sp,mv,dt,pig,perr,kp,ki,kd)
   LOCAL err,ig,drv
   err = sp - mv
-  ig = ig + err*dt
+  ig = pig + err*dt
   drv = (err - perr)/dt
   PIDControl = kp*err + ki*ig + kd*drv
   perr = err

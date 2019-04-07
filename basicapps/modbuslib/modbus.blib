@@ -150,6 +150,7 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
   ELSE
    pause(1000.0*3.5*12.0/SYS.Get("rs485-2", "baud")+1)
   ENDIF
+  __cmb
   DO WHILE RS485Read(nm%) >=0
   LOOP
   n%=RS485Write(nm%,req$)
@@ -159,16 +160,17 @@ FUNCTION mbCom(itf$,slv%,fnc%,rq$,rpl%, py%, rp$, tmo%)
    pause(1000.0*3.5*12/SYS.Get("rs485-2", "baud")+1)
   ENDIF
   rsp$=RS485Read$(nm%,rpl%+3,tmo%)
-  'mbLog(interf$+"-"+num$,req$,rsp$,prot$)
+  mbLog(interf$+"-"+num$,req$,rsp$,prot$)
  ELSE
   ' Send it over ethernet
+  __cmb
   con%=SocketClient( 1, interf$, val(num$) )   
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",tmo%)
    n%=SocketWrite( con%, req$ )    
    rsp$=SocketRead$(con%,rpl%+7)
    n%=SocketClose( con% )
-   'mbLog(interf$,req$,rsp$,prot$)   
+   mbLog(interf$,req$,rsp$,prot$)   
   ELSE
    mbCom=-20
    EXIT FUNCTION
@@ -250,7 +252,6 @@ END FUNCTION
 '----------------------------------------
 SUB mbLog(itf$,tx$,rx$,msg$)
  LOCAL s$, h$, i, srx$, stx$
- 
  s$=msg$+":"+itf$
  stx$="tx:"
  FOR i=1 TO len(tx$)
