@@ -6,32 +6,33 @@
 ' 20.3.2014
 
 ' example
+'LIBRARY LOAD "kostal"
 'start:
-' addr%=255
-' server$="192.168.178.17"
-' timeout%=2000
+'addr%=255
+'server$="192.168.178.17"
+'timeout%=2000
 ' err%=kostalVoltageCurrentPower(server$,addr%, timeout%, Udc1, Idc1, Pdc1, Udc2, Idc2, Pdc2, Udc3, Idc3, Pdc3, Uac1, Iac1, Pac1, Uac2, Iac2, Pac2, Uac3, Iac3, Pac3)
-' print "kostal1 " err% Udc1 Idc1 Pdc1 Udc2 Idc2 Pdc2 Udc3 Idc3 Pdc3 Uac1 Iac1 Pac1 Uac2 Iac2 Pac2 Uac3 Iac3 Pac3
+' print "kostal1 ", err%, Udc1, Idc1, Pdc1, Udc2, Idc2, Pdc2, Udc3, Idc3, Pdc3, Uac1, Iac1, Pac1, Uac2, Iac2, Pac2, Uac3, Iac3, Pac3
 ' err%=kostalTotalEnergy(server$, addr%, timeout%, kWh)
-' print "kostal2 " err% kWh
+' print "kostal2 ", err%, kWh
 ' err%=kostalStatus(server$, addr%, timeout%, status%, fault%, code%)
-' print "kostal3 " err% status%, fault%, code%
+' print "kostal3 ", err%, status%, fault%, code%
 ' err%=kostalName(server$, addr%, timeout%, iName$)
-' print "kostal4 " err% iName$
+' print "kostal4 ", err%, iName$
 ' err%=kostalSerialOld(server$, addr%, timeout%, iSerial$)
-' print "kostal5 " err% iSerial$
+' print "kostal5 ", err%, iSerial$
 ' err%=kostalSerial(server$, addr%, timeout%, iSerial$)
-' print "kostal6 " err% iSerial$
+' print "kostal6 ", err%, iSerial$
 ' err%=kostalDailyEnergy(server$, addr%, timeout%, kWh)
-' print "kostal7 " err% kWh
+' print "kostal7 ", err%, kWh
 ' err%=kostalPropertiesOld(server$, addr%, timeout%, sNum%, pNum%)
-' print "kostal8 " err% sNum% pNum%
+' print "kostal8 ", err%, sNum%, pNum%
 ' err%=kostalProperties(server$, addr%, timeout%, tDe$,sNum%, pNum%, pC%)
-' print "kostal9 " err% tDe$ sNum% pNum% pC%
+' print "kostal9 ", err%, tDe$, sNum%, pNum%, pC%
 ' err%=kostalAnalog(server$, addr%, timeout%, aNa1, aNa2, aNa3, aNa4)
-' print "kostal10 " err% aNa1 aNa2 aNa3 aNa4
+' print "kostal10 ", err%, aNa1, aNa2, aNa3, aNa4
 ' err%=kostalFeedin(server$, addr%, timeout%, Tfeed%)
-' print "kostal11 " err% Tfeed%
+' print "kostal11 ", err%, Tfeed%
 ' pause 30000
 ' goto start
 
@@ -89,7 +90,7 @@ END FUNCTION
 ' kWh      Inverter Total Energy
 FUNCTION kostalTotalEnergy(server$, addr%, timeout%, kWh)
  LOCAL err%, rp$
- err%=kostalTransfer(server$, addr%, timeout%, &H45, 73, rp$)
+ err%=kostalTransfer(server$, addr%, timeout%, &H45, 11, rp$)
  IF err% =0 THEN
   kWh=conv("ble/i32",mid$(rp$,6,4))/1000.0
  ENDIF
@@ -145,7 +146,7 @@ FUNCTION kostalSerialOld(server$, addr%, timeout%, iSerial$)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H50, 12, rp$)
  IF err% =0 THEN
-  iSerial$=hex$(asc(mid$(rp$,6,1)))+left$(hex$(asc(mid$(rp,8,1))),1)+hex$(asc(mid$(rp$,7,1)))+hex$(asc(mid$(rp$,10,1)))+hex$(asc(mid$(rp$,9,1)))
+  iSerial$=hex$(asc(mid$(rp$,6,1)))+left$(hex$(asc(mid$(rp$,8,1))),1)+hex$(asc(mid$(rp$,7,1)))+hex$(asc(mid$(rp$,10,1)))+hex$(asc(mid$(rp$,9,1)))
  ENDIF
  kostalSerialOld=err%
 END FUNCTION
@@ -159,7 +160,7 @@ FUNCTION kostalSerial(server$, addr%, timeout%, iSerial$)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H50, 20, rp$)
  IF err% =0 THEN
-  iSerial$=mid$(rp$,6,13))
+  iSerial$=mid$(rp$,6,13)
  ENDIF
  kostalSerial=err%
 END FUNCTION
@@ -206,7 +207,7 @@ FUNCTION kostalProperties(server$, addr%, timeout%, tDe$,sNum%, pNum%, pC%)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H90, 35, rp$)
  IF err% =0 THEN
-  tDe$=mid$(rp,6,16)
+  tDe$=mid$(rp$,6,16)
   pNum%=asc(mid$(rp$,22,1))
   sNum%=asc(mid$(rp$,28,1))
   pNum%=conv("ble/i32",mid$(rp$,29,4))
@@ -257,8 +258,9 @@ END FUNCTION
 ' rp$      inverter response
 ' return   < 0 on error
 FUNCTION kostalTransfer(server$, addr%, timeout%, magic%, rpl%, rp$)
- LOCAL con%, n%, ck%, rq$
+ LOCAL con%, n%, ck%, rq$, tk%
 
+ tk%=Ticks()
  ' Open connection to the inverter
  con%=SocketClient( 1, server$, 81 )
  IF con% <0 THEN
@@ -270,15 +272,15 @@ FUNCTION kostalTransfer(server$, addr%, timeout%, magic%, rpl%, rp$)
  n%=SocketOption(con%,"SO_RCVTIMEO",timeout%)
  n%=SocketOption(con%,"SO_SNDTIMEO",timeout%)
  ' e.g. 0x65 is 0xa8-0x43
- 'ck%=(0-(&H65+magic%+(2*addr%))) AND 255
+ ck%=(0-(&H65+magic%+(2*addr%))) AND 255
  'PRINT "kostalTransfer", ck%
  rq$=chr$(&H62)+chr$(addr%)+chr$(3)+chr$(addr%)+chr$(0)+chr$(magic%)+chr$(ck%)+chr$(0)
  n%=SocketWrite( con%, rq$)
  rp$=SocketRead$(con%,rpl%)
  n%=SocketClose( con% )
 
- IF len(rsp$) <> rpl% THEN
-  PRINT "kostalTransfer unexpected len", len(rsp$),rpl%
+ IF len(rp$) <> rpl% THEN
+  PRINT "kostalTransfer unexpected len", len(rp$),rpl%, Ticks()-tk%
   kostalTransfer=-1
   EXIT FUNCTION
  ENDIF
