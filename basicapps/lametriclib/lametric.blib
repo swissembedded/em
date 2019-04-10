@@ -11,7 +11,7 @@
 ' The key must be converted to base64(dev:key)
 ' Icons see, instead of # use i as name
 'https://developer.lametric.com/icons
-' Some examples on usage 
+' Some examples on usage
 'Loading Http library, make sure it is installed on EMDO
 'LIBRARY LOAD "http"
 'Adjust server IP and username to your bridge setting (see developers url below for details)
@@ -20,7 +20,7 @@
 'start:
 ' err%=LMMakeSimpleFrame(frm$,"i7421","Car fully charged")
 ' print "LMMakeSimpleFrame" err%
-' err%=LMSendNotification( server$,key$,notid$, "critical","alert",1000,1,"notifications","car",2,frm$,"","","","" ) 
+' err%=LMSendNotification( server$,key$,notid$, "critical","alert",1000,1,"notifications","car",2,frm$,"","","","" )
 ' print "LMSendNotification" err%
 ' pause 20000
 ' err%=LMDelNotification(server$,key$,notid$)
@@ -28,7 +28,7 @@
  ' can be used e.g. for battery state
  'err%=LMMakeGoalFrame(frm$,"i6363",0,90,100)
  'print "LMGoalFrame" err%
- 'err%=LMSendNotification( server$,key$,notid$, "info","none",1000,1,"notifications","energy",2,frm$,"","","","" ) 
+ 'err%=LMSendNotification( server$,key$,notid$, "info","none",1000,1,"notifications","energy",2,frm$,"","","","" )
  'print "LMSendNotification" err%
  'pause 20000
  'err%=LMDelNotification(server$,key$,notid$)
@@ -36,12 +36,23 @@
  ' can be used for simple graphs
  'err%=LMMakeSpikeChart(frm$,"0,10,30,90,100,90,40,10,0")
  'print "LMSpikeChart" err%
- 'err%=LMSendNotification( server$,key$,notid$, "warning","info",2000,1,"notifications","statistic",2,frm$,"","","","" ) 
+ 'err%=LMSendNotification( server$,key$,notid$, "warning","info",2000,1,"notifications","statistic",2,frm$,"","","","" )
  'print "LMSendNotification" err%
  'pause 20000
- 'err%=LMDelNotification(server$,key$,notid$) 
+ 'err%=LMDelNotification(server$,key$,notid$)
  'print "LMDeleteNotification" err%
 'GOTO start
+
+'@lib_init
+FUNCTION __lametric_init()
+ OPTION LIBRARY lametric PRINT ENABLE
+ print "Init lametric"
+END FUNCTION
+
+'@lib_destroy
+FUNCTION __lametric_destroy()
+  PRINT "Deinit lametric"
+END FUNCTION
 
 ' LaMetric make simpleframe
 ' frm$ frame that will be generated
@@ -168,4 +179,4 @@ FUNCTION LMDelNotification( server$,key$,notid$)
  ENDIF
  n%=HTTPClose(con%)
  LMDelNotification=0
-END FUNCTION 
+END FUNCTION

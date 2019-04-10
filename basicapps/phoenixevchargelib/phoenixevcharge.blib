@@ -24,16 +24,16 @@
 
 FUNCTION __phoenixevcharge_init()
  LIBRARY LOAD "modbus"
- print "init phoenixevcharge" 
+  PRINT "init phoenixevcharge"
 END FUNCTION
- 
+
 '@lib_destroy
 FUNCTION __phoenixevcharge_destroy()
   LIBRARY UNLOAD "modbus"
-  print "deinit phoenixevcharge"
+  PRINT "deinit phoenixevcharge"
 END FUNCTION
 
- 
+
 ' Phoenix EV electric car charger controller
 ' This function must be called at least every 60 seconds,
 ' itf$ modbus interface (see EMDO modbus library for details)
@@ -63,14 +63,14 @@ FUNCTION PhoenixEVControl(itf$, slv%, rst%, en%, amp, ampmin, ampmax, amphw, st$
   PhoenixEVControl=-10
   EXIT FUNCTION
  ENDIF
- 
+
  ' Check DIP switches
  dip%=conv("bbe/u32",mid$(reG$,9,4))
- IF NOT (dip% and &H240) THEN  
-  PhoenixEVControl=-11  
+ IF NOT (dip% and &H240) THEN
+  PhoenixEVControl=-11
   EXIT FUNCTION
  ENDIF
- ' Status 
+ ' Status
  st$=mid$(reG$,2,1)
  ' Proximity charge current in A
  amphw=conv("bbe/u16",mid$(reG$,3,2))

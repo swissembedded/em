@@ -5,7 +5,17 @@
 ' @VERSION 1.0
 ' Documentation RFC2616 and others
 
-' Some examples on usage:
+'@lib_init
+FUNCTION __http_init()
+ OPTION LIBRARY http PRINT ENABLE
+ print "Init http"
+END FUNCTION
+
+'@lib_destroy
+FUNCTION __http_destroy()
+  PRINT "Deinit http"
+END FUNCTION
+
 
 ' Connect to  a http server
 ' server$ server name ( ip or dns), e.g. www.google.com or 192.168.2.3
@@ -25,7 +35,7 @@ FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%, auth$)
   port = 80
  ENDIF
  ' Open connection to the server
- con%=SocketClient( 1, server$, port% )    
+ con%=SocketClient( 1, server$, port% )
  IF con% < 0 THEN
   PRINT "Connect to " server$ " failed"
   HTTPRequest=con%
@@ -43,7 +53,7 @@ FUNCTION HTTPRequest(server$, port%, con%, cmd$, qry$, conn$, acc$, tmo%, auth$)
  ENDIF
  ' accept string
  IF cmd$="GET" THEN
-  IF acc$="" THEN 
+  IF acc$="" THEN
    acc$="text/html,application/xml"
   ENDIF
   acc$="Accept: "+acc$
@@ -80,11 +90,11 @@ END FUNCTION
 FUNCTION HTTPClose(con%)
  LOCAL err%
  ' Close connection again
- err%=SocketClose( con% )  
+ err%=SocketClose( con% )
  HTTPClose=0
 END FUNCTION
 
-' Convert a value from 
+' Convert a value from
 ' sec$ xml section string
 ' attr$ xml attribute string
 ' def$ default value if attribute is not found
@@ -96,10 +106,10 @@ FUNCTION HTTPGetValue$(sec$, attr$, def$, nl%, nr%)
  s$(0)=attr$+"="+chr$(34)
  s$(1)=chr$(34)
  s$(2)="ss$"
- ss$=def$ 
+ ss$=def$
  n%=StreamSearch(sec$,"s$",0)
  IF n% <> 1 THEN
-  ss$=def$ 
+  ss$=def$
  ENDIF
  'print n% s$(0) ss$ len(ss$)
  HTTPGetValue$=mid$(ss$,nl%+1,len(ss$)-nl%-nr%)
@@ -119,12 +129,12 @@ FUNCTION HTTPReadToken(con%, token$, state%)
  IF rsp%<0 THEN
   ' end of stream
   state%=-1
- ELSE IF state%=0 AND chr$(rsp%)=mid$(token$, state%+1,1) THEN 
-   state%=state%+1   
+ ELSE IF state%=0 AND chr$(rsp%)=mid$(token$, state%+1,1) THEN
+   state%=state%+1
    IF state%=len(token$) THEN
     state%=0
 	rsp%=-1
-   ENDIF	
+   ENDIF
  ELSE
   state%=0
  ENDIF

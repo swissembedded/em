@@ -10,7 +10,7 @@
 ' WARNING: The EVCC controller does have a nominal setting for max charging current, but this value can be overwritten
 ' by control commands. Pls make sure that the max current is within nominal rating.
 ' The RS485 does not have a galvanic isolation. Which can be critical when connecting serveral devices
-' Some examples on usage 
+' Some examples on usage
 'charger IP
 'server$="192.168.0.25"
 'start:
@@ -19,10 +19,21 @@
 ' pause 60000
 'GOTO start
 
+'@lib_init
+FUNCTION __abl_init()
+ 'OPTION LIBRARY abl PRINT ENABLE
+ print "Init abl"
+END FUNCTION
+
+'@lib_destroy
+FUNCTION __abl_destroy()
+  PRINT "Deinit abl"
+END FUNCTION
+
 ' ABL command
 ' itf$ interface
 ' addr% address (default 0) 1..8
-' cmd% command number 
+' cmd% command number
 ' param
 ' 0=Reset
 ' 1=Get revision of firmware, return version
@@ -123,12 +134,12 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
   rq$=rq$+" "+right$("0000"+str$(cint(param)),4)
  else if cmd%=22 then
   rq$=rq$+" 111"+right$("0"+str$(cint(param)),1)
- endif 
+ endif
  rq$=rq$+chr$(13)+chr$(10)
  ' tranceive over interface
  rsp$=""
  'print "rq$ " rq$
- __cmb 
+ __cmb
  IF interf$="RS485" THEN
   DO WHILE RS485Read(val(num$)) >=0
   LOOP
@@ -136,7 +147,7 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
   rsp$=RS485ReadLn$(val(num$),2000,chr$(13)+chr$(10))
  ELSE
   ' Send it over ethernet
-  con%=SocketClient( 1, interf$, val(num$) )   
+  con%=SocketClient( 1, interf$, val(num$) )
   IF con% >0 THEN
    n%=SocketOption(con%,"SO_RCVTIMEO",2000)
    rsp$=SocketReadLn$(con%,chr$(13)+chr$(10),2000)
@@ -147,11 +158,11 @@ FUNCTION ABLCmd( itf$, addr%, cmd%, param)
  'Check response
  IF rsp$="" THEN
   ABLCmd=-2
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  IF split$(0,rsp$," ")<>(">"+right$(str$(addr%),1)) OR split$(1,rsp$," ")<>right$("00"+str$(cmd%),2) THEN
   ABLCmd=-3
-  EXIT FUNCTION  
+  EXIT FUNCTION
  ENDIF
  IF cmd%=1 OR cmd%=24 THEN
   param=val(split$(1,rsp$,"V"))
@@ -169,7 +180,7 @@ FUNCTION ABLDutyA( duty )
  IF duty < 8 THEN
   ' Charging not allowed
   ABLDutyA=0
- ELSE IF duty < 10 THEN 
+ ELSE IF duty < 10 THEN
   ABLDutyA=6
  ELSE IF duty <= 85 THEN
   ABLDutyA=duty*0.6
@@ -212,7 +223,7 @@ END FUNCTION
 '     amp x 230V x num of phases = excess energy available for charging
 ' ampmin minimal ampere
 ' ampmax maximal ampere
-' amphw Ic is the minimum of Idefault, Icmax and cable rating (in amp), 
+' amphw Ic is the minimum of Idefault, Icmax and cable rating (in amp),
 '     ABL does not output proximity cable value directly
 ' st$ device status (A..F)
 '     A Charger is not connected to car
@@ -230,9 +241,9 @@ FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
  IF err% THEN
   ABLEVControl=-10
   EXIT FUNCTION
- ENDIF 
+ ENDIF
  vs$=str$(par)
- 
+
  ' Read EV Status
  err%=ABLCmd( itf$, slv%, 2, par)
  IF err% THEN
@@ -241,7 +252,7 @@ FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
  ENDIF
  'print "Mode " mode%
  mode%=int(par)
- IF mode%=0 THEN 
+ IF mode%=0 THEN
   st$="A"
  ELSE IF mode%=15 OR mode%=16 THEN
   st$="A"
@@ -255,7 +266,7 @@ FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
   st$="B"
  ELSE IF mode%=68 OR mode%=9 THEN
   st$="B"
- ELSE IF mode%=5 THEN 
+ ELSE IF mode%=5 THEN
   st$="C"
  ELSE IF mode%=6 THEN
   st$="D"
@@ -300,7 +311,7 @@ FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
  IF err% THEN
   ABLEVControl=-16
   EXIT FUNCTION
- ENDIF 
+ ENDIF
  cbf%=par
  IF en% THEN
   'PRINT "Enable"
