@@ -322,7 +322,7 @@ FUNCTION SunspecInverterStatus$(Status%)
     CASE 5
       st$="Throttled"
     CASE 6
-      st$="Shutting down"
+      st$="Shutting Down"
     CASE 7
       st$="Fault"
     CASE 8

@@ -286,3 +286,28 @@ FUNCTION kostalTransfer(server$, addr%, timeout%, magic%, rpl%, rp$)
  ENDIF
  kostalTransfer=0
 END FUNCTION
+
+' Convert Status Enum from Inverter into Text
+' return status text
+FUNCTION kostalInverterStatus$(status%, fault%)
+  LOCAL st$
+  IF fault% THEN
+    st$="Fault"
+  ELSE
+    SELECT CASE status%
+      CASE 0
+        st$="Off"
+      CASE 1
+        st$="Standby"
+      CASE 2
+        st$="Starting"
+      CASE 3
+        st$="MPPT"
+      CASE 4
+        st$="Throttled"
+      CASE 5
+        st$="Feed-In"
+    END SELECT
+  ENDIF
+  kostalInverterStatus$=st$
+END FUNCTION
