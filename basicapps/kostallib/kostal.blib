@@ -51,34 +51,34 @@
 ' Server$  IP address of the inverter
 ' Addr%    inverter address
 ' Timeout% timeout in ms
-' Udc1-3   voltage string 1-3
-' Idc1-3   current string 1-3
-' Putdc1-3 power string 1-3
-' Uac1-3   voltage phase 1-3
-' Iac1-3   current phase 1-3
-' Putac1-3 power phase 1-3
+' Udc1-3   voltage string 1-3 [V]
+' Idc1-3   current string 1-3 [A]
+' Putdc1-3 power string 1-3 [kW]
+' Uac1-3   voltage phase 1-3 [V]
+' Iac1-3   current phase 1-3 [A]
+' Putac1-3 power phase 1-3 [kW]
 FUNCTION kostalVoltageCurrentPower(server$,addr%, timeout%, Udc1, Idc1, Pdc1, Udc2, Idc2, Pdc2, Udc3, Idc3, Pdc3, Uac1, Iac1, Pac1, Uac2, Iac2, Pac2, Uac3, Iac3, Pac3)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H43, 73, rp$)
  IF err% =0 THEN
   Udc1=conv("ble/i16",mid$(rp$,6,2))/10.0
   Idc1=conv("ble/i16",mid$(rp$,8,2))/100.0
-  Pdc1=conv("ble/i16",mid$(rp$,10,2))
+  Pdc1=conv("ble/i16",mid$(rp$,10,2))/1000.0
   Udc2=conv("ble/i16",mid$(rp$,16,2))/10.0
   Idc2=conv("ble/i16",mid$(rp$,18,2))/100.0
-  Pdc2=conv("ble/i16",mid$(rp$,20,2))
+  Pdc2=conv("ble/i16",mid$(rp$,20,2))/1000.0
   Udc3=conv("ble/i16",mid$(rp$,26,2))/10.0
   Idc3=conv("ble/i16",mid$(rp$,28,2))/100.0
-  Pdc3=conv("ble/i16",mid$(rp$,30,2))
+  Pdc3=conv("ble/i16",mid$(rp$,30,2))/1000.0
   Uac1=conv("ble/i16",mid$(rp$,36,2))/10.0
   Iac1=conv("ble/i16",mid$(rp$,38,2))/100.0
-  Pac1=conv("ble/i16",mid$(rp$,40,2))
+  Pac1=conv("ble/i16",mid$(rp$,40,2))/1000.0
   Uac2=conv("ble/i16",mid$(rp$,44,2))/10.0
   Iac2=conv("ble/i16",mid$(rp$,46,2))/100.0
-  Pac2=conv("ble/i16",mid$(rp$,48,2))
+  Pac2=conv("ble/i16",mid$(rp$,48,2))/1000.0
   Uac3=conv("ble/i16",mid$(rp$,52,2))/10.0
   Iac3=conv("ble/i16",mid$(rp$,54,2))/100.0
-  Pac3=conv("ble/i16",mid$(rp$,56,2))
+  Pac3=conv("ble/i16",mid$(rp$,56,2))/1000.0
  ENDIF
  kostalVoltageCurrentPower=err%
 END FUNCTION
@@ -87,12 +87,12 @@ END FUNCTION
 ' server$  IP address of the inverter
 ' addr%    Inverter address
 ' timeout% Timeout in ms
-' kWh      Inverter Total Energy
-FUNCTION kostalTotalEnergy(server$, addr%, timeout%, kWh)
+' EAc      Inverter Total Energy [kWh]
+FUNCTION kostalTotalEnergy(server$, addr%, timeout%, EAc)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H45, 11, rp$)
  IF err% =0 THEN
-  kWh=conv("ble/i32",mid$(rp$,6,4))/1000.0
+  EAc=conv("ble/i32",mid$(rp$,6,4))/1000.0
  ENDIF
  kostalTotalEnergy=err%
 END FUNCTION
@@ -169,12 +169,12 @@ END FUNCTION
 ' server$  IP address of the inverter
 ' addr%    Inverter Address
 ' timeout% Timeout in ms
-' kWh      Daily Energy
-FUNCTION kostalDailyEnergy(server$, addr%, timeout%, kWh)
+' EAc      Daily Energy [kWh]
+FUNCTION kostalDailyEnergy(server$, addr%, timeout%, EAc)
  LOCAL err%, rp$
  err%=kostalTransfer(server$, addr%, timeout%, &H9D, 11, rp$)
  IF err% =0 THEN
-  kWh=conv("ble/i32",mid$(rp$,6,4))/1000.0
+  EAc=conv("ble/i32",mid$(rp$,6,4))/1000.0
  ENDIF
  kostalDailyEnergy=err%
 END FUNCTION

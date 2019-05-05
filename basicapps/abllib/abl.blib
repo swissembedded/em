@@ -21,7 +21,7 @@
 
 '@lib_init
 FUNCTION __abl_init()
- 'OPTION LIBRARY abl PRINT ENABLE
+ OPTION LIBRARY abl PRINT ENABLE
  print "Init abl"
 END FUNCTION
 
@@ -212,6 +212,127 @@ FUNCTION ABLADuty( amp )
  ENDIF
 END FUNCTION
 
+
+' ABL EV electric car charger controller default
+' This function must be called at least every 60 seconds,
+' itf$ abl interface
+' slv% slave address of charger (default 0=all)
+' curmin% minimal charging current [mA]
+' curmax% maximal charging current [mA]
+FUNCTION ABLEVControlDflt(itf$, slv%, curmin%, curmax%)
+  LOCAL err%, par
+
+  ' Set Icmax
+  par=ABLADuty(curmin%/1000.0)*10
+  err%=ABLCmd( itf$, slv%, 12, par)
+  IF err% THEN
+   ABLEVControlDflt=-10
+   EXIT FUNCTION
+  ENDIF
+
+  ' Set Icdefault
+  par=ABLADuty(curmax%/1000.0)*10
+  err%=ABLCmd( itf$, slv%, 15, par)
+  IF err% THEN
+   ABLEVControlDflt=-11
+   EXIT FUNCTION
+  ENDIF
+END FUNCTION
+
+' ABL EV electric car charger controller state
+' This function must be called at least every 60 seconds,
+' itf$ abl interface
+' slv% slave address of charger (default 0=all)
+' Pac current AC power
+' Eac cummulativ energy of the charging
+' NumAc% control loop factor
+' curhw% available charging current limited by hardware [mA]
+' st$ device status (A..F)
+'     A Charger is not connected to car
+'     B Charger is connected to car or charging ended
+'     C Charging without ventilation
+'     E Shutoff, no power
+'     F Error
+'     U unknown status
+FUNCTION ABLEVControlState(itf$, slv%, Pac, Eac, NumAc%, enusr%, curusr%, curhw%, st$)
+  LOCAL err%, par, mode%
+  ' Read EV Status
+  err%=ABLCmd( itf$, slv%, 2, par)
+  IF err% THEN
+    ABLEVControlState=-10
+    EXIT FUNCTION
+  ENDIF
+  'print "Mode " mode%
+  mode%=int(par)
+  IF mode%=0 OR mode%=15 OR mode%=16 OR mode%=17 THEN
+    st$="A"
+  ELSE IF (mode%>=1 AND mode%<=4) OR mode%=9 OR (mode%>=12 AND mode%<=13) OR (mode%>=64 AND mode%<=68)  THEN
+    st$="B"
+  ELSE IF mode%=5 THEN
+    st$="C"
+  ELSE IF mode%=6 THEN
+    st$="D"
+  ELSE IF mode%=33 OR mode%=35 OR mode%=37 OR mode%=39 THEN
+    st$="E"
+  ELSE
+    st$="U"
+  ENDIF
+  ' Get Ic
+  ' The available current Ic is automatically set to the lowest value of Idefault, Icmax and rated current of charging cable
+  ' Ic is communicated to the EV by PWM on CP-line
+  err%=ABLCmd( itf$, slv%, 11, par)
+  IF err% THEN
+   ABLEVControlState=-11
+   EXIT FUNCTION
+  ENDIF
+  curusr%=ABLDutyA(par/10.0)*1000.0
+
+  ' Get Break flag
+  err%=ABLCmd( itf$, slv%, 29, par)
+  IF err% THEN
+   ABLEVControlState=-12
+   EXIT FUNCTION
+  ENDIF
+  enusr%=1
+  IF par THEN enusr%=0
+  Pac=0
+  Eac=0
+  NumAc%=0
+  ABLEVControlState=0
+END FUNCTION
+
+' ABL EV electric car charger controller
+' This function must be called at least every 60 seconds,
+' itf$ abl interface
+' slv% slave address of charger (default 0=all)
+' en%  enable charger
+' cur% charging current [mA]
+'     amp x 230V x num of phases = excess energy available for charging
+FUNCTION ABLEVControl(itf$, slv%, en%, cur%)
+  LOCAL err%, par
+
+  IF en% THEN
+    ' Clear bBreakCharge flag
+    err%=ABLCmd( itf$, slv%, 28, par)
+  ELSE
+    ' Set bBreakCharge flag
+    err%=ABLCmd( itf$, slv%, 27, par)
+  ENDIF
+  IF err% THEN
+    ABLEVControl=-10
+    EXIT FUNCTION
+  ENDIF
+
+  ' Set Icmax
+  par=ABLADuty(cur%/1000.0)*10
+  err%=ABLCmd( itf$, slv%, 12, par)
+  IF err% THEN
+   ABLEVControl=-11
+   EXIT FUNCTION
+  ENDIF
+  ABLEVControl=0
+END FUNCTION
+
 ' ABL EV electric car charger controller
 ' This function must be called at least every 60 seconds,
 ' The device is not capable to interrupt charging from the Charger side
@@ -233,7 +354,7 @@ END FUNCTION
 '     F Error
 '     else unknown status
 ' vs$ version info
-FUNCTION ABLEVControl(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
+FUNCTION ABLEVControlold(itf$,slv%,rst%, en%, amp, ampmin, ampmax, amphw, st$, vs$)
  __cmb
  LOCAL par, mode%, cbf%
  ' Get Version

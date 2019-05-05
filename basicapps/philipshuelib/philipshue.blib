@@ -85,7 +85,6 @@ SUB PhilipsCalHue(Ph, Phmax, Ps, Pv, hue%, sat%)
   IF Ps < 0.0 THEN hue%=46920 'blue excess discharging
   IF Ps > 0.0 THEN hue%=38250 'cyan excess, charging
  ENDIF
- PhilipsCalHue=hue%
 END SUB
 
 ' Philips hue light state changer
