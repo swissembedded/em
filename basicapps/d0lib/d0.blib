@@ -1,0 +1,131 @@
+' Copyright (c) 2019 swissEmbedded GmbH, All rights reserved.
+' D0 reader
+' @DESCRIPTION D0 reader
+' @VERSION 1.0
+
+'@lib_init
+FUNCTION __d0_init()
+ 'OPTION LIBRARY d0 PRINT ENABLE
+ print "Init D0"
+END FUNCTION
+
+'@lib_destroy
+FUNCTION __d0_destroy()
+  PRINT "Deinit D0"
+END FUNCTION
+
+FUNCTION D0GetOBIS(ln$, ab$, cde$, f$, value$, unit$)
+ LOCAL st%, dp%, bo%, bc%, sr%, srb%
+ ' Parse A-B:C.D.E*F
+ '15.8.0(062697.445*kWh)
+ '1234567890123456789012
+ st%=1
+ dp%=Instr(1,ln$,":")
+ IF dp%>0 THEN
+  'A-B present
+  st%=dp%+1
+  ab$=LEFT$(ln$,dp%-1)
+ ENDIF
+
+ bo%=Instr(st%,ln$,"(")
+ bc%=Instr(st%,ln$,")")
+ sr%=Instr(st%,ln$,"*")
+ srb%=0
+ ' search * inside brackets
+ IF bo% > 0 THEN
+  srb%=Instr(bo%,ln$,"*")
+ ENDIF
+ IF sr% > 0 AND bo% > 0 AND bo%>sr% THEN
+  ' * ( -> we have f
+  cde$=mid$(ln$, st%, sr%-st%)
+  f$=mid$(ln$,sr%+1,bo%-sr%-1)
+ ELSE IF sr% > 0 AND bo% >0 AND bo%<sr% THEN
+  ' ( *
+  cde$=mid$(ln$, st%, bo%-st%)
+  f$=""
+ ELSE IF sr% > 0 THEN
+  ' * no (
+  cde$=mid$(ln$, st%, sr%-st%)
+  f$=mid$(ln$,sr%+1,len(ln$)-sr%)
+ ENDIF
+ ' parse inside brackets
+ IF bo% > 0 THEN
+  IF bc% > 0 THEN
+    IF srb% > 0 THEN
+      value$=mid$(bo%+1, srb%-bo%-1)
+      unit$=mid(srb%+1, bc%-srb%-1)
+    ELSE
+      value$=mid$(bo%+1, bc%-bo%-1)
+      unit$=""
+  ENDIF
+ ELSE
+  D0GetOBIS=-1
+  EXIT FUNCTION
+ ENDIF
+ D0GetOBIS=0
+END FUNCTION
+
+
+FUNCTION D0EnergyMeter(grp$,pre$,idx%, start%, err%, kW, kWhI, kWhE, tarif%)
+  LOCAL n%, ln$, ab$, cde$, f$, value$, unit$, tf$, vr$, vo, v, kWI, kWE
+  ' Read line, D0 IEC 62056-21
+  ' We read a max of 20 lines if device is in continues mode
+  ' We have to parse each line for the register of interest
+  ' and current readout e.g.
+  ' Energy 1.8.0 import grid, 2.8.0 export grid, last number is tariff, 0=total
+  ' Power 1.7.0 import grid, 2.7.0 export grid, last number is tariff, 0=total
+  err%=D0End(1000)
+  kWI=-1.0
+  kWE=-1.0
+  ' assume 1-0
+	' consumption :  1.8.0(017613.595*kWh)
+	' feed in grid:  2.8.0(000058.254*kWh)
+	' pls check the readout, there are differences from manufacturer to manufacturer
+  n%=0
+  DO
+	 ln$=RTRIM$(D0ReadLn$(1000))
+   IF len(ln$) > 0 THEN
+    PRINT "line ",n%, " [" ln$ "]"
+    ab$="1-0"
+    err%=D0GetOBIS(ln$, ab$, cde$, f$, value$, unit$)
+    IF err% = 0 AND ab$="1-0" THEN
+      ' f$ is not end of month value
+      IF LEN(cde$)>4 AND (f$="" OR f$="255") THEN
+        tf$=right$(cde$,1)
+        SELECT CASE LEFT$(cde$,4)
+          CASE "1.8."
+            vr$=grp$+str$(idx%)+pre$+tf$+"ETmpI"
+            vo=$(vr$)
+            v=val(value$)
+            IF v > vo AND tf$<>"0" THEN tarif%=val(tf$)
+            IF start%=0 AND tf$="0" THEN kW=(v-vo)/15.0*3600.0
+            kWI=v
+            $(vr$,v)
+          CASE "2.8."
+            vr$=grp$+str$(idx%)+pre$+tf$+"ETmpE"
+            vo=$(vr$)
+            v=val(value$)
+            IF v > vo AND tf$<>"0" THEN tarif%=val(tf$)
+            IF start%=0 AND tf$="0" THEN kW=-(v-vo)/15.0*3600.0
+            kWE=v
+            $(vr$,v)
+          CASE "1.7.0"
+            $vr=grp$+str$(idx%)+pre$+tf$+"PTmpI"
+            v=val(value$)
+            kWE=v
+            $(vr$,v)
+          CASE "2.7.0"
+            vr$=grp$+str$(idx%)+pre$+tf$+"PTmpE"
+            vo=$(vr$)
+            v=val(value$)
+            kWI=v
+            $(vr$,v)
+	    END SELECT
+    ENDIF
+   ENDIF %len
+   n%=n%+1
+	LOOP UNTIL n%>20
+  D0EnergyMeter=n%
+  IF kWI >=0.0 THEN kW=kWI
+  IF kWE >=0.0 THEN kW=-kWE
+END FUNCTION
